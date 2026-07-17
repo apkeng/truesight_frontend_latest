@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   MdStar,
   MdPsychology,
@@ -122,7 +122,7 @@ const Dashboard = () => {
     };
   }, []);
 
-  const stats = [
+  const stats = useMemo(() => [
     {
       label: "Total Points",
       total: userData?.userPoints || 0,
@@ -144,22 +144,7 @@ const Dashboard = () => {
       bg: "bg-purple-100",
       iconColor: "text-purple-600",
     },
-  ];
-
-
-  const Card = ({ label, total, bg, icon, iconColor }) => (
-    <div className="relative group overflow-hidden bg-white/40 backdrop-blur-xl border border-white/40 rounded-3xl p-6 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95">
-      <div className="flex items-start justify-between relative z-10">
-        <div>
-          <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</p>
-          <h3 className="text-3xl font-black text-gray-900 leading-tight">{total}</h3>
-        </div>
-        <div className={`${bg} ${iconColor} w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg`}>
-          {React.cloneElement(icon, { className: "w-6 h-6" })}
-        </div>
-      </div>
-    </div>
-  );
+  ], [userData, quizResults, lastQuizScore]);
 
   if (loading && !userData) {
     return (

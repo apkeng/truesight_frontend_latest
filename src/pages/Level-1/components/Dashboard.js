@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { 
+import React, { useEffect, useMemo, useState } from "react";
+import {
   MdFolder,
   MdStar
 } from "react-icons/md";
@@ -14,6 +14,20 @@ import { db } from "../../../firebase/firebase-config";
 import { toast } from "react-toastify";
 import { SkeletonStatsCard } from "../../../components/SkeletonLoading";
 import { useNavigate } from "react-router-dom";
+
+const Card = ({ label, count, bg, icon, iconColor }) => (
+  <div className="relative group overflow-hidden bg-white/40 backdrop-blur-xl border border-white/40 rounded-3xl p-6 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95">
+    <div className="flex items-start justify-between relative z-10">
+      <div>
+        <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</p>
+        <h3 className="text-3xl font-black text-gray-900 leading-tight">{count}</h3>
+      </div>
+      <div className={`${bg} ${iconColor} w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg`}>
+        {React.cloneElement(icon, { className: "w-6 h-6" })}
+      </div>
+    </div>
+  </div>
+);
 
 const Dashboard = () => {
   const [users, setUsers] = useState([]);
@@ -110,11 +124,17 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  const stats = [
+  const students = useMemo(
+    () => users.filter((u) => u.role === "Level-2"),
+    [users]
+  );
+  const totalStudents = students.length;
+
+  const stats = useMemo(() => [
     {
       _id: "1",
       label: "Total Students",
-      total: users?.filter((u) => u.role === "Level-2")?.length || 0,
+      total: totalStudents || 0,
       icon: <FaUsers className="w-6 h-6" />,
       bg: "bg-blue-100",
       iconColor: "text-blue-600",
@@ -143,21 +163,7 @@ const Dashboard = () => {
       bg: "bg-purple-100",
       iconColor: "text-purple-600",
     },
-  ];
-
-  const Card = ({ label, count, bg, icon, iconColor }) => (
-    <div className="relative group overflow-hidden bg-white/40 backdrop-blur-xl border border-white/40 rounded-3xl p-6 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95">
-      <div className="flex items-start justify-between relative z-10">
-        <div>
-          <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</p>
-          <h3 className="text-3xl font-black text-gray-900 leading-tight">{count}</h3>
-        </div>
-        <div className={`${bg} ${iconColor} w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg`}>
-          {React.cloneElement(icon, { className: "w-6 h-6" })}
-        </div>
-      </div>
-    </div>
-  );
+  ], [users, totalStudents, totalProjects, totalTasks]);
 
   return (
     <div className="w-full min-h-screen p-4 sm:p-6 lg:p-10">
@@ -182,7 +188,7 @@ const Dashboard = () => {
 
             {!loading && (
               <div className="bg-white/10 backdrop-blur-xl px-10 py-6 rounded-[2.5rem] border border-white/10 flex flex-col items-center shadow-inner">
-                 <span className="text-4xl font-black">{users?.filter(u => u.role === "Level-2")?.length || 0}</span>
+                 <span className="text-4xl font-black">{totalStudents || 0}</span>
                  <span className="text-[10px] font-black uppercase tracking-widest text-blue-100 mt-2">Active Students</span>
               </div>
             )}
@@ -225,7 +231,7 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50/50">
-                {users.filter(u => u.role === "Level-2").slice(0, 5).map((user, i) => (
+                {students.slice(0, 5).map((user, i) => (
                   <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="py-4 px-3">
                       <div className="flex items-center gap-3">
@@ -253,7 +259,7 @@ const Dashboard = () => {
                     </td>
                   </tr>
                 ))}
-                {users.filter(u => u.role === "Level-2").length === 0 && (
+                {totalStudents === 0 && (
                   <tr>
                     <td colSpan="3" className="py-16 text-center">
                        <div className="flex flex-col items-center opacity-30">

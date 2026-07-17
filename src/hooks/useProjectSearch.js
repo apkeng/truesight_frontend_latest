@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 
 export const useProjectSearch = (projects, searchQuery) => {
-  const [filteredProjects, setFilteredProjects] = useState(projects);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchQuery);
 
   // Increase debounce delay to reduce processing frequency
@@ -43,9 +42,5 @@ export const useProjectSearch = (projects, searchQuery) => {
     );
   }, [projectsMap, debouncedSearchTerm, projects]);
 
-  useEffect(() => {
-    setFilteredProjects(searchProjects);
-  }, [searchProjects]);
-
-  return filteredProjects;
+  return searchProjects;
 };

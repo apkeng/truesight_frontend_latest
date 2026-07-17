@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { MdAdminPanelSettings } from "react-icons/md";
 import { FaClipboard } from "react-icons/fa";
 import { FaUsers } from "react-icons/fa";
@@ -83,6 +83,27 @@ export const summary = {
   },
 };
 
+const Card = ({ label, count, bg, icon }) => {
+  return (
+    <div className="w-full h-32 bg-white p-5 shadow-md rounded-md flex items-center justify-between">
+      <div className="h-full flex flex-1 flex-col justify-between">
+        <p className="text-base text-gray-600">{label}</p>
+        <span className="text-2xl font-semibold">{count}</span>
+        <span className="text-sm text-gray-400"></span>
+      </div>
+
+      <div
+        className={clsx(
+          "w-10 h-10 rounded-full flex items-center justify-center text-white",
+          bg
+        )}
+      >
+        {icon}
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const [users, setUsers] = useState([]);
   const [instituteCode, setInstituteCode] = useState("");
@@ -127,7 +148,7 @@ const Dashboard = () => {
     });
   }, [instituteCode]);
 
-  const stats = [
+  const stats = useMemo(() => [
     {
       _id: "1",
       label: "TOTAL USERS",
@@ -154,30 +175,9 @@ const Dashboard = () => {
       label: "TODOS",
       total: totals["todo"],
       icon: <FaArrowsToDot />,
-      bg: "bg-[#be185d]" || 0,
+      bg: "bg-[#be185d]",
     },
-  ];
-
-  const Card = ({ label, count, bg, icon }) => {
-    return (
-      <div className="w-full h-32 bg-white p-5 shadow-md rounded-md flex items-center justify-between">
-        <div className="h-full flex flex-1 flex-col justify-between">
-          <p className="text-base text-gray-600">{label}</p>
-          <span className="text-2xl font-semibold">{count}</span>
-          <span className="text-sm text-gray-400"></span>
-        </div>
-
-        <div
-          className={clsx(
-            "w-10 h-10 rounded-full flex items-center justify-center text-white",
-            bg
-          )}
-        >
-          {icon}
-        </div>
-      </div>
-    );
-  };
+  ], [users, totals]);
 
   return (
     <div className="h-full py-4">
