@@ -27,4 +27,5 @@ create-test-users.js
 
 # Developer documentation (internal only)
 *.md
+!README.md
 .vercel
