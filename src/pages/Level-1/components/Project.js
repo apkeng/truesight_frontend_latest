@@ -1,6 +1,6 @@
 import React from "react";
 import AllProjects from "./AllProjects";
-import MyCollaborations from "./MyCollaborations";
+import MyCollaborations from "../../shared/components/MyCollaborations";
 import PrivateProjects from "./PrivateProjects";
 import { Route, Routes } from "react-router-dom";
 import TaskDetails from "../../../components/task/TaskDetails";

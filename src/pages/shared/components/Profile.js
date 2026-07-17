@@ -29,11 +29,43 @@ const getRoleIcon = (role) => {
   return faUserTie;
 };
 
-export default function Profile() {
+// Per-dashboard presentation differences. Tailwind's JIT compiler only picks up
+// complete class strings, so each variant carries the full literal className.
+const VARIANTS = {
+  "level1": {
+    syncEducationLevel: false,
+    namePlaceholder: "e.g. Prof. Jordan Smith",
+    heroClass: "relative bg-gradient-to-br from-blue-700 via-blue-800 to-slate-900 rounded-[2.5rem] p-8 sm:p-12 text-white shadow-2xl shadow-blue-100 overflow-hidden group",
+    roleRowClass: "flex items-center gap-2 text-blue-100 font-bold",
+    dotClass: "w-1 h-1 rounded-full bg-blue-400 hidden sm:block",
+    instituteClass: "text-blue-200 font-medium text-sm",
+    editIdleClass: "bg-white text-blue-900 hover:scale-105 active:scale-95",
+    affiliationIconClass: "w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-inner",
+    verifyBtnClass: "px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all self-start sm:self-auto hover:scale-[1.02] active:scale-95",
+    submitBtnClass: "w-full py-5 rounded-[2rem] bg-blue-600 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-blue-100 hover:scale-[1.02] active:scale-95 transition-all",
+    modalVerifyBtnClass: "flex-1 py-4 rounded-2xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center",
+  },
+  "level2": {
+    syncEducationLevel: true,
+    namePlaceholder: "e.g. Dr. Jordan Smith",
+    heroClass: "relative bg-gradient-to-br from-indigo-700 via-indigo-800 to-slate-900 rounded-[2.5rem] p-8 sm:p-12 text-white shadow-2xl shadow-indigo-100 overflow-hidden group",
+    roleRowClass: "flex items-center gap-2 text-indigo-100 font-bold",
+    dotClass: "w-1 h-1 rounded-full bg-indigo-400 hidden sm:block",
+    instituteClass: "text-indigo-200 font-medium text-sm",
+    editIdleClass: "bg-white text-indigo-900 hover:scale-105 active:scale-95",
+    affiliationIconClass: "w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner",
+    verifyBtnClass: "px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all self-start sm:self-auto hover:scale-[1.02] active:scale-95",
+    submitBtnClass: "w-full py-5 rounded-[2rem] bg-indigo-600 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-100 hover:scale-[1.02] active:scale-95 transition-all",
+    modalVerifyBtnClass: "flex-1 py-4 rounded-2xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center",
+  },
+};
+
+export default function Profile({ variant = "level2" }) {
+  const ui = VARIANTS[variant] || VARIANTS["level2"];
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
@@ -66,14 +98,14 @@ export default function Profile() {
     }
   };
 
-  
+
   const {
     register,
     setValue,
     handleSubmit,
     watch,
   } = useForm();
-  
+
   const watchedRole = watch("role");
 
   useEffect(() => {
@@ -91,6 +123,9 @@ export default function Profile() {
             setValue("phone", data.phone);
             setValue("role", data.role);
             setValue("photoURL", data.photoURL || "");
+            if (ui.syncEducationLevel) {
+              setValue("educationLevel", data.educationLevel || "");
+            }
           }
         } catch (error) {
           console.error("Error fetching user details:", error);
@@ -102,7 +137,7 @@ export default function Profile() {
 
       fetchUserDetails();
     }
-  }, [setValue]);
+  }, [setValue, ui.syncEducationLevel]);
 
   const onSubmit = async (data) => {
     const uid = Cookies.get("uid");
@@ -135,15 +170,16 @@ export default function Profile() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
       <ToastContainer autoClose={2000} />
-      
+
       {/* Premium Hero Banner */}
       <div className="mb-10 mt-6 animate-in fade-in slide-in-from-top-6 duration-1000">
-        <div className="relative bg-gradient-to-br from-blue-700 via-blue-800 to-slate-900 rounded-[2.5rem] p-8 sm:p-12 text-white shadow-2xl shadow-blue-100 overflow-hidden group">
+        <div className={ui.heroClass}>
           <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:scale-110 transition-transform duration-700">
             <FontAwesomeIcon icon={faFingerprint} className="text-[14rem]" />
           </div>
-          
+
           <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8">
+            {/* Avatar Section */}
             <div className="relative group/avatar">
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-[2rem] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center overflow-hidden shadow-2xl ring-4 ring-white/10 group-hover/avatar:ring-blue-400/30 transition-all duration-500">
                 {userData?.photoURL ? (
@@ -166,12 +202,12 @@ export default function Profile() {
               </div>
               <h1 className="text-4xl sm:text-5xl font-black mb-3 tracking-tight">{userData?.name || "Anonymous Researcher"}</h1>
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
-                <div className="flex items-center gap-2 text-blue-100 font-bold">
+                <div className={ui.roleRowClass}>
                    <FontAwesomeIcon icon={getRoleIcon(userData?.role)} className="text-sm opacity-70" />
                    <span className="text-sm uppercase tracking-widest">{getRoleDisplayName(userData?.role)}</span>
                 </div>
-                <div className="w-1 h-1 rounded-full bg-blue-400 hidden sm:block" />
-                <p className="text-blue-200 font-medium text-sm">{userData?.instituteName || "Global Academy Consortium"}</p>
+                <div className={ui.dotClass} />
+                <p className={ui.instituteClass}>{userData?.instituteName || "Global Academy Consortium"}</p>
               </div>
             </div>
 
@@ -179,9 +215,9 @@ export default function Profile() {
               <button
                 onClick={() => setIsEditing(!isEditing)}
                 className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-3 whitespace-nowrap ${
-                  isEditing 
+                  isEditing
                     ? "bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white"
-                    : "bg-white text-blue-900 hover:scale-105 active:scale-95"
+                    : ui.editIdleClass
                 }`}
               >
                 <FontAwesomeIcon icon={isEditing ? faEnvelope : faEdit} />
@@ -198,14 +234,16 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Main Profile Grid */}
       <form onSubmit={handleSubmit(onSubmit)} className="animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Personal Metadata */}
           <div className="lg:col-span-2 space-y-8">
              <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 sm:p-10 shadow-sm relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity">
                    <FontAwesomeIcon icon={faUser} className="text-[10rem]" />
                 </div>
-                
+
                 <div className="flex items-center gap-3 mb-8">
                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-inner">
                       <FontAwesomeIcon icon={faUser} className="text-sm" />
@@ -217,7 +255,7 @@ export default function Profile() {
                    <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Legal Full Name</label>
                       <Textbox
-                        placeholder="e.g. Prof. Jordan Smith"
+                        placeholder={ui.namePlaceholder}
                         type="text"
                         className="w-full"
                         register={register("name", { required: "Identity name required" })}
@@ -247,6 +285,18 @@ export default function Profile() {
                         readOnly={!isEditing}
                       />
                    </div>
+                   {watchedRole === "Level-2" && (
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Academic Level</label>
+                        <Textbox
+                          placeholder="e.g. Final Year Scholar"
+                          type="text"
+                          className="w-full"
+                          register={register("educationLevel")}
+                          readOnly={!isEditing}
+                        />
+                     </div>
+                   )}
                 </div>
              </div>
 
@@ -254,9 +304,9 @@ export default function Profile() {
                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity">
                    <FontAwesomeIcon icon={faBuilding} className="text-[10rem]" />
                 </div>
-                
+
                 <div className="flex items-center gap-3 mb-8">
-                   <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-inner">
+                   <div className={ui.affiliationIconClass}>
                       <FontAwesomeIcon icon={faBuilding} className="text-sm" />
                    </div>
                    <h3 className="text-xl font-black text-slate-800 tracking-tight">Institutional Affiliation</h3>
@@ -295,13 +345,14 @@ export default function Profile() {
                 <button
                    type="button"
                    onClick={() => setIsPasswordModalOpen(true)}
-                   className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all self-start sm:self-auto hover:scale-[1.02] active:scale-95"
+                   className={ui.verifyBtnClass}
                 >
                    Verify Credentials
                 </button>
              </div>
           </div>
 
+          {/* Right Column: Identity Configuration */}
           <div className="space-y-8">
              <div className="bg-slate-900 rounded-[2.5rem] p-8 sm:p-10 text-white shadow-2xl relative overflow-hidden">
                 <div className="relative z-10">
@@ -311,7 +362,7 @@ export default function Profile() {
                       </div>
                       <h3 className="text-xl font-black tracking-tight">Security Status</h3>
                    </div>
-                   
+
                    <div className="space-y-6">
                       <div className="p-4 rounded-3xl bg-white/5 border border-white/5">
                          <div className="flex items-center justify-between mb-2">
@@ -340,7 +391,7 @@ export default function Profile() {
                   <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-center mb-2">Finalize Synchronization</h4>
                   <button
                     type="submit"
-                    className="w-full py-5 rounded-[2rem] bg-blue-600 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-blue-100 hover:scale-[1.02] active:scale-95 transition-all"
+                    className={ui.submitBtnClass}
                   >
                     Commit Identity Changes
                   </button>
@@ -366,7 +417,7 @@ export default function Profile() {
             </div>
             <h3 className="text-xl font-black text-slate-800 tracking-tight">Security Check</h3>
           </div>
-          
+
           <p className="text-sm text-slate-500 mb-6 leading-relaxed">
             For security purposes, please enter your current password to verify your credentials.
           </p>
@@ -405,7 +456,7 @@ export default function Profile() {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-4 rounded-2xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center"
+                className={ui.modalVerifyBtnClass}
                 disabled={isVerifying}
               >
                 {isVerifying ? "Verifying..." : "Verify"}
@@ -417,4 +468,3 @@ export default function Profile() {
     </div>
   );
 }
-

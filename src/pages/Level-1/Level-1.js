@@ -22,8 +22,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
-import Settings from "./components/Settings";
-import Profile from "./components/Profile";
+import Settings from "../shared/components/Settings";
+import Profile from "../shared/components/Profile";
 import Project from "./components/Project";
 import Quiz from "./components/Quiz";
 import QuizResults from "./components/QuizResults";
@@ -495,7 +495,7 @@ function Level1Dashboard() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile" element={<Profile variant="level1" />} />
             <Route path="/project/*" element={<Project searchQuery={searchQuery} />} />
             <Route path="/quiz/:topic" element={<Quiz />} />
             <Route path="/quiz-results" element={<QuizResults />} />

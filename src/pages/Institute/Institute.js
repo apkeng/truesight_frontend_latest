@@ -19,7 +19,7 @@ import Settings from "./components/Settings";
 import Profile from "./components/Profile";
 import { useAuth } from "../../contexts/AuthContext";
 import InstituteDetails from "./components/InstituteDetails";
-import MyCollaborations from "../Level-1/components/MyCollaborations";
+import MyCollaborations from "../shared/components/MyCollaborations";
 import logo from "../../assets/logo_blue.png";
 import Cookies from "js-cookie";
 import { doc, getDoc } from "firebase/firestore";
