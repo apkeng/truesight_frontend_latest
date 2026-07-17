@@ -53,6 +53,7 @@ This repo is a conservative optimization of the original codebase: same dependen
 - **Cloud Functions** (`functions/index.js`): `initializeRewards` no longer issues one Firestore query per reward inside a loop (~15 sequential reads → 1); the callable and HTTP variants of `getRewards` share one `fetchAccessibleRewards` helper; the two email templates share their common CSS, with rendered output verified identical.
 - **Dead code removed**: 10 unimported files (including a broken `searchUtils.js` that imported itself) and an 80-line commented-out component; debug `console.log` calls stripped from `src/` (error reporting via `console.error`/`console.warn` kept).
 - **Reproducible functions installs**: `functions/package-lock.json` is now committed so `npm ci` works there.
+- **DEP0176 fix for Node 23+ builds**: `react-dev-utils` (an archived CRA dependency) uses the deprecated top-level `fs.F_OK`, which makes newer Node print `[DEP0176] DeprecationWarning` on every build. A dependency-free `postinstall` script (`scripts/patch-react-dev-utils.js`) patches it to `fs.constants.F_OK` after each install; it is idempotent and a no-op once upstream is fixed.
 
 ## Verification
 
