@@ -107,7 +107,6 @@ const Rewards = () => {
         rewards.sort((a, b) => a.pointsRequired - b.pointsRequired);
         
         setAvailableRewards(rewards);
-      console.log("Rewards fetched from backend API:", rewards.length);
     } catch (error) {
       console.error("Error fetching rewards:", error);
       toast.error("Failed to load rewards. Please try again later.");
@@ -217,8 +216,7 @@ const Rewards = () => {
           specifications={selectedReward.selectedSpecs}
           userPoints={userStats.totalPoints}
           onBack={() => setView("REWARD_DETAILS")}
-          onComplete={(orderData) => {
-            console.log("Redemption complete:", orderData);
+          onComplete={() => {
             toast.success("🎉 Reward redeemed successfully! Your order is being processed.");
             fetchUserPoints(); // Refresh points
             fetchRedeemedRewards(); // Refresh rewards

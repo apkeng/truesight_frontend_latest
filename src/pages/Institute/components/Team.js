@@ -34,8 +34,6 @@ const Team = () => {
         const docSnap = await getDoc(userDoc);
         if (docSnap.exists()) {
           setInstituteCode(docSnap.data().instituteCode || "");
-        } else {
-          console.log("No such document!");
         }
       }
     };
@@ -74,23 +72,18 @@ const Team = () => {
 
   const deleteHandler = async () => {
     if (selected) {
-      console.log("Attempting to delete user with ID:", selected);
       try {
         await deleteDoc(doc(db, "users", selected));
-        console.log("User deleted successfully");
         setOpenDialog(false); // Close the dialog after deleting
         setUsers(users.filter((user) => user._id !== selected)); // Update the local state
         setSelected(null); // Reset selected after deletion
       } catch (error) {
         console.error("Failed to delete user:", error);
       }
-    } else {
-      console.log("No user selected for deletion");
     }
   };
 
   const deleteClick = (id) => {
-    console.log("Delete clicked for ID:", id);
     setSelected(id);
     setOpenDialog(true);
   };

@@ -88,7 +88,6 @@ export default function Login() {
       
       // Navigate based on user role
       if (result.user.role) {
-        console.log("User role is:", result.user.role);
         navigateBasedOnRole(result.user.role);
       } else {
         setError("No user role found.");

@@ -53,8 +53,6 @@ const AddUser = ({ open, setOpen, userData, onUserAddedOrUpdated }) => {
         if (docSnap.exists()) {
           setInstituteCode(docSnap.data().instituteCode || "");
           setInstituteName(docSnap.data().instituteName || ""); // Assuming 'instituteName' is a field in the document
-        } else {
-          console.log("No such document!");
         }
       }
     };
@@ -73,7 +71,6 @@ const AddUser = ({ open, setOpen, userData, onUserAddedOrUpdated }) => {
       }
       
       if (isUpdating) {
-        console.log("Attempting to update user with data:", data);
         const userDoc = doc(db, "users", userData.uid);
         await updateDoc(userDoc, {
           name: data.name,
@@ -83,7 +80,6 @@ const AddUser = ({ open, setOpen, userData, onUserAddedOrUpdated }) => {
           educationLevel: data.educationLevel || (data.role === "Level-1" ? "Teacher" : null),
         })
           .then(() => {
-            console.log("Update successful!");
             updatedUser = { ...userData, ...data };
             toast.success("User updated successfully!");
             onUserAddedOrUpdated(updatedUser);

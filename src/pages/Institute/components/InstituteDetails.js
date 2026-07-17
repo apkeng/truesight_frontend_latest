@@ -82,7 +82,6 @@ export default function InstituteDetails() {
         }
 
         toast.success("Institute details submitted successfully!");
-        // console.log("Form Submission Data:", data);
       } catch (error) {
         console.error("Error saving institute details:", error);
         toast.error("Failed to save institute details.");

@@ -85,8 +85,6 @@ export default function RequestDemoModal({ isOpen, onClose }) {
       
       if (GOOGLE_SHEETS_WEBHOOK_URL) {
         try {
-          console.log("Sending data to Google Sheets via Webhook...");
-          
           // Using mode: 'no-cors' and text/plain to bypass OPTIONS preflight and CORS blocks
           await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
             method: "POST",
@@ -99,7 +97,6 @@ export default function RequestDemoModal({ isOpen, onClose }) {
 
           // In "no-cors" mode, the response is opaque. 
           // If fetch doesn't throw, we assume success as Google Script redirects make typical parsing fail.
-          console.log("Data sent to Google Sheets successfully");
           googleSheetsSuccess = true;
         } catch (webhookError) {
           console.error("Error sending to Google Sheets:", webhookError);

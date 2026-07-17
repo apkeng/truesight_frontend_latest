@@ -123,7 +123,6 @@ export const AuthProvider = ({ children }) => {
     const timeSinceLastActivity = Date.now() - lastActivityRef.current;
     
     if (timeSinceLastActivity >= INACTIVITY_TIMEOUT) {
-      console.log("User inactive for 30 minutes, logging out...");
       if (logoutRef.current) {
         await logoutRef.current();
       }
