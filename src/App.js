@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -8,18 +8,23 @@ import {
 } from "react-router-dom";
 import StudentHome from "./pages/StudentHome";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Contact from "./pages/Contact";
 import { useAuth } from "./contexts/AuthContext";
-import Institute from "./pages/Institute/Institute";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import ResetPasswordWithOTP from "./pages/ResetPasswordWithOTP";
-import Level1Dashboard from "./pages/Level-1/Level-1";
-import Level2Dashboard from "./pages/Level-2/Level-2";
-import Events from "./pages/Events";
-import EventDetails from "./pages/Events/EventDetails";
+import Loading from "./components/Loading";
 import { setNavigateFunction } from "./utils/apiClient";
+
+// Route-level code splitting: each section loads on first navigation instead
+// of shipping in the main bundle. StudentHome and Login stay eager since they
+// are the entry pages.
+const Register = lazy(() => import("./pages/Register"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Institute = lazy(() => import("./pages/Institute/Institute"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const ResetPasswordWithOTP = lazy(() => import("./pages/ResetPasswordWithOTP"));
+const Level1Dashboard = lazy(() => import("./pages/Level-1/Level-1"));
+const Level2Dashboard = lazy(() => import("./pages/Level-2/Level-2"));
+const Events = lazy(() => import("./pages/Events"));
+const EventDetails = lazy(() => import("./pages/Events/EventDetails"));
 
 const NavigationRegistrar = () => {
   const navigate = useNavigate();
@@ -44,62 +49,64 @@ function App() {
   return (
     <Router>
       <NavigationRegistrar />
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<StudentHome />} />
-        <Route path="/student-home" element={<Navigate to="/" replace />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/forgotpassword" element={<ForgotPassword />} />
-        <Route path="/resetpassword" element={<ResetPassword />} />
-        <Route path="/resetpassword-otp" element={<ResetPasswordWithOTP />} />
-        
-        {/* Protected Routes */}
-        <Route
-          path="/institutedashboard/*"
-          element={
-            <ProtectedRoute>
-              <Institute />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/l1dashboard/*"
-          element={
-            <ProtectedRoute>
-              <Level1Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/l2dashboard/*"
-          element={
-            <ProtectedRoute>
-              <Level2Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/events"
-          element={
-            <ProtectedRoute>
-              <Events />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/events/:id"
-          element={
-            <ProtectedRoute>
-              <EventDetails />
-            </ProtectedRoute>
-          }
-        />
-        
-        {/* Catch all - redirect to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<Loading fullScreen />}>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<StudentHome />} />
+          <Route path="/student-home" element={<Navigate to="/" replace />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/forgotpassword" element={<ForgotPassword />} />
+          <Route path="/resetpassword" element={<ResetPassword />} />
+          <Route path="/resetpassword-otp" element={<ResetPasswordWithOTP />} />
+
+          {/* Protected Routes */}
+          <Route
+            path="/institutedashboard/*"
+            element={
+              <ProtectedRoute>
+                <Institute />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/l1dashboard/*"
+            element={
+              <ProtectedRoute>
+                <Level1Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/l2dashboard/*"
+            element={
+              <ProtectedRoute>
+                <Level2Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events"
+            element={
+              <ProtectedRoute>
+                <Events />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/:id"
+            element={
+              <ProtectedRoute>
+                <EventDetails />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Catch all - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }
