@@ -24,6 +24,22 @@ const smtpConfig = {
 
 const transporter = nodemailer.createTransport(smtpConfig);
 
+// Shared fragments of the transactional email templates. The interpolation
+// sites sit at 12-space indentation inside each <style> block, so the
+// continuation lines below carry the same indent to keep the rendered
+// markup identical to the previous inline templates.
+const EMAIL_BASE_CSS = `body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }`;
+
+const EMAIL_INFO_BOX_CSS = `.info-box { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #667eea; }`;
+
+// Renders one label/value block of the redemption email body (interpolated at
+// 14-space indentation).
+const infoBox = (label, value) => `<div class="info-box">
+                <div class="label">${label}:</div>
+                <div>${value}</div>
+              </div>`;
+
 /**
  * Cloud Function to send redemption email
  * Callable from the frontend
@@ -67,11 +83,10 @@ exports.sendRedemptionEmail = functions.https.onCall(async (data, context) => {
       <html>
         <head>
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            ${EMAIL_BASE_CSS}
             .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
             .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-            .info-box { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #667eea; }
+            ${EMAIL_INFO_BOX_CSS}
             .label { font-weight: bold; color: #667eea; }
             .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
           </style>
@@ -82,60 +97,30 @@ exports.sendRedemptionEmail = functions.https.onCall(async (data, context) => {
               <h2>🎁 New Reward Redemption</h2>
             </div>
             <div class="content">
-              <div class="info-box">
-                <div class="label">Reward Name:</div>
-                <div>${rewardName}</div>
-              </div>
-              
-              <div class="info-box">
-                <div class="label">Description:</div>
-                <div>${rewardDescription || 'N/A'}</div>
-              </div>
-              
-              <div class="info-box">
-                <div class="label">Category:</div>
-                <div>${category}</div>
-              </div>
-              
-              <div class="info-box">
-                <div class="label">Points Required:</div>
-                <div>${pointsRequired} points</div>
-              </div>
-              
+              ${infoBox('Reward Name', rewardName)}
+
+              ${infoBox('Description', rewardDescription || 'N/A')}
+
+              ${infoBox('Category', category)}
+
+              ${infoBox('Points Required', `${pointsRequired} points`)}
+
               <h3 style="color: #667eea; margin-top: 20px;">Student Information</h3>
-              
-              <div class="info-box">
-                <div class="label">Email:</div>
-                <div><a href="mailto:${studentEmail}">${studentEmail}</a></div>
-              </div>
-              
-              <div class="info-box">
-                <div class="label">Phone:</div>
-                <div><a href="tel:${studentPhone}">${studentPhone}</a></div>
-              </div>
-              
-              <div class="info-box">
-                <div class="label">Delivery Address:</div>
-                <div>${deliveryAddress || 'N/A'}</div>
-              </div>
-              
+
+              ${infoBox('Email', `<a href="mailto:${studentEmail}">${studentEmail}</a>`)}
+
+              ${infoBox('Phone', `<a href="tel:${studentPhone}">${studentPhone}</a>`)}
+
+              ${infoBox('Delivery Address', deliveryAddress || 'N/A')}
+
               ${studentIdUrl ? `
-              <div class="info-box">
-                <div class="label">Student ID:</div>
-                <div><a href="${studentIdUrl}" target="_blank">View Student ID</a></div>
-              </div>
+              ${infoBox('Student ID', `<a href="${studentIdUrl}" target="_blank">View Student ID</a>`)}
               ` : ''}
-              
-              <div class="info-box">
-                <div class="label">Redemption Date:</div>
-                <div>${redemptionDate}</div>
-              </div>
-              
-              <div class="info-box">
-                <div class="label">Redemption ID:</div>
-                <div>${redemptionId}</div>
-              </div>
-              
+
+              ${infoBox('Redemption Date', redemptionDate)}
+
+              ${infoBox('Redemption ID', redemptionId)}
+
               <div class="footer">
                 <p>This is an automated notification from Truesight University Rewards System.</p>
                 <p>Please process this redemption and update the status in the admin panel.</p>
@@ -245,13 +230,12 @@ exports.sendPasswordResetOTP = functions.https.onCall(async (data, context) => {
       <html>
         <head>
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            ${EMAIL_BASE_CSS}
             .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
             .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
             .otp-box { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; border: 2px dashed #667eea; }
             .otp-code { font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 8px; font-family: 'Courier New', monospace; }
-            .info-box { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #667eea; }
+            ${EMAIL_INFO_BOX_CSS}
             .warning { background: #fff3cd; border-left-color: #ffc107; padding: 15px; margin: 15px 0; border-radius: 5px; }
             .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; text-align: center; }
           </style>
@@ -668,11 +652,22 @@ exports.initializeRewards = functions.https.onCall(async (data, context) => {
     let addedCount = 0;
     let updatedCount = 0;
 
+    // Fetch existing rewards once and index them by their numeric id, rather
+    // than issuing one query per reward inside the loop (N+1 round-trips).
+    // First document per id wins, matching the previous limit(1) behavior.
+    const existingSnapshot = await rewardsRef.get();
+    const existingDocIdByRewardId = new Map();
+    existingSnapshot.forEach((doc) => {
+      const rewardId = doc.data().id;
+      if (!existingDocIdByRewardId.has(rewardId)) {
+        existingDocIdByRewardId.set(rewardId, doc.id);
+      }
+    });
+
     for (const reward of rewards) {
-      // Check if reward with this ID already exists
-      const existingReward = await rewardsRef.where('id', '==', reward.id).limit(1).get();
-      
-      if (existingReward.empty) {
+      const existingDocId = existingDocIdByRewardId.get(reward.id);
+
+      if (existingDocId === undefined) {
         // Add new reward
         const newRewardRef = rewardsRef.doc();
         batch.set(newRewardRef, {
@@ -683,8 +678,7 @@ exports.initializeRewards = functions.https.onCall(async (data, context) => {
         addedCount++;
       } else {
         // Update existing reward
-        const docId = existingReward.docs[0].id;
-        const rewardRef = rewardsRef.doc(docId);
+        const rewardRef = rewardsRef.doc(existingDocId);
         batch.update(rewardRef, {
           ...reward,
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -713,6 +707,28 @@ exports.initializeRewards = functions.https.onCall(async (data, context) => {
 });
 
 /**
+ * Fetch all accessible rewards from Firestore, shaped for the frontend.
+ * Shared by the callable (getRewards) and HTTP (getRewardsHttp) variants.
+ */
+async function fetchAccessibleRewards(db) {
+  const snapshot = await db.collection('rewards')
+    .where('accessible', '==', true)
+    .get();
+
+  const rewards = [];
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    rewards.push({
+      ...data,
+      // Use the numeric id from the document, or fallback to Firestore doc id
+      id: data.id || doc.id,
+      docId: doc.id // Also include Firestore doc ID for reference
+    });
+  });
+  return rewards;
+}
+
+/**
  * Cloud Function to get all available rewards
  * Callable from the frontend
  * Note: Firebase callable functions handle CORS automatically
@@ -727,24 +743,7 @@ exports.getRewards = functions.https.onCall(async (data, context) => {
   }
 
   try {
-    const db = admin.firestore();
-    const rewardsRef = db.collection('rewards');
-    
-    // Get all accessible rewards
-    const snapshot = await rewardsRef
-      .where('accessible', '==', true)
-      .get();
-
-    const rewards = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      rewards.push({
-        ...data,
-        // Use the numeric id from the document, or fallback to Firestore doc id
-        id: data.id || doc.id,
-        docId: doc.id // Also include Firestore doc ID for reference
-      });
-    });
+    const rewards = await fetchAccessibleRewards(admin.firestore());
 
     return {
       success: true,
@@ -803,24 +802,7 @@ exports.getRewardsHttp = functions.https.onRequest(async (req, res) => {
       return;
     }
 
-    const db = admin.firestore();
-    const rewardsRef = db.collection('rewards');
-    
-    // Get all accessible rewards
-    const snapshot = await rewardsRef
-      .where('accessible', '==', true)
-      .get();
-
-    const rewards = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      rewards.push({
-        ...data,
-        // Use the numeric id from the document, or fallback to Firestore doc id
-        id: data.id || doc.id,
-        docId: doc.id // Also include Firestore doc ID for reference
-      });
-    });
+    const rewards = await fetchAccessibleRewards(admin.firestore());
 
     res.status(200).json({
       success: true,
