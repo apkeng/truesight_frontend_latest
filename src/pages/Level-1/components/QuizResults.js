@@ -44,9 +44,16 @@ const QuizResults = () => {
 
         // Sort by creation date (newest first)
         results.sort((a, b) => {
-          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return dateB - dateA;
+         const parseDate = (val) => {
+            if (!val) return 0;
+            if (typeof val.toDate === 'function') return val.toDate().getTime();
+            if (val.seconds !== undefined) return val.seconds * 1000;
+            if (val._seconds !== undefined) return val._seconds * 1000;
+            if (val instanceof Date) return val.getTime();
+            const d = new Date(val);
+            return isNaN(d.getTime()) ? 0 : d.getTime();
+          };
+          return parseDate(b.createdAt) - parseDate(a.createdAt);
         });
 
         setQuizResults(results);
