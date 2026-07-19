@@ -34,7 +34,18 @@ const History = () => {
       }
 
       const results = await getQuizResults({ role: 'Level-2' });
-      results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      results.sort((a, b) => {
+        const parseDate = (val) => {
+          if (!val) return 0;
+          if (typeof val.toDate === 'function') return val.toDate().getTime();
+          if (val.seconds !== undefined) return val.seconds * 1000;
+          if (val._seconds !== undefined) return val._seconds * 1000;
+          if (val instanceof Date) return val.getTime();
+          const d = new Date(val);
+          return isNaN(d.getTime()) ? 0 : d.getTime();
+        };
+        return parseDate(b.createdAt) - parseDate(a.createdAt);
+      });
       setQuizResults(results);
     } catch (error) {
       console.error("Error fetching quiz results:", error);
