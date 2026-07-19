@@ -71,7 +71,18 @@ const Dashboard = () => {
       try {
         const results = await getQuizResults({ role: 'Level-2' });
         if (results && results.length > 0) {
-          const sortedResults = results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const sortedResults = results.sort((a, b) => {
+            const parseDate = (val) => {
+              if (!val) return 0;
+              if (typeof val.toDate === 'function') return val.toDate().getTime();
+              if (val.seconds !== undefined) return val.seconds * 1000;
+              if (val._seconds !== undefined) return val._seconds * 1000;
+              if (val instanceof Date) return val.getTime();
+              const d = new Date(val);
+              return isNaN(d.getTime()) ? 0 : d.getTime();
+            };
+            return parseDate(b.createdAt) - parseDate(a.createdAt);
+          });
           setQuizResults(sortedResults);
 
           const last = sortedResults[0];
