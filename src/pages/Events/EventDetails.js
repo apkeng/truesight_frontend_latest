@@ -40,6 +40,8 @@ export default function EventDetails() {
     if (id) {
       loadDetails();
     }
+    // loadDetails is recreated every render; this effect must only re-run for a new event id.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadDetails = async () => {

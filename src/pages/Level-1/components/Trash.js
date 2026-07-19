@@ -2,29 +2,18 @@ import clsx from "clsx";
 import React, { useEffect, useState, useCallback } from "react";
 import {
   MdDelete,
-  MdKeyboardDoubleArrowUp,
   MdOutlineRestore,
   MdRestoreFromTrash,
   MdDeleteSweep,
   MdAutoDelete,
-  MdShare,
-  MdMoreVert,
 } from "react-icons/md";
 import { formatDate, PRIOTITYSTYELS } from "../../../utils";
 import ConfirmationDialog from "../../../components/Dialogs";
 import { toast, ToastContainer } from "react-toastify";
 import Cookies from "js-cookie";
 import { getProjects, getStudyPlans, deleteProject, deleteStudyPlan, restoreProject, restoreStudyPlan } from "../../../utils/apiServices";
-import Loading from "../../../components/Loading";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrashArrowUp, faDumpster, faShareNodes } from "@fortawesome/free-solid-svg-icons";
-
-const ICONS = {
-  "Undergraduate Student": <MdKeyboardDoubleArrowUp />,
-  "High School": <MdKeyboardDoubleArrowUp />,
-  "Primary School": <MdKeyboardDoubleArrowUp />,
-  "Post Graduate": <MdKeyboardDoubleArrowUp />,
-};
 
 const Trash = () => {
   const [openDialog, setOpenDialog] = useState(false);

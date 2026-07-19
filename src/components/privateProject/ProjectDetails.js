@@ -9,7 +9,6 @@ import TopicItem from "../task/TopicItem";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
   faChevronLeft,
-  faKeyboard,
   faShieldHalved,
   faCircleUp,
   faCheckCircle

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { 
-  faTrophy, faStar, faClock, faGift, faRocket, faHistory, 
-  faCamera, faUpload, faTimes, faChevronRight, faCircleCheck,
+import {
+  faTrophy, faStar, faClock, faGift,
   faFire, faMagicWandSparkles, faHeart, faTshirt, faDragon, faChartLine, faSearch,
-  faMedal, faCrown, faCheckCircle, faGraduationCap, faLaptop, faGem, faPalette, faXmark
+  faMedal, faCrown, faLaptop, faGem, faPalette
 } from "@fortawesome/free-solid-svg-icons";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -12,18 +11,13 @@ import Loading from "./Loading";
 import RewardDetails from "./rewards/RewardDetails";
 import RedemptionFlow from "./rewards/RedemptionFlow";
 
-import { storage, auth } from "../firebase/firebase-config";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { onAuthStateChanged } from "firebase/auth";
 import Cookies from "js-cookie";
-import { getUser, getRewards, getRedemptions, createRedemption, updateUser } from "../utils/apiServices";
+import { getUser, getRewards, getRedemptions } from "../utils/apiServices";
 
 const Rewards = () => {
   const [loading, setLoading] = useState(true);
   const [availableRewards, setAvailableRewards] = useState([]);
   const [earnedRewards, setEarnedRewards] = useState([]);
-  const [redeemedRewardsDetails, setRedeemedRewardsDetails] = useState([]);
-  const [uploading, setUploading] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
   const [userStats, setUserStats] = useState({ totalPoints: 0 });
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -124,21 +118,7 @@ const Rewards = () => {
       if (!uid) return;
 
       // Fetch redemptions from backend API
-      const redemptions = await getRedemptions({});
-      
-      // Store full redemption details for display
-      const redemptionDetails = redemptions.map(redemption => ({
-        id: redemption._id || redemption.id,
-        ...redemption
-      }));
-      
-      // Sort by redemption date (newest first)
-      redemptionDetails.sort((a, b) => {
-        const dateA = a.redeemedAt ? new Date(a.redeemedAt) : new Date(0);
-        const dateB = b.redeemedAt ? new Date(b.redeemedAt) : new Date(0);
-        return dateB - dateA;
-      });
-      setRedeemedRewardsDetails(redemptionDetails);
+      await getRedemptions({});
     } catch (error) {
       console.error("Error fetching redeemed rewards:", error);
     }

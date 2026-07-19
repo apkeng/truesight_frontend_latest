@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBell,
   faUserCircle,
   faKey,
   faSignOutAlt,
@@ -12,7 +11,7 @@ import {
   faBuilding,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
-import { Route, Routes, useNavigate, useLocation } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Team from "./components/Team";
 import Settings from "./components/Settings";

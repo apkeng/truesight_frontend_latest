@@ -3,14 +3,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTrophy,
   faTimes,
-  faClock,
-  faCheckCircle,
-  faTimesCircle,
   faCrown,
   faShieldHalved,
-  faBolt,
   faFingerprint,
-  faArrowRight,
   faCircleCheck,
   faCircleXmark,
   faHourglassEnd
@@ -25,7 +20,6 @@ const ChallengeResults = ({ isOpen, onClose, challenge, currentUserId }) => {
   const opponentResult = isChallenger
     ? challenge.opponentResult
     : challenge.challengerResult;
-  const opponentName = isChallenger ? challenge.opponentName : challenge.challengerName;
   const iWon =
     challenge.winner === "tie"
       ? null

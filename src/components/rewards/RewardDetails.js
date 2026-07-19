@@ -3,9 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
   faStar,
-  faGift,
-  faCheckCircle,
-  faInfoCircle,
   faTruckFast,
   faShieldHalved,
   faArrowRight

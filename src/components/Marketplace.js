@@ -2,12 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTshirt,
-  faShoppingCart,
-  faFilter,
   faSearch,
   faStar,
   faHeart,
-  faEye,
   faStore,
   faGift,
   faTrophy,

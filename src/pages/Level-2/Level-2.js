@@ -18,7 +18,6 @@ import {
   faHistory,
   faMagicWandSparkles,
   faUserShield,
-  faUsers,
   faCalendarAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { Route, Routes, useNavigate, useLocation } from "react-router-dom";
@@ -98,6 +97,8 @@ function Level2Dashboard() {
   // Update state when route changes
   useEffect(() => {
     parseRoute(location.pathname);
+    // parseRoute is recreated every render; it only depends on the pathname listed here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
 

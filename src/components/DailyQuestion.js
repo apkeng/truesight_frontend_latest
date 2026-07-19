@@ -21,13 +21,10 @@ const DailyQuestion = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [hasAttempted, setHasAttempted] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [showCoins, setShowCoins] = useState(false);
 
   useEffect(() => {
-    const uid = Cookies.get("uid");
-    setIsLoggedIn(!!uid);
     fetchQuestion();
   }, []);
 

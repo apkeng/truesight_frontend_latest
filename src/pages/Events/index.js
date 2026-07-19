@@ -27,6 +27,8 @@ export default function EventsExplorer() {
 
   useEffect(() => {
     filterEvents();
+    // filterEvents is recreated every render; its inputs are already listed here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, activeTab, events]);
 
   const fetchEvents = async () => {

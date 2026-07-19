@@ -31,7 +31,6 @@ const Card = ({ label, count, bg, icon, iconColor }) => (
 
 const Dashboard = () => {
   const [users, setUsers] = useState([]);
-  const [instituteCode, setInstituteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [totalProjects, setTotalProjects] = useState(0);
   const [totalTasks, setTotalTasks] = useState(0);
@@ -59,7 +58,6 @@ const Dashboard = () => {
         let resolvedInstituteCode = "";
         if (userData) {
           resolvedInstituteCode = userData.instituteCode || "";
-          setInstituteCode(resolvedInstituteCode);
         }
 
         const studyPlans = (studyPlansData || []).filter(item => !item.isTrashed);

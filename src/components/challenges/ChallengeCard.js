@@ -12,8 +12,6 @@ import {
   faHourglassHalf,
   faBolt,
   faShieldHalved,
-  faFingerprint,
-  faArrowRight,
   faXmark
 } from "@fortawesome/free-solid-svg-icons";
 import clsx from "clsx";

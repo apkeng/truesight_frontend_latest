@@ -110,7 +110,7 @@ const Dashboard = () => {
     const handleUpdate = (e) => {
       // Optimistic update if event detail is available
       if (e?.detail) {
-        const { score, totalScore, scoreDisplay } = e.detail;
+        const { totalScore, scoreDisplay } = e.detail;
         if (totalScore !== undefined) {
           setUserData(prev => prev ? { ...prev, userPoints: totalScore } : prev);
         }

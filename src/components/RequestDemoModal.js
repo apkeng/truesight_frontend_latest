@@ -13,9 +13,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { db } from "../firebase/firebase-config";
 import { collection, addDoc } from "firebase/firestore";
-// Backend API base URL
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
-
 export default function RequestDemoModal({ isOpen, onClose }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");

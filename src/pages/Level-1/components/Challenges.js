@@ -10,9 +10,7 @@ import {
 import Cookies from "js-cookie";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Loading from "../../../components/Loading";
 import ErrorPage from "../../../components/ErrorPage";
-import { SkeletonChallengeCard } from "../../../components/SkeletonLoading";
 import ChallengeCard from "../../../components/challenges/ChallengeCard";
 import ChallengeForm from "../../../components/challenges/ChallengeForm";
 import ChallengeResults from "../../../components/challenges/ChallengeResults";
@@ -21,8 +19,8 @@ import { getUser, getStudyPlans, getChallenges, createChallenge, acceptChallenge
 const Challenges = () => {
   const [activeTab, setActiveTab] = useState("my-challenges");
   const [challenges, setChallenges] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
+  const [loading] = useState(false);
+  const [, setIsCreatingChallenge] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [showResults, setShowResults] = useState(false);
