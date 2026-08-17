@@ -259,10 +259,10 @@ const PrivateProjects = ({ searchQuery }) => {
                    <FontAwesomeIcon icon={faUserSecret} className="text-[10px] text-purple-200" />
                    <span className="text-[10px] font-black uppercase tracking-widest text-purple-50">Private Workspace</span>
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-black mb-3 tracking-tight truncate">Your Private Roadmap</h1>
+                /*<h1 className="text-3xl sm:text-4xl font-black mb-3 tracking-tight truncate">Your Private Roadmap</h1>
                 <p className="text-purple-100/80 font-medium text-sm max-w-xl leading-relaxed">
                    Your personalized learning space. Projects created here are exclusive to you until you decide to share them.
-                </p>
+                </p>*/
               </div>
 
               <div className="flex flex-col items-center gap-4 flex-shrink-0">
