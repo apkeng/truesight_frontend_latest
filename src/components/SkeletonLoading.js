@@ -4,6 +4,32 @@ import React from "react";
  * Premium Skeleton Loading Component
  */
 
+// The shimmer keyframes are injected once when this module loads, so every
+// skeleton export animates - not just the ones rendered through the default
+// component below.
+if (typeof document !== "undefined" && !document.getElementById("skeleton-shimmer-style")) {
+  const style = document.createElement("style");
+  style.id = "skeleton-shimmer-style";
+  style.textContent = `
+    @keyframes shimmer {
+      0% { background-position: -1000px 0; }
+      100% { background-position: 1000px 0; }
+    }
+    .skeleton-shimmer {
+      background: linear-gradient(
+        90deg,
+        #efebe3 0%,
+        #e2ddd3 20%,
+        #efebe3 40%,
+        #efebe3 100%
+      );
+      background-size: 1000px 100%;
+      animation: shimmer 2s infinite linear;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 const SkeletonElement = ({ width, height, rounded = "" }) => {
   return (
     <div
@@ -167,31 +193,6 @@ const SkeletonLoading = ({
   className = "",
   children 
 }) => {
-  React.useEffect(() => {
-    if (!document.getElementById('skeleton-shimmer-style')) {
-      const style = document.createElement('style');
-      style.id = 'skeleton-shimmer-style';
-      style.textContent = `
-        @keyframes shimmer {
-          0% { background-position: -1000px 0; }
-          100% { background-position: 1000px 0; }
-        }
-        .skeleton-shimmer {
-          background: linear-gradient(
-            90deg,
-            #f8fafc 0%,
-            #f1f5f9 20%,
-            #f8fafc 40%,
-            #f8fafc 100%
-          );
-          background-size: 1000px 100%;
-          animation: shimmer 2s infinite linear;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }, []);
-
   const renderSkeleton = () => {
     switch (type) {
       case "project":

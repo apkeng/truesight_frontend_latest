@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTrophy,
@@ -14,6 +14,7 @@ import ErrorPage from "../../../components/ErrorPage";
 import ChallengeCard from "../../../components/challenges/ChallengeCard";
 import ChallengeForm from "../../../components/challenges/ChallengeForm";
 import ChallengeResults from "../../../components/challenges/ChallengeResults";
+import { SkeletonChallengeCard } from "../../../components/SkeletonLoading";
 import {
   Button,
   EmptyState,
@@ -23,10 +24,21 @@ import {
 } from "../../../components/ui";
 import { getUser, getPublishedStudyPlans, getChallenges, createChallenge, acceptChallenge, declineChallenge, cancelChallenge } from "../../../utils/apiServices";
 
+// Challenges are kept for the lifetime of the tab so coming back to this page
+// paints the last known list straight away and refreshes behind it, instead of
+// showing a blank page for the length of a round trip. Keyed by user so a
+// different account never sees the previous one's data.
+let challengeCache = { uid: null, data: null };
+
 const Challenges = () => {
+  const cachedChallenges =
+    challengeCache.uid && challengeCache.uid === Cookies.get("uid")
+      ? challengeCache.data
+      : null;
+
   const [activeTab, setActiveTab] = useState("my-challenges");
-  const [challenges, setChallenges] = useState([]);
-  const [loading] = useState(false);
+  const [challenges, setChallenges] = useState(cachedChallenges || []);
+  const [loading, setLoading] = useState(!cachedChallenges);
   const [, setIsCreatingChallenge] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
@@ -57,24 +69,39 @@ const Challenges = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      const uid = Cookies.get("uid");
+      if (!uid) {
+        setLoading(false);
+        return;
+      }
+
+      // The list only needs the challenges. The profile is for the create form,
+      // so it is fetched alongside rather than ahead of them - awaiting it first
+      // used to add a whole round trip before anything could render.
+      const userRequest = getUser(uid)
+        .then((user) => setUserData(user))
+        .catch((err) => console.error("Error fetching user for challenges:", err));
+
       try {
-        // setLoading(true);
-        const uid = Cookies.get("uid");
-        if (!uid) return;
-        const user = await getUser(uid);
-        setUserData(user);
         await fetchChallenges();
+        setError(null);
       } catch (error) {
         console.error("Error fetching challenges:", error);
         setError(error);
         toast.error("Failed to load challenges");
         setChallenges([]);
       } finally {
-        // Arena synchronization complete
+        setLoading(false);
       }
+
+      await userRequest;
     };
     fetchData();
   }, [fetchChallenges]);
+
+  useEffect(() => {
+    challengeCache = { uid: Cookies.get("uid"), data: challenges };
+  }, [challenges]);
 
   // Lazy-load published study plan topics only when launching challenge creation
   const handleOpenCreateForm = async () => {
@@ -102,17 +129,27 @@ const Challenges = () => {
     }
   };
 
-  const getFilteredChallenges = () => {
+  // One pass over the list produces every tab's contents, so rendering the tab
+  // bar no longer re-filters the whole list once per tab.
+  const challengesByTab = useMemo(() => {
     const uid = Cookies.get("uid");
-    if (!uid) return [];
-    switch (activeTab) {
-      case "my-challenges": return challenges.filter((c) => c.challengerId === uid);
-      case "received": return challenges.filter((c) => c.opponentId === uid && c.status === "pending");
-      case "active": return challenges.filter((c) => (c.challengerId === uid || c.opponentId === uid) && (c.status === "accepted" || c.status === "in_progress"));
-      case "completed": return challenges.filter((c) => (c.challengerId === uid || c.opponentId === uid) && c.status === "completed");
-      default: return [];
-    }
-  };
+    const buckets = {
+      "my-challenges": [],
+      received: [],
+      active: [],
+      completed: [],
+    };
+    if (!uid) return buckets;
+
+    challenges.forEach((c) => {
+      const isMine = c.challengerId === uid || c.opponentId === uid;
+      if (c.challengerId === uid) buckets["my-challenges"].push(c);
+      if (c.opponentId === uid && c.status === "pending") buckets.received.push(c);
+      if (isMine && (c.status === "accepted" || c.status === "in_progress")) buckets.active.push(c);
+      if (isMine && c.status === "completed") buckets.completed.push(c);
+    });
+    return buckets;
+  }, [challenges]);
 
   const handleCreateChallenge = async (challengeData) => {
     try {
@@ -198,7 +235,7 @@ const Challenges = () => {
     return <ErrorPage title="Network Error" message="Unable to synchronize with battle arena." error={error} onRetry={() => window.location.reload()} />;
   }
 
-  const filteredChallenges = getFilteredChallenges();
+  const filteredChallenges = challengesByTab[activeTab] || [];
 
   return (
     <PageShell>
@@ -218,19 +255,7 @@ const Challenges = () => {
         <div className="flex overflow-x-auto no-scrollbar border border-line bg-white">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
-            const count = challenges.filter((c) => {
-              const uid = Cookies.get("uid");
-              if (tab.id === "my-challenges") return c.challengerId === uid;
-              if (tab.id === "received") return c.opponentId === uid && c.status === "pending";
-              if (tab.id === "active")
-                return (
-                  (c.challengerId === uid || c.opponentId === uid) &&
-                  (c.status === "accepted" || c.status === "in_progress")
-                );
-              if (tab.id === "completed")
-                return (c.challengerId === uid || c.opponentId === uid) && c.status === "completed";
-              return false;
-            }).length;
+            const count = (challengesByTab[tab.id] || []).length;
 
             return (
               <button
@@ -257,10 +282,16 @@ const Challenges = () => {
             );
           })}
         </div>
-        <SectionLabel>{challenges.length} challenges</SectionLabel>
+        <SectionLabel>{loading ? "Loading" : `${challenges.length} challenges`}</SectionLabel>
       </div>
 
-      {filteredChallenges.length === 0 && !loading ? (
+      {loading ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonChallengeCard key={i} />
+          ))}
+        </div>
+      ) : filteredChallenges.length === 0 ? (
         <EmptyState
           title="No challenges here yet"
           description="Nothing is logged under this tab. Start a new challenge to get going."
