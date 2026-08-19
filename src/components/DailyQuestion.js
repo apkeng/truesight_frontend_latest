@@ -106,7 +106,7 @@ const DailyQuestion = () => {
 
   if (loading) {
     return (
-      <div className="backdrop-blur-xl bg-white/30 rounded-2xl shadow-xl border border-white/20 p-6 md:p-8 animate-fadeIn">
+      <div className="w-full bg-white rounded-3xl shadow-xl shadow-slate-100/50 border border-slate-100 p-8 sm:p-10 animate-fadeIn">
         <div className="flex flex-col items-center justify-center py-12 gap-4">
           <div className="relative">
             <FontAwesomeIcon icon={faSpinner} className="w-10 h-10 text-blue-600 animate-spin" />
@@ -120,7 +120,7 @@ const DailyQuestion = () => {
 
   if (!question) {
     return (
-      <div className="backdrop-blur-xl bg-white/30 rounded-2xl shadow-xl border border-white/20 p-6 md:p-8 animate-fadeIn">
+      <div className="w-full bg-white rounded-3xl shadow-xl shadow-slate-100/50 border border-slate-100 p-8 sm:p-10 animate-fadeIn">
         <div className="text-center py-12">
           <FontAwesomeIcon icon={faQuestionCircle} className="w-16 h-16 text-gray-300 mb-4" />
           <p className="text-gray-600 font-medium">No daily question available at the moment.</p>
@@ -131,7 +131,7 @@ const DailyQuestion = () => {
   }
 
   return (
-    <div className="backdrop-blur-xl bg-white/50 rounded-[2rem] shadow-xl border border-slate-100/80 p-5 md:p-6 hover:bg-white/60 transition-all duration-500 ease-out animate-fadeIn w-full">
+    <div className="w-full bg-white rounded-3xl shadow-xl shadow-slate-100/50 border border-slate-100 p-8 sm:p-10 transition-all duration-500 ease-out animate-fadeIn">
       <style>{`
         @keyframes fadeIn {
           from {
@@ -200,18 +200,18 @@ const DailyQuestion = () => {
       `}</style>
       
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4 animate-slideIn">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
-          <FontAwesomeIcon icon={faQuestionCircle} className="w-5 h-5 text-white" />
+      <div className="flex items-center gap-3 min-h-[3.5rem] mb-8 animate-slideIn">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0 transform hover:scale-105 transition-transform duration-300">
+          <FontAwesomeIcon icon={faQuestionCircle} className="w-4 h-4 text-white" />
         </div>
         <div>
-          <h3 className="text-lg md:text-xl font-extrabold text-slate-800 flex items-center gap-2">
+          <h3 className="text-2xl font-bold text-slate-900 leading-tight flex items-center gap-2">
             Daily Question
-            <span className="text-[10px] bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-0.5 rounded-full font-bold">
-              NEW
+            <span className="text-[10px] bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+              New
             </span>
           </h3>
-          <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5 font-medium">
+          <p className="text-xs text-slate-400 flex items-center gap-1 mt-1 font-medium">
             <FontAwesomeIcon icon={faCoins} className="w-3 h-3 text-yellow-500" />
             Earn 5 coins for correct answers!
           </p>
@@ -219,9 +219,9 @@ const DailyQuestion = () => {
       </div>
 
       {/* Question */}
-      <div className="mb-4 animate-fadeIn">
-        <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 rounded-xl p-3.5 mb-3 border-l-4 border-blue-500">
-          <p className="text-base md:text-lg font-bold text-slate-800 leading-relaxed">
+      <div className="mb-6 animate-fadeIn">
+        <div className="bg-gradient-to-r from-blue-50/60 to-indigo-50/60 rounded-2xl p-5 mb-4 border-l-4 border-blue-500">
+          <p className="text-base md:text-lg font-semibold text-slate-800 leading-relaxed">
             {question.question}
           </p>
         </div>
@@ -233,7 +233,7 @@ const DailyQuestion = () => {
             const isCorrectOption = submitted && option === correctAnswer;
             const isWrongOption = submitted && isSelected && !isCorrect;
 
-            let optionClasses = "w-full p-3 rounded-xl border-2 transition-all duration-300 text-left transform ";
+            let optionClasses = "w-full min-h-[3.5rem] p-4 rounded-2xl border-2 transition-all duration-300 text-left transform ";
             
             if (submitted || hasAttempted) {
               if (isCorrectOption) {
@@ -273,7 +273,7 @@ const DailyQuestion = () => {
                   }`}>
                     {String.fromCharCode(65 + index)}
                   </div>
-                  <span className="flex-1 text-left text-xs md:text-sm">{option}</span>
+                  <span className="flex-1 text-left text-sm font-medium">{option}</span>
                   {submitted && isCorrectOption && (
                     <FontAwesomeIcon 
                       icon={faCheckCircle} 
@@ -298,7 +298,7 @@ const DailyQuestion = () => {
         <button
           onClick={handleSubmit}
           disabled={!selectedAnswer || submitting}
-          className="w-full py-3 px-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-[0.99] relative overflow-hidden group text-sm"
+          className="w-full h-14 px-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-2xl font-bold uppercase tracking-[0.18em] text-xs hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-[0.99] relative overflow-hidden group"
         >
           <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
           {submitting ? (

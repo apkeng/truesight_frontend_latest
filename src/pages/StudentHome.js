@@ -62,7 +62,7 @@ const RewardCard = ({ reward }) => {
 
       {/* Content Details */}
       <div className="p-4 flex flex-col flex-grow">
-        <h4 className="font-extrabold text-sm md:text-base text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition-colors duration-300">
+        <h4 className="font-display font-bold text-sm md:text-base text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition-colors duration-300">
           {reward.name || reward.title}
         </h4>
         <p className="text-xs text-slate-400 font-medium line-clamp-3 mt-1.5 leading-relaxed">
@@ -238,7 +238,7 @@ export default function StudentHome() {
   });
 
   return (
-    <div className="min-h-screen bg-[#fcfcfd] flex flex-col font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+    <div className="home-page min-h-screen bg-[#fcfcfd] flex flex-col text-slate-900 selection:bg-blue-100 selection:text-blue-900">
       {/* Background elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-50/40 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4 animate-pulse"></div>
@@ -250,39 +250,46 @@ export default function StudentHome() {
       {/* Main Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-8 py-16">
         {/* Top Hero & Events Split Section */}
-        <section className="mb-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch animate-fadeIn">
+        <section className="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch animate-fadeIn">
           {/* Left Column: Hero & Action Buttons */}
-          <div className="lg:col-span-5 flex flex-col justify-between p-8 sm:p-10 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50 relative overflow-hidden group">
+          <div className="lg:col-span-5 flex flex-col p-8 sm:p-10 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50 relative overflow-hidden group">
             {/* Background blur decorative element */}
             <div className="absolute top-0 left-0 w-64 h-64 bg-blue-100/50 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/3 pointer-events-none group-hover:scale-110 transition-transform duration-500"></div>
-            
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-6">
+
+            {/* Header rail. Fixed height so the wordmark and the events card
+                heading opposite it sit on the same line, and everything below
+                starts at the same y in both columns. */}
+            <div className="relative z-10 flex items-center min-h-[3.5rem] mb-8">
+              <div className="flex items-center gap-3">
                 <img src={logo} alt="Logo" className="w-10 h-10 object-cover rounded-full border-2 border-white shadow-md" />
-                <span className="text-[10px] font-black tracking-widest text-indigo-600 uppercase">TRUESIGHT</span>
+                <span className="font-display text-[11px] font-bold tracking-[0.28em] text-indigo-600 uppercase">
+                  Truesight
+                </span>
               </div>
-              
-              <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight leading-[1.1] mb-6">
+            </div>
+
+            <div className="relative z-10">
+              <h1 className="font-display tracking-display text-4xl sm:text-5xl font-bold text-slate-900 leading-[1.05] mb-5">
                 Elevate <br />
                 <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">your learning.</span>
               </h1>
-              
-              <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
+
+              <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
                 Welcome to the Truesight Student Platform. Explore modules, complete challenges, track your results, and redeem rewards as you progress.
               </p>
             </div>
 
-            {/* Action Buttons Div */}
-            <div className="relative z-10 flex flex-col sm:flex-row gap-4 w-full mt-auto">
+            {/* Buttons sit on the card floor, level with the last event row. */}
+            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-auto pt-10">
               <button
                 onClick={() => navigate("/login")}
-                className="flex-1 py-4 bg-slate-900 hover:bg-black text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg active:scale-95 transition-all duration-300"
+                className="h-14 bg-slate-900 hover:bg-black text-white font-display font-bold text-xs uppercase tracking-[0.18em] rounded-2xl shadow-lg active:scale-95 transition-all duration-300"
               >
                 Login
               </button>
               <button
                 onClick={() => setShowDemoModal(true)}
-                className="flex-1 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg hover:shadow-indigo-500/20 active:scale-95 transition-all duration-300"
+                className="h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-display font-bold text-xs uppercase tracking-[0.18em] rounded-2xl shadow-lg hover:shadow-indigo-500/20 active:scale-95 transition-all duration-300"
               >
                 Request Demo
               </button>
@@ -291,22 +298,22 @@ export default function StudentHome() {
 
           {/* Right Column: Event Registry (Next 3 Events) */}
           <div className="lg:col-span-7 flex flex-col p-8 sm:p-10 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between gap-6 min-h-[3.5rem] mb-8">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Upcoming Events</h2>
-                <p className="text-xs font-semibold text-slate-400 mt-1">Next 3 events to look out for</p>
+                <h2 className="font-display text-2xl font-bold text-slate-900 leading-tight">Upcoming Events</h2>
+                <p className="text-xs font-medium text-slate-400 mt-1">Next 3 events to look out for</p>
               </div>
-              <button 
+              <button
                 onClick={() => navigate("/events")}
-                className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 transition-colors flex items-center gap-1.5"
+                className="flex-shrink-0 font-display text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-600 hover:text-indigo-700 transition-colors flex items-center gap-1.5"
               >
-                View All <MdArrowForward className="text-xs" />
+                View All <MdArrowForward className="text-sm" />
               </button>
             </div>
 
-            <div className="flex flex-col gap-4 flex-grow justify-center">
-              {events.length > 0 ? (
-                events.slice(0, 3).map((event) => {
+            {events.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {events.slice(0, 3).map((event) => {
                   const start = new Date(event.dateTimeStart);
                   const formattedDate = start.toLocaleDateString("en-US", {
                     month: "short",
@@ -318,53 +325,63 @@ export default function StudentHome() {
                     <div 
                       key={event.id || event._id}
                       onClick={() => navigate(`/events/${event.id || event._id}`)}
-                      className="group cursor-pointer p-4 bg-slate-50 hover:bg-indigo-50/50 rounded-2xl border border-slate-100 hover:border-indigo-100 flex items-center justify-between gap-4 transition-all duration-300 active:scale-[0.99]"
+                      className="group cursor-pointer min-h-[5.25rem] p-4 bg-slate-50 hover:bg-indigo-50/50 rounded-2xl border border-slate-100 hover:border-indigo-100 flex items-center gap-4 transition-all duration-300 active:scale-[0.99]"
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 text-white font-black text-xs shadow-sm overflow-hidden">
-                          {event.bannerUrl ? (
-                            <img src={event.bannerUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          ) : (
-                            <span>EV</span>
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-extrabold text-sm text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition-colors">
-                            {event.title}
-                          </h4>
-                          <span className="text-[10px] text-slate-400 font-bold mt-1 block">
-                            {formattedDate} • {event.eventType === "online" ? "💻 Online" : "📍 In-Person"}
-                          </span>
-                        </div>
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 text-white font-display font-bold text-xs shadow-sm overflow-hidden">
+                        {event.bannerUrl ? (
+                          <img src={event.bannerUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        ) : (
+                          <span>EV</span>
+                        )}
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-white border border-slate-100 px-3 py-1.5 rounded-xl group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all shadow-sm">
+                      {/* min-w-0 lets long titles truncate instead of pushing
+                          the View pill out of its column. */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-display font-bold text-sm text-slate-800 line-clamp-2 sm:truncate group-hover:text-indigo-600 transition-colors">
+                          {event.title}
+                        </h4>
+                        <span className="text-[11px] text-slate-400 font-medium mt-1 block truncate">
+                          {formattedDate} • {event.eventType === "online" ? "💻 Online" : "📍 In-Person"}
+                        </span>
+                      </div>
+                      <span className="flex-shrink-0 w-20 text-center font-display text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-600 bg-white border border-slate-100 py-2 rounded-xl group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all shadow-sm">
                         View
                       </span>
                     </div>
                   );
-                })
-              ) : (
-                <div className="text-center py-12 text-slate-400 italic text-sm">
-                  No upcoming events scheduled.
-                </div>
-              )}
-            </div>
+                })}
+              </div>
+            ) : (
+              <div className="flex-1 min-h-[10rem] rounded-2xl border border-dashed border-slate-200 flex items-center justify-center text-sm font-medium text-slate-400">
+                No upcoming events scheduled.
+              </div>
+            )}
+
+            {/* With fewer than three events the list would leave a hole at the
+                bottom of the card, so a calendar link takes up the slack. */}
+            {events.length > 0 && events.length < 3 && (
+              <button
+                onClick={() => navigate("/events")}
+                className="mt-3 flex-1 min-h-[5.25rem] w-full rounded-2xl border border-dashed border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/30 flex items-center justify-center gap-2 font-display text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 hover:text-indigo-600 transition-all duration-300"
+              >
+                Browse the full calendar <MdArrowForward className="text-sm" />
+              </button>
+            )}
           </div>
         </section>
 
-        {/* Daily Question Section */}
-        <section className="mb-24 flex justify-center w-full">
-          <div className="w-full max-w-4xl">
-            <DailyQuestion />
-          </div>
+        {/* Daily Question. Full container width so its edges line up with the
+            hero and events cards directly above it. */}
+        <section className="mb-24 w-full">
+          <DailyQuestion />
         </section>
 
 
 
         {/* Rewards Section */}
         <section className="mb-24 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <div className="mb-10 px-1">
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2 flex items-center gap-3">
+          <div className="mb-10">
+            <h2 className="font-display text-3xl font-bold text-slate-900 tracking-display mb-3 flex items-center gap-3">
               <MdRedeem className="text-purple-600" />
               Available Rewards
             </h2>
@@ -389,7 +406,7 @@ export default function StudentHome() {
         <section className="mb-24">
           <div className="flex items-center justify-between mb-12">
             <div>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
+              <h2 className="font-display text-3xl font-bold text-slate-900 tracking-display mb-3">
                 Explore Modules
               </h2>
               <div className="h-1.5 w-12 bg-blue-600 rounded-full"></div>
@@ -406,13 +423,13 @@ export default function StudentHome() {
                 <div className={`w-16 h-16 ${action.bg} ${action.color} rounded-2xl flex items-center justify-center text-3xl mb-8 shadow-sm transition-all duration-300 group-hover:scale-110 ${action.accent} group-hover:text-white`}>
                   {action.icon}
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-4 group-hover:text-blue-600 transition-colors">
+                <h3 className="font-display text-2xl font-bold text-slate-900 mb-4 group-hover:text-blue-600 transition-colors">
                   {action.title}
                 </h3>
                 <p className="text-slate-500 text-sm leading-relaxed mb-auto pb-8">
                   {action.desc}
                 </p>
-                <div className="flex items-center text-[11px] font-black text-blue-600 uppercase tracking-widest">
+                <div className="font-display text-[11px] font-bold text-blue-600 uppercase tracking-[0.18em] flex items-center">
                   Access Portal <MdArrowForward className="ml-2 text-base group-hover:translate-x-2 transition-transform duration-300" />
                 </div>
               </div>
@@ -427,8 +444,8 @@ export default function StudentHome() {
             <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/4"></div>
             
             <div className="relative z-10 max-w-2xl text-center lg:text-left">
-              <span className="text-blue-500 text-xs font-black uppercase tracking-widest block mb-3">Founder</span>
-              <h2 className="text-3xl lg:text-4xl font-black text-white mb-3 leading-tight">Yadu Aravind</h2>
+              <span className="font-display text-xs font-bold text-blue-500 uppercase tracking-[0.22em] block mb-3">Founder</span>
+              <h2 className="font-display text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight tracking-display">Yadu Aravind</h2>
               <a 
                 href="https://www.linkedin.com/in/yadu-aravind-a493375a/" 
                 target="_blank" 
@@ -452,7 +469,7 @@ export default function StudentHome() {
               <span className="text-slate-400 text-xs sm:text-sm font-bold uppercase tracking-wider">Support Contact</span>
               <a 
                 href="tel:+919746398389"
-                className="px-8 py-4 sm:px-10 sm:py-5 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-50 transition-all duration-300 flex items-center gap-3 active:scale-95 shadow-lg text-sm sm:text-base"
+                className="px-8 py-4 sm:px-10 sm:py-5 bg-white text-slate-900 rounded-2xl font-display font-bold uppercase tracking-[0.18em] hover:bg-blue-50 transition-all duration-300 flex items-center gap-3 active:scale-95 shadow-lg text-sm sm:text-base"
               >
                 <MdCall className="text-xl text-blue-600" />
                 +91 97463 98389
@@ -469,7 +486,7 @@ export default function StudentHome() {
             <img src={logo} alt="Logo" className="h-6" />
             <span className="text-sm font-bold tracking-tight">TRUESIGHT</span>
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">© 2026 Truesight Student Platform. All Performance Data Encrypted.</p>
+          <p className="font-display text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">© 2026 Truesight Student Platform. All Performance Data Encrypted.</p>
           <div className="flex gap-4">
             <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100"></div>
             <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100"></div>
