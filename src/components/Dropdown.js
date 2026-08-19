@@ -27,11 +27,11 @@ const Dropdown = ({
       <div className="relative">
         <select
           className={clsx(
-            "bg-transparent px-3 py-2.5 2xl:py-3 border border-gray-300 text-gray-900 text-base leading-tight focus:outline-none focus:ring-2 ring-blue-300 w-full shadow appearance-none rounded",
+            "bg-transparent px-3 py-2.5 2xl:py-3 border border-gray-300 text-ink text-base leading-tight focus:outline-none focus:ring-2 ring-blue-300 w-full shadow appearance-none rounded",
             {
               "cursor-not-allowed opacity-50": error,
-              "text-gray-400": isPlaceholderSelected, // Apply gray color only when the placeholder is selected
-              "text-gray-900": !isPlaceholderSelected, // Apply default color when an option is selected
+              "text-ink-muted": isPlaceholderSelected, // Apply gray color only when the placeholder is selected
+              "text-ink": !isPlaceholderSelected, // Apply default color when an option is selected
             }
           )}
           {...register}

@@ -28,7 +28,7 @@ const Textbox = forwardRef(
     return (
       <div className="w-full flex flex-col gap-1">
         {label && (
-          <label htmlFor={name} className="text-slate-800">
+          <label htmlFor={name} className="text-ink">
             {label}
           </label>
         )}
@@ -42,7 +42,7 @@ const Textbox = forwardRef(
             {...register}
             aria-invalid={error ? "true" : "false"}
             className={clsx(
-              "bg-transparent px-3 py-2.5 2xl:py-3 border border-gray-300 placeholder-gray-400 text-gray-900 outline-none text-base focus:ring-2 ring-blue-300 w-full",
+              "bg-transparent px-3 py-2.5 2xl:py-3 border border-gray-300 placeholder-gray-400 text-ink outline-none text-base focus:ring-2 ring-blue-300 w-full",
               className,
               {
                 "opacity-50 cursor-not-allowed": readOnly, // Style for read-only state
@@ -54,7 +54,7 @@ const Textbox = forwardRef(
             <button
               type="button"
               onClick={togglePasswordVisibility}
-              className="absolute inset-y-0 right-3 flex items-center text-gray-500"
+              className="absolute inset-y-0 right-3 flex items-center text-ink-muted"
               style={{ fontSize: "10px" }}
             >
               {inputType === "password" ? "Show" : "Hide"}

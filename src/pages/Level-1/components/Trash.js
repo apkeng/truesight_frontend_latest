@@ -140,19 +140,19 @@ const Trash = () => {
       
       {/* Premium Trash Hero Banner */}
       <div className="mb-8 mt-6">
-        <div className="relative bg-gradient-to-br from-slate-700 via-slate-800 to-slate-950 rounded-[2.5rem] p-8 sm:p-10 text-white shadow-2xl overflow-hidden group">
+        <div className="relative bg-navy  p-8 sm:p-10 text-white  overflow-hidden group">
           <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:scale-110 transition-transform duration-700">
             <FontAwesomeIcon icon={faDumpster} className="text-[12rem]" />
           </div>
           
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div className="flex-1 min-w-0">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 mb-4 backdrop-blur-md">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 mb-4 ">
                  <FontAwesomeIcon icon={faTrashArrowUp} className="text-[10px] text-blue-300" />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-blue-50">Faculty Archival Terminal</span>
+                 <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-50">Faculty Archival Terminal</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-black mb-3 tracking-tight">Institutional DISPOSAL</h1>
-              <p className="text-slate-400 font-medium text-sm max-w-xl leading-relaxed">
+              <h1 className="text-3xl sm:text-4xl font-semibold mb-3 tracking-tight">Institutional DISPOSAL</h1>
+              <p className="text-ink-muted font-medium text-sm max-w-xl leading-relaxed">
                  Administrative control over archived curricula and project data. Restore resources for reactivation or finalize permanent archival.
               </p>
             </div>
@@ -165,7 +165,7 @@ const Trash = () => {
                   setOpenDialog(true);
                 }}
                 disabled={tasks.length === 0}
-                className="w-full sm:w-auto bg-white/10 hover:bg-white text-white hover:text-slate-900 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] border border-white/10 shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+                className="w-full sm:w-auto bg-white/10 hover:bg-white text-white hover:text-ink px-8 py-4  font-semibold uppercase tracking-[0.14em] text-[10px] border border-white/10  transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 <MdRestoreFromTrash className="text-lg" /> Restore Global
               </button>
@@ -176,7 +176,7 @@ const Trash = () => {
                   setOpenDialog(true);
                 }}
                 disabled={tasks.length === 0}
-                className="w-full sm:w-auto bg-rose-600 hover:bg-rose-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+                className="w-full sm:w-auto bg-rose-600 hover:bg-rose-500 text-white px-8 py-4  font-semibold uppercase tracking-[0.14em] text-[10px]  hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 <MdDeleteSweep className="text-lg" /> Purge Analytics
               </button>
@@ -185,54 +185,54 @@ const Trash = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="bg-white  border border-line overflow-hidden  animate-in fade-in slide-in-from-bottom-8 duration-700">
         <div className="w-full overflow-x-auto no-scrollbar">
           <table className="w-full text-left border-collapse table-fixed min-w-[900px]">
              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                   <th className="w-[40%] px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Archived Curriculum</th>
-                   <th className="w-[20%] px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pedagogical Level</th>
-                   <th className="w-[15%] px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Archived On</th>
-                   <th className="w-[25%] px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Emergency Protocol</th>
+                <tr className="bg-parchment/50 border-b border-line">
+                   <th className="w-[40%] px-8 py-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">Archived Curriculum</th>
+                   <th className="w-[20%] px-6 py-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">Pedagogical Level</th>
+                   <th className="w-[15%] px-6 py-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">Archived On</th>
+                   <th className="w-[25%] px-8 py-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted text-right">Emergency Protocol</th>
                 </tr>
              </thead>
              <tbody className="divide-y divide-slate-50">
                 {loading ? (
                    Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i} className="animate-pulse">
-                         <td colSpan="4" className="px-8 py-10"><div className="h-10 bg-slate-100 rounded-2xl w-full" /></td>
+                         <td colSpan="4" className="px-8 py-10"><div className="h-10 bg-parchment  w-full" /></td>
                       </tr>
                    ))
                 ) : tasks.length > 0 ? (
                    tasks.map((task, index) => (
-                      <tr key={index} className="group hover:bg-slate-50/50 transition-all duration-300">
+                      <tr key={index} className="group hover:bg-parchment/50 transition-all duration-300">
                          <td className="px-8 py-6">
                             <div className="flex items-center gap-3">
-                               <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-100/50 flex-shrink-0">
+                               <div className="w-10 h-10  bg-parchment flex items-center justify-center text-ink-muted border border-line/50 flex-shrink-0">
                                   <MdAutoDelete className="text-[14px]" />
                                </div>
                                <div className="min-w-0">
-                                  <p className="text-sm font-black text-slate-900 truncate">{task?.topic}</p>
-                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{task?.collection === 'studyPlans' ? 'Study Plan' : 'Private Project'}</p>
+                                  <p className="text-sm font-semibold text-ink truncate">{task?.topic}</p>
+                                  <p className="text-[10px] text-ink-muted font-bold uppercase tracking-[0.14em] mt-0.5">{task?.collection === 'studyPlans' ? 'Study Plan' : 'Private Project'}</p>
                                </div>
                             </div>
                          </td>
                          <td className="px-6 py-6">
                             <div className={clsx(
-                               "inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest",
-                               PRIOTITYSTYELS[task?.levelOfLearning] || "bg-slate-50 border-slate-100 text-slate-500"
+                               "inline-flex items-center gap-1.5 px-3 py-1  border text-[10px] font-semibold uppercase tracking-[0.14em]",
+                               PRIOTITYSTYELS[task?.levelOfLearning] || "bg-parchment border-line text-ink-muted"
                             )}>
                                <span className="truncate">{task?.levelOfLearning || 'Standard'}</span>
                             </div>
                          </td>
                          <td className="px-6 py-6">
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{formatDate(new Date(task?.updatedAt || task?.createdAt))}</span>
+                            <span className="text-xs font-bold text-ink-muted uppercase tracking-wider">{formatDate(new Date(task?.updatedAt || task?.createdAt))}</span>
                          </td>
                          <td className="px-8 py-6 text-right">
                             <div className="flex items-center justify-end gap-2">
                                <button 
                                  onClick={() => handleShare(task)}
-                                 className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-sm flex items-center justify-center"
+                                 className="w-10 h-10  bg-parchment text-ink-muted hover:bg-navy hover:text-white transition-all  flex items-center justify-center"
                                  title="Share Link"
                                >
                                   <FontAwesomeIcon icon={faShareNodes} className="text-xs" />
@@ -244,7 +244,7 @@ const Trash = () => {
                                     setMsg("Initiate pedagogical restoration protocol?");
                                     setOpenDialog(true);
                                  }}
-                                 className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm flex items-center justify-center group/btn"
+                                 className="w-10 h-10  bg-navy-wash text-navy hover:bg-navy hover:text-white transition-all  flex items-center justify-center group/btn"
                                >
                                   <MdOutlineRestore className="text-lg group-active/btn:rotate-180 transition-transform duration-500" />
                                </button>
@@ -255,7 +255,7 @@ const Trash = () => {
                                     setMsg("Confirm permanent termination of curriculum data?");
                                     setOpenDialog(true);
                                  }}
-                                 className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white transition-all shadow-sm flex items-center justify-center"
+                                 className="w-10 h-10  bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white transition-all  flex items-center justify-center"
                                >
                                   <MdDelete className="text-lg" />
                                </button>
@@ -265,7 +265,7 @@ const Trash = () => {
                    ))
                 ) : (
                    <tr>
-                      <td colSpan="4" className="px-8 py-32 text-center text-slate-300 font-black uppercase tracking-[0.3em] text-xs">
+                      <td colSpan="4" className="px-8 py-32 text-center text-ink-muted font-semibold uppercase tracking-[0.3em] text-xs">
                          Administrative archive is currently cleared
                       </td>
                    </tr>

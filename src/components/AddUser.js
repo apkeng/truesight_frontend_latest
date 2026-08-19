@@ -124,7 +124,7 @@ const AddUser = ({ open, setOpen, userData, onUserAddedOrUpdated }) => {
       <form onSubmit={handleSubmit(handleOnSubmit)}>
         <Dialog.Title
           as="h2"
-          className="text-base font-bold leading-6 text-gray-900 mb-4"
+          className="text-base font-bold leading-6 text-ink mb-4"
         >
           {isUpdating ? "UPDATE PROFILE" : "ADD NEW USER"}
         </Dialog.Title>
@@ -177,7 +177,7 @@ const AddUser = ({ open, setOpen, userData, onUserAddedOrUpdated }) => {
             </label>
             <select
               id="role"
-              className="form-select mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              className="form-select mt-1 block w-full  border-gray-300 "
               {...register("role", {
                 required: "User role is required!",
               })}
@@ -205,7 +205,7 @@ const AddUser = ({ open, setOpen, userData, onUserAddedOrUpdated }) => {
               </label>
               <select
                 id="educationLevel"
-                className="form-select mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                className="form-select mt-1 block w-full  border-gray-300 "
                 {...register("educationLevel", {
                   required: "Education level is required for Level-2 users!",
                 })}
@@ -251,12 +251,12 @@ const AddUser = ({ open, setOpen, userData, onUserAddedOrUpdated }) => {
           <div className="py-3 mt-4 sm:flex sm:flex-row-reverse">
             <Button
               type="submit"
-              className="bg-blue-600 px-8 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
+              className="bg-navy px-8 text-sm font-semibold text-white hover:bg-navy-dark sm:w-auto"
               label="Submit"
             />
             <Button
               type="button"
-              className="bg-white px-5 text-sm font-semibold text-gray-900 sm:w-auto"
+              className="bg-white px-5 text-sm font-semibold text-ink sm:w-auto"
               onClick={() => setOpen(false)}
               label="Cancel"
             />

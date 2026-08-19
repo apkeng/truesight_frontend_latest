@@ -35,28 +35,28 @@ const VARIANTS = {
   "level1": {
     syncEducationLevel: false,
     namePlaceholder: "e.g. Prof. Jordan Smith",
-    heroClass: "relative bg-gradient-to-br from-blue-700 via-blue-800 to-slate-900 rounded-[2.5rem] p-8 sm:p-12 text-white shadow-2xl shadow-blue-100 overflow-hidden group",
+    heroClass: "relative bg-navy  p-8 sm:p-12 text-white   overflow-hidden group",
     roleRowClass: "flex items-center gap-2 text-blue-100 font-bold",
     dotClass: "w-1 h-1 rounded-full bg-blue-400 hidden sm:block",
     instituteClass: "text-blue-200 font-medium text-sm",
     editIdleClass: "bg-white text-blue-900 hover:scale-105 active:scale-95",
-    affiliationIconClass: "w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-inner",
-    verifyBtnClass: "px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all self-start sm:self-auto hover:scale-[1.02] active:scale-95",
-    submitBtnClass: "w-full py-5 rounded-[2rem] bg-blue-600 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-blue-100 hover:scale-[1.02] active:scale-95 transition-all",
-    modalVerifyBtnClass: "flex-1 py-4 rounded-2xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center",
+    affiliationIconClass: "w-10 h-10  bg-navy-wash flex items-center justify-center text-navy ",
+    verifyBtnClass: "px-6 py-3.5 bg-navy hover:bg-navy-dark text-white text-[10px] font-semibold uppercase tracking-[0.14em]   transition-all self-start sm:self-auto hover:scale-[1.02] active:scale-95",
+    submitBtnClass: "w-full py-5  bg-navy text-white text-[11px] font-semibold uppercase tracking-[0.2em]   hover:scale-[1.02] active:scale-95 transition-all",
+    modalVerifyBtnClass: "flex-1 py-4  bg-navy text-white text-[10px] font-semibold uppercase tracking-[0.14em]   hover:bg-navy-dark transition-all flex items-center justify-center",
   },
   "level2": {
     syncEducationLevel: true,
     namePlaceholder: "e.g. Dr. Jordan Smith",
-    heroClass: "relative bg-gradient-to-br from-indigo-700 via-indigo-800 to-slate-900 rounded-[2.5rem] p-8 sm:p-12 text-white shadow-2xl shadow-indigo-100 overflow-hidden group",
+    heroClass: "relative bg-navy  p-8 sm:p-12 text-white   overflow-hidden group",
     roleRowClass: "flex items-center gap-2 text-indigo-100 font-bold",
     dotClass: "w-1 h-1 rounded-full bg-indigo-400 hidden sm:block",
     instituteClass: "text-indigo-200 font-medium text-sm",
     editIdleClass: "bg-white text-indigo-900 hover:scale-105 active:scale-95",
-    affiliationIconClass: "w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner",
-    verifyBtnClass: "px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all self-start sm:self-auto hover:scale-[1.02] active:scale-95",
-    submitBtnClass: "w-full py-5 rounded-[2rem] bg-indigo-600 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-100 hover:scale-[1.02] active:scale-95 transition-all",
-    modalVerifyBtnClass: "flex-1 py-4 rounded-2xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center",
+    affiliationIconClass: "w-10 h-10  bg-navy-wash flex items-center justify-center text-navy ",
+    verifyBtnClass: "px-6 py-3.5 bg-navy hover:bg-navy-dark text-white text-[10px] font-semibold uppercase tracking-[0.14em]   transition-all self-start sm:self-auto hover:scale-[1.02] active:scale-95",
+    submitBtnClass: "w-full py-5  bg-navy text-white text-[11px] font-semibold uppercase tracking-[0.2em]   hover:scale-[1.02] active:scale-95 transition-all",
+    modalVerifyBtnClass: "flex-1 py-4  bg-navy text-white text-[10px] font-semibold uppercase tracking-[0.14em]   hover:bg-navy-dark transition-all flex items-center justify-center",
   },
 };
 
@@ -181,7 +181,7 @@ export default function Profile({ variant = "level2" }) {
           <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8">
             {/* Avatar Section */}
             <div className="relative group/avatar">
-              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-[2rem] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center overflow-hidden shadow-2xl ring-4 ring-white/10 group-hover/avatar:ring-blue-400/30 transition-all duration-500">
+              <div className="w-24 h-24 sm:w-32 sm:h-32  bg-white/10  border border-white/20 flex items-center justify-center overflow-hidden  ring-4 ring-white/10 group-hover/avatar:ring-blue-400/30 transition-all duration-500">
                 {userData?.photoURL ? (
                   <img src={userData.photoURL} alt="Identity" className="w-full h-full object-cover" />
                 ) : (
@@ -189,22 +189,22 @@ export default function Profile({ variant = "level2" }) {
                 )}
               </div>
               {isEditing && (
-                <button className="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-2xl shadow-xl transition-all hover:scale-110 active:scale-95">
+                <button className="absolute -bottom-2 -right-2 bg-navy hover:bg-navy-wash0 text-white p-3   transition-all hover:scale-110 active:scale-95">
                   <FontAwesomeIcon icon={faCamera} className="text-sm" />
                 </button>
               )}
             </div>
 
             <div className="flex-1 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 mb-4 backdrop-blur-md">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 mb-4 ">
                  <FontAwesomeIcon icon={faShieldHalved} className="text-[10px] text-blue-200" />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-blue-50">Verified Academic Identity</span>
+                 <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-50">Verified Academic Identity</span>
               </div>
-              <h1 className="text-4xl sm:text-5xl font-black mb-3 tracking-tight">{userData?.name || "Anonymous Researcher"}</h1>
+              <h1 className="text-4xl sm:text-5xl font-semibold mb-3 tracking-tight">{userData?.name || "Anonymous Researcher"}</h1>
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
                 <div className={ui.roleRowClass}>
                    <FontAwesomeIcon icon={getRoleIcon(userData?.role)} className="text-sm opacity-70" />
-                   <span className="text-sm uppercase tracking-widest">{getRoleDisplayName(userData?.role)}</span>
+                   <span className="text-sm uppercase tracking-[0.14em]">{getRoleDisplayName(userData?.role)}</span>
                 </div>
                 <div className={ui.dotClass} />
                 <p className={ui.instituteClass}>{userData?.instituteName || "Global Academy Consortium"}</p>
@@ -214,7 +214,7 @@ export default function Profile({ variant = "level2" }) {
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-3 whitespace-nowrap ${
+                className={`px-8 py-4  text-[10px] font-semibold uppercase tracking-[0.14em] transition-all  flex items-center justify-center gap-3 whitespace-nowrap ${
                   isEditing
                     ? "bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white"
                     : ui.editIdleClass
@@ -224,9 +224,9 @@ export default function Profile({ variant = "level2" }) {
                 {isEditing ? "Cancel Edition" : "Update Profile"}
               </button>
               {!isEditing && (
-                <div className="bg-emerald-500/20 px-6 py-2 rounded-xl border border-emerald-500/20 flex items-center justify-center gap-2">
+                <div className="bg-emerald-500/20 px-6 py-2  border border-emerald-500/20 flex items-center justify-center gap-2">
                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                   <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Privacy Secured</span>
+                   <span className="text-[9px] font-semibold text-emerald-400 uppercase tracking-[0.14em]">Privacy Secured</span>
                 </div>
               )}
             </div>
@@ -239,21 +239,21 @@ export default function Profile({ variant = "level2" }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Personal Metadata */}
           <div className="lg:col-span-2 space-y-8">
-             <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 sm:p-10 shadow-sm relative overflow-hidden group">
+             <div className="bg-white  border border-line p-8 sm:p-10  relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity">
                    <FontAwesomeIcon icon={faUser} className="text-[10rem]" />
                 </div>
 
                 <div className="flex items-center gap-3 mb-8">
-                   <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-inner">
+                   <div className="w-10 h-10  bg-navy-wash flex items-center justify-center text-navy ">
                       <FontAwesomeIcon icon={faUser} className="text-sm" />
                    </div>
-                   <h3 className="text-xl font-black text-slate-800 tracking-tight">Identity Information</h3>
+                   <h3 className="text-xl font-semibold text-ink tracking-tight">Identity Information</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Legal Full Name</label>
+                      <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted ml-1">Legal Full Name</label>
                       <Textbox
                         placeholder={ui.namePlaceholder}
                         type="text"
@@ -263,7 +263,7 @@ export default function Profile({ variant = "level2" }) {
                       />
                    </div>
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Electronic Mail</label>
+                      <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted ml-1">Electronic Mail</label>
                       <Textbox
                         placeholder="email@institution.edu"
                         type="email"
@@ -273,7 +273,7 @@ export default function Profile({ variant = "level2" }) {
                       />
                    </div>
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Contact Terminal (Phone)</label>
+                      <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted ml-1">Contact Terminal (Phone)</label>
                       <Textbox
                         placeholder="10-digit mobile"
                         type="tel"
@@ -287,7 +287,7 @@ export default function Profile({ variant = "level2" }) {
                    </div>
                    {watchedRole === "Level-2" && (
                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Academic Level</label>
+                        <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted ml-1">Academic Level</label>
                         <Textbox
                           placeholder="e.g. Final Year Scholar"
                           type="text"
@@ -300,7 +300,7 @@ export default function Profile({ variant = "level2" }) {
                 </div>
              </div>
 
-             <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 sm:p-10 shadow-sm relative overflow-hidden group">
+             <div className="bg-white  border border-line p-8 sm:p-10  relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity">
                    <FontAwesomeIcon icon={faBuilding} className="text-[10rem]" />
                 </div>
@@ -309,12 +309,12 @@ export default function Profile({ variant = "level2" }) {
                    <div className={ui.affiliationIconClass}>
                       <FontAwesomeIcon icon={faBuilding} className="text-sm" />
                    </div>
-                   <h3 className="text-xl font-black text-slate-800 tracking-tight">Institutional Affiliation</h3>
+                   <h3 className="text-xl font-semibold text-ink tracking-tight">Institutional Affiliation</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Educational Institution</label>
+                      <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted ml-1">Educational Institution</label>
                       <Textbox
                         placeholder="Name of your academy"
                         type="text"
@@ -324,7 +324,7 @@ export default function Profile({ variant = "level2" }) {
                       />
                    </div>
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Organization ID</label>
+                      <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted ml-1">Organization ID</label>
                       <Textbox
                         placeholder="SYSTEM-AUTH-CODE"
                         type="text"
@@ -337,10 +337,10 @@ export default function Profile({ variant = "level2" }) {
              </div>
 
              {/* Verify Password Card */}
-             <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 sm:p-10 shadow-sm relative overflow-hidden group flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+             <div className="bg-white  border border-line p-8 sm:p-10  relative overflow-hidden group flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                   <h3 className="text-xl font-black text-slate-800 tracking-tight">Credentials Verification</h3>
-                   <p className="text-slate-400 text-xs mt-1">Verify your current login credentials securely.</p>
+                   <h3 className="text-xl font-semibold text-ink tracking-tight">Credentials Verification</h3>
+                   <p className="text-ink-muted text-xs mt-1">Verify your current login credentials securely.</p>
                 </div>
                 <button
                    type="button"
@@ -354,26 +354,26 @@ export default function Profile({ variant = "level2" }) {
 
           {/* Right Column: Identity Configuration */}
           <div className="space-y-8">
-             <div className="bg-slate-900 rounded-[2.5rem] p-8 sm:p-10 text-white shadow-2xl relative overflow-hidden">
+             <div className="bg-navy  p-8 sm:p-10 text-white  relative overflow-hidden">
                 <div className="relative z-10">
                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-blue-400 shadow-inner">
+                      <div className="w-10 h-10  bg-white/10 flex items-center justify-center text-blue-400 ">
                          <FontAwesomeIcon icon={faShieldHalved} className="text-sm" />
                       </div>
-                      <h3 className="text-xl font-black tracking-tight">Security Status</h3>
+                      <h3 className="text-xl font-semibold tracking-tight">Security Status</h3>
                    </div>
 
                    <div className="space-y-6">
-                      <div className="p-4 rounded-3xl bg-white/5 border border-white/5">
+                      <div className="p-4  bg-white/5 border border-white/5">
                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Account Role</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500 text-white font-black uppercase">Active</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">Account Role</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-navy-wash0 text-white font-semibold uppercase">Active</span>
                          </div>
-                         <p className="text-lg font-black">{getRoleDisplayName(watchedRole)}</p>
+                         <p className="text-lg font-semibold">{getRoleDisplayName(watchedRole)}</p>
                       </div>
 
-                      <div className="p-4 rounded-3xl bg-white/5 border border-white/5">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3">Protocol Identity URL</label>
+                      <div className="p-4  bg-white/5 border border-white/5">
+                         <label className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted block mb-3">Protocol Identity URL</label>
                          <Textbox
                            placeholder="External media link"
                            type="text"
@@ -387,8 +387,8 @@ export default function Profile({ variant = "level2" }) {
              </div>
 
              {isEditing && (
-               <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm flex flex-col gap-4 animate-in slide-in-from-right-8 duration-500">
-                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-center mb-2">Finalize Synchronization</h4>
+               <div className="bg-white  border border-line p-8  flex flex-col gap-4 animate-in slide-in-from-right-8 duration-500">
+                  <h4 className="text-xs font-semibold text-ink-muted uppercase tracking-[0.2em] text-center mb-2">Finalize Synchronization</h4>
                   <button
                     type="submit"
                     className={ui.submitBtnClass}
@@ -398,7 +398,7 @@ export default function Profile({ variant = "level2" }) {
                   <button
                     type="button"
                     onClick={() => setIsEditing(false)}
-                    className="w-full py-5 rounded-[2rem] bg-slate-50 text-slate-400 text-[11px] font-black uppercase tracking-[0.2em] hover:bg-slate-100 transition-all"
+                    className="w-full py-5  bg-parchment text-ink-muted text-[11px] font-semibold uppercase tracking-[0.2em] hover:bg-parchment transition-all"
                   >
                     Discard Changes
                   </button>
@@ -412,19 +412,19 @@ export default function Profile({ variant = "level2" }) {
       <ModalWrapper open={isPasswordModalOpen} setOpen={setIsPasswordModalOpen}>
         <form onSubmit={handleVerifyPasswordSubmit} className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-inner">
+            <div className="w-10 h-10  bg-navy-wash flex items-center justify-center text-navy ">
               <FontAwesomeIcon icon={faShieldHalved} className="text-sm" />
             </div>
-            <h3 className="text-xl font-black text-slate-800 tracking-tight">Security Check</h3>
+            <h3 className="text-xl font-semibold text-ink tracking-tight">Security Check</h3>
           </div>
 
-          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+          <p className="text-sm text-ink-muted mb-6 leading-relaxed">
             For security purposes, please enter your current password to verify your credentials.
           </p>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Current Password</label>
+              <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">Current Password</label>
               <input
                 type="password"
                 placeholder="••••••••"
@@ -433,7 +433,7 @@ export default function Profile({ variant = "level2" }) {
                   setPasswordInput(e.target.value);
                   if (passwordError) setPasswordError("");
                 }}
-                className="w-full px-4 py-3 border border-slate-200 rounded-2xl outline-none text-slate-800 focus:ring-2 ring-blue-300 transition-all"
+                className="w-full px-4 py-3 border border-line  outline-none text-ink focus:ring-2 ring-blue-300 transition-all"
                 disabled={isVerifying}
               />
               {passwordError && (
@@ -449,7 +449,7 @@ export default function Profile({ variant = "level2" }) {
                   setPasswordInput("");
                   setPasswordError("");
                 }}
-                className="flex-1 py-4 rounded-2xl bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+                className="flex-1 py-4  bg-parchment text-ink-muted text-[10px] font-semibold uppercase tracking-[0.14em] hover:bg-parchment transition-all"
                 disabled={isVerifying}
               >
                 Cancel

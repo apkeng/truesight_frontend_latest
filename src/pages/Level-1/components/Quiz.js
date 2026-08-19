@@ -385,46 +385,46 @@ const Quiz = () => {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 lg:p-12 font-['Inter']">
         <div className="max-w-4xl w-full">
-          <div className="relative overflow-hidden bg-white rounded-[3.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-slate-100 p-8 md:p-16">
+          <div className="relative overflow-hidden bg-white  shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-line p-8 md:p-16">
             {/* Animated Background Decor */}
-            <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50" />
+            <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-navy-wash rounded-full blur-3xl opacity-50" />
             
             <div className="relative z-10 text-center mb-16">
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-blue-600 rounded-[2.5rem] shadow-2xl shadow-blue-200 mb-8 transform hover:rotate-12 transition-transform duration-500">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-navy    mb-8 transform hover:rotate-12 transition-transform duration-500">
                 <FontAwesomeIcon icon={faTrophy} className="text-4xl text-white" />
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight mb-4">
+              <h1 className="text-4xl md:text-5xl font-semibold text-ink tracking-tight mb-4">
                 Assessment Complete
               </h1>
-              <p className="text-slate-500 font-medium text-lg max-w-lg mx-auto">
-                Comprehensive performance analysis for <span className="text-blue-600 font-bold">"{topic}"</span> module.
+              <p className="text-ink-muted font-medium text-lg max-w-lg mx-auto">
+                Comprehensive performance analysis for <span className="text-navy font-bold">"{topic}"</span> module.
               </p>
             </div>
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
               <div className="relative group">
-                <div className="absolute inset-0 bg-blue-600/5 rounded-[2.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative p-8 bg-blue-50/50 border border-blue-100 rounded-[2.5rem] text-center transform transition-transform group-hover:-translate-y-2">
-                   <div className="text-3xl font-black text-blue-900 mb-1">{correctAnswers}/{totalQuestions}</div>
-                   <div className="text-[10px] font-black uppercase tracking-widest text-blue-600/60">Assessment Accuracy</div>
+                <div className="absolute inset-0 bg-navy/5  blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative p-8 bg-navy-wash/50 border border-navy/15  text-center transform transition-transform group-hover:-translate-y-2">
+                   <div className="text-3xl font-semibold text-blue-900 mb-1">{correctAnswers}/{totalQuestions}</div>
+                   <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy/60">Assessment Accuracy</div>
                 </div>
               </div>
 
               <div className="relative group">
-                <div className="absolute inset-0 bg-emerald-600/5 rounded-[2.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative p-8 bg-emerald-50/50 border border-emerald-100 rounded-[2.5rem] text-center transform transition-transform group-hover:-translate-y-2">
-                   <div className="text-3xl font-black text-emerald-900 mb-1">{score}</div>
-                   <div className="text-[10px] font-black uppercase tracking-widest text-emerald-600/60">Performance Score</div>
+                <div className="absolute inset-0 bg-emerald-600/5  blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative p-8 bg-emerald-50/50 border border-emerald-100  text-center transform transition-transform group-hover:-translate-y-2">
+                   <div className="text-3xl font-semibold text-emerald-900 mb-1">{score}</div>
+                   <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-600/60">Performance Score</div>
                 </div>
               </div>
 
               <div className="relative group">
-                <div className="absolute inset-0 bg-purple-600/5 rounded-[2.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative p-8 bg-purple-50/50 border border-purple-100 rounded-[2.5rem] text-center transform transition-transform group-hover:-translate-y-2">
-                   <div className="text-3xl font-black text-purple-900 mb-1">{percentage}%</div>
-                   <div className="text-[10px] font-black uppercase tracking-widest text-purple-600/60">Academic Mastery</div>
+                <div className="absolute inset-0 bg-navy/5  blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative p-8 bg-navy-wash/50 border border-navy/15  text-center transform transition-transform group-hover:-translate-y-2">
+                   <div className="text-3xl font-semibold text-purple-900 mb-1">{percentage}%</div>
+                   <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-navy/60">Academic Mastery</div>
                 </div>
               </div>
             </div>
@@ -432,37 +432,37 @@ const Quiz = () => {
             {/* Answer Analytics */}
             <div className="space-y-4 mb-16">
                <div className="flex items-center justify-between px-4 mb-6">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Detailed Feedback</h3>
-                  <span className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-ink-muted">Detailed Feedback</h3>
+                  <span className="px-3 py-1 bg-parchment rounded-full text-[10px] font-bold text-ink-muted">
                     {answers.length} Responses Captured
                   </span>
                </div>
                
                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                   {answers.map((answer, index) => (
-                    <div key={index} className={`grid grid-cols-[48px_1fr] gap-4 p-6 rounded-[2rem] border transition-all ${
+                    <div key={index} className={`grid grid-cols-[48px_1fr] gap-4 p-6  border transition-all ${
                       answer.isCorrect 
                         ? 'bg-white border-emerald-100 hover:border-emerald-300' 
                         : 'bg-white border-red-100 hover:border-red-300 shadow-sm'
                     }`}>
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${
+                      <div className={`w-12 h-12  flex items-center justify-center font-semibold ${
                         answer.isCorrect ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
                       }`}>
                         {index + 1}
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-slate-800 mb-3 leading-relaxed">
+                        <div className="text-sm font-bold text-ink mb-3 leading-relaxed">
                           {answer.question}
                         </div>
                         <div className="flex flex-wrap gap-3">
-                           <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold ${
+                           <div className={`inline-flex items-center gap-2 px-3 py-1.5  text-[11px] font-bold ${
                              answer.isCorrect ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
                            }`}>
                              <FontAwesomeIcon icon={answer.isCorrect ? faCheckCircle : faTimesCircle} />
                              {answer.userAnswer}
                            </div>
                            {!answer.isCorrect && (
-                             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-600 rounded-xl text-[11px] font-bold border border-slate-100">
+                             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-parchment text-ink-muted  text-[11px] font-bold border border-line">
                                <span className="opacity-50">Solution:</span> {answer.correctAnswer}
                              </div>
                            )}
@@ -477,14 +477,14 @@ const Quiz = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => navigate('/l1dashboard/quiz-results')}
-                className="flex-1 bg-slate-900 hover:bg-black text-white px-10 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3"
+                className="flex-1 bg-navy hover:bg-navy-dark text-white px-10 py-6  font-semibold text-[11px] uppercase tracking-[0.2em]   transition-all active:scale-95 flex items-center justify-center gap-3"
               >
                 <FontAwesomeIcon icon={faCheckCircle} />
                 Analytics Repository
               </button>
               <button
                 onClick={handleBackToDashboard}
-                className="flex-1 bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-100 px-10 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-3"
+                className="flex-1 bg-white hover:bg-parchment text-ink border-2 border-line px-10 py-6  font-semibold text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-3"
               >
                 <FontAwesomeIcon icon={faArrowLeft} />
                 Return to Hub
@@ -514,10 +514,10 @@ const Quiz = () => {
     <>
       <ToastContainer autoClose={2000} />
       
-      <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-parchment py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Premium Glass Header */}
-          <div className="relative mb-10 overflow-hidden rounded-[2.5rem] bg-white/40 backdrop-blur-xl border border-white/60 shadow-2xl shadow-blue-100/50 p-8">
+          <div className="relative mb-10 overflow-hidden  bg-white/40  border border-white/60   p-8">
              <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
                 <FontAwesomeIcon icon={faUsers} className="text-8xl text-blue-900" />
              </div>
@@ -526,37 +526,37 @@ const Quiz = () => {
                 <div className="space-y-4">
                   <button
                     onClick={handleBackToDashboard}
-                    className="group inline-flex items-center gap-2 px-4 py-2 bg-slate-900/5 hover:bg-slate-900/10 text-slate-600 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all active:scale-95"
+                    className="group inline-flex items-center gap-2 px-4 py-2 bg-navy/5 hover:bg-navy/10 text-ink-muted font-semibold text-[10px] uppercase tracking-[0.14em]  transition-all active:scale-95"
                   >
                     <FontAwesomeIcon icon={faArrowLeft} className="group-hover:-translate-x-1 transition-transform" />
                     Back to Hub
                   </button>
                   <div>
-                    <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-2">Academic Assessment</h1>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600 flex items-center gap-2">
-                       <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                    <h1 className="text-3xl font-semibold text-ink tracking-tight leading-none mb-2">Academic Assessment</h1>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-navy flex items-center gap-2">
+                       <span className="w-2 h-2 rounded-full bg-navy animate-pulse" />
                        Topic: {topic}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
-                  <div className={`flex flex-col items-center justify-center min-w-[100px] p-4 rounded-3xl transition-all duration-500 border-2 shadow-inner ${
+                  <div className={`flex flex-col items-center justify-center min-w-[100px] p-4  transition-all duration-500 border-2  ${
                     timeLeft <= 10 
                       ? "bg-red-50 border-red-200 text-red-600 animate-[pulse_1s_infinite]" 
-                      : "bg-white border-blue-50 text-slate-800"
+                      : "bg-white border-blue-50 text-ink"
                   }`}>
-                    <span className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-1">Time Remaining</span>
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.14em] opacity-60 mb-1">Time Remaining</span>
                     <div className="flex items-center gap-2">
-                       <FontAwesomeIcon icon={faClock} className={timeLeft <= 10 ? "text-red-500" : "text-blue-500"} />
-                       <span className="font-mono text-3xl font-black">{formatTime(timeLeft)}</span>
+                       <FontAwesomeIcon icon={faClock} className={timeLeft <= 10 ? "text-red-500" : "text-navy"} />
+                       <span className="font-mono text-3xl font-semibold">{formatTime(timeLeft)}</span>
                     </div>
                   </div>
 
-                  <div className="bg-slate-900 text-white px-8 py-4 rounded-3xl flex flex-col items-center justify-center shadow-lg shadow-slate-200">
-                     <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Progress</span>
+                  <div className="bg-navy text-white px-8 py-4  flex flex-col items-center justify-center  ">
+                     <span className="text-[9px] font-semibold uppercase tracking-[0.14em] opacity-40 mb-1">Progress</span>
                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black">{currentQuestionIndex + 1}</span>
+                        <span className="text-2xl font-semibold">{currentQuestionIndex + 1}</span>
                         <span className="text-xs font-bold opacity-40">/</span>
                         <span className="text-xs font-bold opacity-40">{questions.length}</span>
                      </div>
@@ -565,9 +565,9 @@ const Quiz = () => {
              </div>
 
              {/* Refined Progress Bar */}
-             <div className="mt-8 relative h-1.5 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-50">
+             <div className="mt-8 relative h-1.5 w-full bg-parchment rounded-full overflow-hidden border border-line">
                <div
-                 className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                 className="absolute top-0 left-0 h-full bg-navy transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(59,130,246,0.5)]"
                  style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
                />
              </div>
@@ -575,16 +575,16 @@ const Quiz = () => {
 
           {/* Premium Question Card */}
           <div className="relative group perspective-1000">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-[3rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute -inset-1 bg-navy  blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
             
-            <div className="relative bg-white rounded-[3rem] shadow-2xl shadow-blue-100 border border-slate-100 p-8 sm:p-12 overflow-hidden animate-in fade-in zoom-in-95 duration-700">
-              <div className="absolute top-0 left-0 w-2 h-full bg-blue-600" />
+            <div className="relative bg-white    border border-line p-8 sm:p-12 overflow-hidden animate-in fade-in zoom-in-95 duration-700">
+              <div className="absolute top-0 left-0 w-2 h-full bg-navy" />
               
               <div className="mb-12">
-                 <span className="inline-block px-3 py-1 bg-blue-50 text-blue-600 font-black text-[9px] uppercase tracking-widest rounded-lg mb-6 border border-blue-100/50">
+                 <span className="inline-block px-3 py-1 bg-navy-wash text-navy font-semibold text-[9px] uppercase tracking-[0.14em]  mb-6 border border-navy/15/50">
                     Active Question
                  </span>
-                 <h2 className="text-2xl sm:text-3xl font-black text-slate-800 leading-[1.2] tracking-tight">
+                 <h2 className="text-2xl sm:text-3xl font-semibold text-ink leading-[1.2] tracking-tight">
                    {currentQuestion.question}
                  </h2>
               </div>
@@ -594,29 +594,29 @@ const Quiz = () => {
                   <button
                     key={index}
                     onClick={() => handleAnswerSelect(option)}
-                    className={`relative w-full p-6 text-left rounded-[2rem] border-2 transition-all duration-500 flex items-center justify-between group/opt ${
+                    className={`relative w-full p-6 text-left  border-2 transition-all duration-500 flex items-center justify-between group/opt ${
                       selectedAnswer === option
-                        ? 'border-blue-600 bg-blue-50/50 shadow-xl shadow-blue-100/20 translate-x-1'
-                        : 'border-slate-50 bg-slate-50/30 hover:border-slate-200 hover:bg-white hover:-translate-y-1'
+                        ? 'border-blue-600 bg-navy-wash/50   translate-x-1'
+                        : 'border-line bg-parchment/30 hover:border-line hover:bg-white hover:-translate-y-1'
                     }`}
                   >
                     <div className="flex items-center gap-5">
-                      <div className={`w-8 h-8 rounded-2xl flex items-center justify-center text-xs font-black transition-all duration-500 shadow-sm ${
+                      <div className={`w-8 h-8  flex items-center justify-center text-xs font-semibold transition-all duration-500  ${
                         selectedAnswer === option
-                          ? 'bg-blue-600 text-white scale-110 rotate-12'
-                          : 'bg-white text-slate-400 group-hover/opt:text-blue-500'
+                          ? 'bg-navy text-white scale-110 rotate-12'
+                          : 'bg-white text-ink-muted group-hover/opt:text-navy'
                       }`}>
                         {String.fromCharCode(65 + index)}
                       </div>
                       <span className={`text-base font-bold transition-colors duration-300 ${
-                        selectedAnswer === option ? 'text-blue-900' : 'text-slate-600'
+                        selectedAnswer === option ? 'text-blue-900' : 'text-ink-muted'
                       }`}>{option}</span>
                     </div>
                     
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-500 ${
                       selectedAnswer === option
-                        ? 'bg-blue-600 border-blue-600 scale-100'
-                        : 'border-slate-200 bg-white scale-0'
+                        ? 'bg-navy border-blue-600 scale-100'
+                        : 'border-line bg-white scale-0'
                     }`}>
                        <FontAwesomeIcon icon={faCheckCircle} className="text-white text-[10px]" />
                     </div>
@@ -628,7 +628,7 @@ const Quiz = () => {
                  <div className="flex -space-x-2">
                     {questions.map((_, i) => (
                        <div key={i} className={`w-2 h-2 rounded-full border border-white ${
-                          i === currentQuestionIndex ? "bg-blue-600 w-6" : i < currentQuestionIndex ? "bg-emerald-400" : "bg-slate-200"
+                          i === currentQuestionIndex ? "bg-navy w-6" : i < currentQuestionIndex ? "bg-emerald-400" : "bg-slate-200"
                        } transition-all duration-500`} />
                     ))}
                  </div>
@@ -636,10 +636,10 @@ const Quiz = () => {
                  <button
                    onClick={handleNextQuestion}
                    disabled={!selectedAnswer}
-                   className={`group relative overflow-hidden px-10 py-5 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-500 ${
+                   className={`group relative overflow-hidden px-10 py-5  font-semibold text-[11px] uppercase tracking-[0.2em] transition-all duration-500 ${
                      selectedAnswer
-                       ? 'bg-blue-600 text-white shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95'
-                       : 'bg-slate-100 text-slate-300 cursor-not-allowed opacity-50'
+                       ? 'bg-navy text-white   hover:bg-navy-dark active:scale-95'
+                       : 'bg-parchment text-ink-muted cursor-not-allowed opacity-50'
                    }`}
                  >
                    <div className="relative z-10 flex items-center gap-3">

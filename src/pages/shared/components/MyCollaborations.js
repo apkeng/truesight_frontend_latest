@@ -26,13 +26,13 @@ const Modal = ({ open, children, onClose }) => {
     <div className="fixed inset-0 z-[100] overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
         <div 
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity" 
+          className="fixed inset-0 bg-navy/40  transition-opacity" 
           onClick={onClose}
         />
         
-        <div className="relative w-full max-w-md transform overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-2xl transition-all animate-in zoom-in-95 duration-300">
+        <div className="relative w-full max-w-md transform overflow-hidden  bg-white p-8  transition-all animate-in zoom-in-95 duration-300">
           <button 
-            className="absolute right-6 top-6 z-[110] flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+            className="absolute right-6 top-6 z-[110] flex h-10 w-10 items-center justify-center rounded-full bg-parchment text-ink-muted hover:bg-parchment hover:text-ink transition-colors cursor-pointer"
             onClick={onClose}
           >
             <IoMdClose className="text-xl" />
@@ -106,22 +106,22 @@ const AddProject = ({ open, setOpen, onTaskAdd }) => {
     <Modal open={open} onClose={() => setOpen(false)}>
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="text-center relative pt-4">
-           <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 mb-6 shadow-sm shadow-slate-100 transition-all duration-500">
+           <div className="inline-flex h-16 w-16 items-center justify-center  bg-parchment text-ink-muted mb-6   transition-all duration-500">
              <FontAwesomeIcon icon={faHandsHelping} className="text-2xl" />
            </div>
-           <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">Initiate Collaboration</h3>
-           <p className="text-slate-400 font-bold text-[10px] px-6 leading-relaxed uppercase tracking-widest">Provide your objectives to architect a roadmap.</p>
+           <h3 className="text-2xl font-semibold text-ink tracking-tight mb-2 uppercase">Initiate Collaboration</h3>
+           <p className="text-ink-muted font-bold text-[10px] px-6 leading-relaxed uppercase tracking-[0.14em]">Provide your objectives to architect a roadmap.</p>
         </div>
 
         <div className="space-y-6">
           <div className="space-y-3 px-1">
             <div className="flex items-center justify-between">
-              <label htmlFor="topic" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              <label htmlFor="topic" className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">
                 Project Goal / Topic
               </label>
               <span className={clsx(
-                "text-[10px] font-black uppercase tracking-widest",
-                topic.length > 3 ? "text-slate-900" : "text-slate-300"
+                "text-[10px] font-semibold uppercase tracking-[0.14em]",
+                topic.length > 3 ? "text-ink" : "text-ink-muted"
               )}>
                 {topic.length}/100
               </span>
@@ -133,13 +133,13 @@ const AddProject = ({ open, setOpen, onTaskAdd }) => {
               rows={3}
               maxLength={100}
               placeholder="e.g. Analysis of renewable energy policies..."
-              className="w-full rounded-2xl border-slate-200 bg-slate-50 p-5 text-xs font-bold text-slate-900 transition-all focus:border-slate-900 focus:ring-0 placeholder:text-slate-400 no-scrollbar resize-none outline-none shadow-inner"
+              className="w-full  border-line bg-parchment p-5 text-xs font-bold text-ink transition-all focus:border-slate-900 focus:ring-0 placeholder:text-ink-muted no-scrollbar resize-none outline-none "
               required
             />
           </div>
 
           <div className="space-y-4 px-1">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">
               Complexity Level
             </label>
             <div className="grid grid-cols-1 gap-2">
@@ -148,19 +148,19 @@ const AddProject = ({ open, setOpen, onTaskAdd }) => {
                   key={lvl.id}
                   onClick={() => setLevelOfLearning(lvl.id)}
                   className={clsx(
-                    "cursor-pointer p-4 rounded-xl border transition-all duration-300 flex flex-col justify-center",
+                    "cursor-pointer p-4  border transition-all duration-300 flex flex-col justify-center",
                     levelOfLearning === lvl.id
-                      ? "border-slate-900 bg-slate-900 text-white shadow-xl shadow-slate-200"
-                      : "border-slate-100 bg-slate-50 hover:border-slate-200"
+                      ? "border-slate-900 bg-navy text-white  "
+                      : "border-line bg-parchment hover:border-line"
                   )}
                 >
                   <h4 className={clsx(
-                    "text-[11px] font-black uppercase tracking-tight",
-                    levelOfLearning === lvl.id ? "text-white" : "text-slate-700"
+                    "text-[11px] font-semibold uppercase tracking-tight",
+                    levelOfLearning === lvl.id ? "text-white" : "text-ink"
                   )}>{lvl.label}</h4>
                   <p className={clsx(
                     "text-[9px] font-bold leading-tight mt-0.5",
-                    levelOfLearning === lvl.id ? "text-slate-400" : "text-slate-400"
+                    levelOfLearning === lvl.id ? "text-ink-muted" : "text-ink-muted"
                   )}>{lvl.desc}</p>
                 </div>
               ))}
@@ -173,10 +173,10 @@ const AddProject = ({ open, setOpen, onTaskAdd }) => {
             type="submit"
             disabled={isLoading || !topic || !levelOfLearning}
             className={clsx(
-              "relative w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-2xl",
+              "relative w-full h-14  font-semibold text-xs uppercase tracking-[0.14em] transition-all duration-300 ",
               isLoading || !topic || !levelOfLearning
-                ? "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none"
-                : "bg-slate-900 text-white hover:scale-[1.01] active:scale-95 shadow-slate-200"
+                ? "bg-parchment text-ink-muted cursor-not-allowed "
+                : "bg-navy text-white hover:scale-[1.01] active:scale-95 "
             )}
           >
             {isLoading ? (
@@ -189,7 +189,7 @@ const AddProject = ({ open, setOpen, onTaskAdd }) => {
             ) : (
               <div className="flex items-center justify-center gap-2">
                 <span>Initiate Collaboration</span>
-                <FontAwesomeIcon icon={faMagicWandSparkles} className="text-slate-400" />
+                <FontAwesomeIcon icon={faMagicWandSparkles} className="text-ink-muted" />
               </div>
             )}
           </button>
@@ -258,18 +258,18 @@ const MyCollaborations = ({ searchQuery }) => {
         <ToastContainer autoClose={2000} />
 
         <div className="mb-8 mt-6">
-          <div className="relative bg-gradient-to-br from-teal-700 via-emerald-800 to-teal-900 rounded-[2.5rem] p-8 sm:p-10 text-white shadow-2xl shadow-teal-100 overflow-hidden group">
+          <div className="relative bg-gradient-to-br from-teal-700 via-emerald-800 to-teal-900  p-8 sm:p-10 text-white  shadow-teal-100 overflow-hidden group">
             <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:scale-110 transition-transform duration-700">
               <FontAwesomeIcon icon={faHandsHelping} className="text-[12rem]" />
             </div>
             
             <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 mb-4 backdrop-blur-md">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 mb-4 ">
                    <FontAwesomeIcon icon={faUsersGear} className="text-[10px] text-teal-200" />
-                   <span className="text-[10px] font-black uppercase tracking-widest text-teal-50">Collaborative Workspace</span>
+                   <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-50">Collaborative Workspace</span>
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-black mb-3 tracking-tight">My Collaborations</h1>
+                <h1 className="text-3xl sm:text-4xl font-semibold mb-3 tracking-tight">My Collaborations</h1>
                 <p className="text-teal-100/80 font-medium text-sm max-w-xl leading-relaxed">
                   Manage projects you are contributing to or leading. Synchronize research efforts and academic publications across your professional network.
                 </p>
@@ -277,7 +277,7 @@ const MyCollaborations = ({ searchQuery }) => {
 
               <button
                 onClick={() => setOpen(true)}
-                className="group/btn relative flex items-center gap-3 bg-white px-8 py-4 rounded-2xl text-slate-900 font-black text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/10 overflow-hidden"
+                className="group/btn relative flex items-center gap-3 bg-white px-8 py-4  text-ink font-semibold text-sm transition-all hover:scale-105 active:scale-95  shadow-black/10 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-teal-100 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity" />
                 <IoMdAdd className="text-xl relative z-10" />
@@ -294,14 +294,14 @@ const MyCollaborations = ({ searchQuery }) => {
             </div>
           )}
           
-          <div className="flex items-center gap-6 w-full md:w-auto px-6 py-2 bg-slate-50 border border-slate-100 rounded-3xl self-center md:self-auto shadow-inner">
-            <div className="flex flex-col items-center border-r border-slate-200 pr-6">
-               <span className="text-[14px] font-black text-slate-800">{filteredTasks.length}</span>
-               <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Collaborations</span>
+          <div className="flex items-center gap-6 w-full md:w-auto px-6 py-2 bg-parchment border border-line  self-center md:self-auto ">
+            <div className="flex flex-col items-center border-r border-line pr-6">
+               <span className="text-[14px] font-semibold text-ink">{filteredTasks.length}</span>
+               <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-ink-muted">Collaborations</span>
             </div>
-            <div className="flex items-center gap-2 text-slate-300">
+            <div className="flex items-center gap-2 text-ink-muted">
                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-               <span className="text-[9px] font-black uppercase tracking-widest leading-none">Sync Active</span>
+               <span className="text-[9px] font-semibold uppercase tracking-[0.14em] leading-none">Sync Active</span>
             </div>
           </div>
         </div>
@@ -325,8 +325,8 @@ const MyCollaborations = ({ searchQuery }) => {
                   ))}
                 </div>
               ) : (
-                <div className="py-32 text-center bg-white rounded-[3rem] border border-slate-100 shadow-sm mb-16">
-                   <p className="text-sm font-black text-slate-300 uppercase tracking-[0.3em]">{searchQuery ? "No matching collaborations found." : "No active collaborations found."}</p>
+                <div className="py-32 text-center bg-white  border border-line  mb-16">
+                   <p className="text-sm font-semibold text-ink-muted uppercase tracking-[0.3em]">{searchQuery ? "No matching collaborations found." : "No active collaborations found."}</p>
                 </div>
               )
             ) : (
