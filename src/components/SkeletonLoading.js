@@ -4,10 +4,10 @@ import React from "react";
  * Premium Skeleton Loading Component
  */
 
-const SkeletonElement = ({ width, height, rounded = "rounded-2xl" }) => {
+const SkeletonElement = ({ width, height, rounded = "" }) => {
   return (
     <div
-      className={`skeleton-shimmer bg-slate-100 ${rounded}`}
+      className={`skeleton-shimmer bg-line-soft ${rounded}`}
       style={{
         width: width || "100%",
         height: height || "1rem",
@@ -32,14 +32,14 @@ export const SkeletonText = ({ lines = 3, className = "" }) => {
 
 export const SkeletonProjectCard = () => {
   return (
-    <div className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm space-y-6">
+    <div className="bg-white p-6 border border-line  space-y-6">
       <div className="flex justify-between items-start">
-        <SkeletonElement height="1.5rem" width="40%" rounded="rounded-xl" />
-        <SkeletonElement height="1rem" width="3rem" rounded="rounded-full" />
+        <SkeletonElement height="1.5rem" width="40%" rounded="" />
+        <SkeletonElement height="1rem" width="3rem" rounded="" />
       </div>
       
       <div className="flex items-start gap-3">
-        <SkeletonElement height="3rem" width="3rem" rounded="rounded-2xl" />
+        <SkeletonElement height="3rem" width="3rem" rounded="" />
         <div className="flex-1 space-y-2">
            <SkeletonElement height="1.25rem" width="80%" />
            <SkeletonElement height="0.75rem" width="40%" />
@@ -47,17 +47,17 @@ export const SkeletonProjectCard = () => {
       </div>
 
       <div className="flex gap-2">
-        <SkeletonElement height="2.5rem" width="100%" rounded="rounded-xl" />
-        <SkeletonElement height="2.5rem" width="100%" rounded="rounded-xl" />
+        <SkeletonElement height="2.5rem" width="100%" rounded="" />
+        <SkeletonElement height="2.5rem" width="100%" rounded="" />
       </div>
 
       <div className="space-y-2 pt-2">
-        <SkeletonElement height="2.5rem" width="100%" rounded="rounded-xl" />
+        <SkeletonElement height="2.5rem" width="100%" rounded="" />
       </div>
       
       <div className="pt-4 border-t border-slate-50 flex gap-3">
-         <SkeletonElement height="3rem" width="100%" rounded="rounded-xl" />
-         <SkeletonElement height="3rem" width="3rem" rounded="rounded-xl" />
+         <SkeletonElement height="3rem" width="100%" rounded="" />
+         <SkeletonElement height="3rem" width="3rem" rounded="" />
       </div>
     </div>
   );
@@ -65,12 +65,12 @@ export const SkeletonProjectCard = () => {
 
 export const SkeletonQuizCard = () => {
   return (
-    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-8 space-y-8">
-      <SkeletonElement height="2.5rem" width="100%" rounded="rounded-xl" />
+    <div className="bg-white  border border-line p-8 space-y-8">
+      <SkeletonElement height="2.5rem" width="100%" rounded="" />
       <div className="space-y-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="flex items-center gap-4 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-            <SkeletonElement height="1.5rem" width="1.5rem" rounded="rounded-full" />
+          <div key={index} className="flex items-center gap-4 p-4 bg-parchment  border border-line">
+            <SkeletonElement height="1.5rem" width="1.5rem" rounded="" />
             <SkeletonElement height="1rem" width="60%" />
           </div>
         ))}
@@ -81,10 +81,10 @@ export const SkeletonQuizCard = () => {
 
 export const SkeletonStatsCard = () => {
   return (
-    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6">
+    <div className="bg-white  border border-line p-6">
       <div className="flex items-center justify-between mb-4">
-        <SkeletonElement height="1rem" width="50%" rounded="rounded-lg" />
-        <SkeletonElement height="2.5rem" width="2.5rem" rounded="rounded-xl" />
+        <SkeletonElement height="1rem" width="50%" rounded="" />
+        <SkeletonElement height="2.5rem" width="2.5rem" rounded="" />
       </div>
       <SkeletonElement height="2.5rem" width="60%" className="mb-2" />
       <SkeletonElement height="1rem" width="80%" />
@@ -106,23 +106,23 @@ export const SkeletonTableRow = ({ columns = 4 }) => {
 
 export const SkeletonChallengeCard = () => {
   return (
-    <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6">
+    <div className="bg-white  border border-line overflow-hidden">
+      <div className="bg-navy p-6">
         <div className="flex items-center justify-between mb-4">
-          <SkeletonElement height="1rem" width="4rem" rounded="rounded-full" className="bg-white/20" />
-          <SkeletonElement height="2rem" width="6rem" rounded="rounded-xl" className="bg-white/20" />
+          <SkeletonElement height="1rem" width="4rem" rounded="" className="bg-white/20" />
+          <SkeletonElement height="2rem" width="6rem" rounded="" className="bg-white/20" />
         </div>
-        <SkeletonElement height="2rem" width="80%" rounded="rounded-xl" className="bg-white/20" />
+        <SkeletonElement height="2rem" width="80%" rounded="" className="bg-white/20" />
       </div>
       <div className="p-6 space-y-4">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="flex items-center gap-3">
-            <SkeletonElement height="1.25rem" width="1.25rem" rounded="rounded-full" />
+            <SkeletonElement height="1.25rem" width="1.25rem" rounded="" />
             <SkeletonElement height="1rem" width={60 + (i * 10) + "%"} />
           </div>
         ))}
         <div className="pt-4">
-           <SkeletonElement height="3.5rem" width="100%" rounded="rounded-2xl" />
+           <SkeletonElement height="3.5rem" width="100%" rounded="" />
         </div>
       </div>
     </div>
@@ -131,10 +131,10 @@ export const SkeletonChallengeCard = () => {
 
 export const SkeletonTableItem = () => {
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 p-5 space-y-4 shadow-sm">
+    <div className="bg-white  border border-line p-5 space-y-4 ">
       <div className="flex items-center justify-between">
         <SkeletonElement height="1.25rem" width="60%" />
-        <SkeletonElement height="1rem" width="3rem" rounded="rounded-full" />
+        <SkeletonElement height="1rem" width="3rem" rounded="" />
       </div>
       <div className="space-y-2">
         <SkeletonElement height="0.75rem" width="90%" />
@@ -150,12 +150,12 @@ export const SkeletonTableItem = () => {
 
 export const SkeletonCard = ({ className = "" }) => {
   return (
-    <div className={`bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8 space-y-6 ${className}`}>
+    <div className={`bg-white  border border-line p-8 space-y-6 ${className}`}>
       <SkeletonElement height="2rem" width="50%" />
       <SkeletonText lines={3} />
       <div className="flex gap-3">
-        <SkeletonElement height="3rem" width="100%" rounded="rounded-2xl" />
-        <SkeletonElement height="3rem" width="100%" rounded="rounded-2xl" />
+        <SkeletonElement height="3rem" width="100%" rounded="" />
+        <SkeletonElement height="3rem" width="100%" rounded="" />
       </div>
     </div>
   );
@@ -204,10 +204,10 @@ const SkeletonLoading = ({
         return Array.from({ length: count }).map((_, i) => <SkeletonChallengeCard key={i} />);
       case "table":
         return (
-          <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+          <div className="bg-white border border-line overflow-hidden ">
             <table className="w-full">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
+                <tr className="bg-parchment border-b border-line">
                   {Array.from({ length: 4 }).map((_, i) => (
                     <th key={i} className="px-6 py-4 text-left">
                       <SkeletonElement height="1rem" width="60%" />

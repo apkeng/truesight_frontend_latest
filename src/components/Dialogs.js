@@ -24,27 +24,27 @@ export default function ConfirmationDialog({
     switch (type) {
       case "publish":
         return {
-          iconBg: "text-green-600 bg-green-100",
-          buttonBg: "bg-green-600 hover:bg-green-500",
+          iconBg: "text-emerald-700 bg-emerald-50",
+          buttonBg: "bg-navy hover:bg-navy-dark",
           buttonLabel: "Publish",
         };
       case "unpublish":
         return {
-          iconBg: "text-yellow-600 bg-yellow-100",
-          buttonBg: "bg-yellow-600 hover:bg-yellow-500",
+          iconBg: "text-amber-700 bg-amber-50",
+          buttonBg: "bg-navy hover:bg-navy-dark",
           buttonLabel: "Unpublish",
         };
       case "restore":
         return {
-          iconBg: "text-yellow-600 bg-yellow-100",
-          buttonBg: "bg-yellow-600 hover:bg-yellow-500",
+          iconBg: "text-amber-700 bg-amber-50",
+          buttonBg: "bg-navy hover:bg-navy-dark",
           buttonLabel: "Restore",
         };
       case "delete":
       default:
         return {
-          iconBg: "text-red-600 bg-red-200",
-          buttonBg: "bg-red-600 hover:bg-red-500",
+          iconBg: "text-red-600 bg-red-50",
+          buttonBg: "bg-red-600 hover:bg-red-700",
           buttonLabel: "Delete",
         };
     }
@@ -57,16 +57,16 @@ export default function ConfirmationDialog({
       <ModalWrapper open={open} setOpen={closeDialog}>
         <div className="py-4 w-full flex flex-col gap-4 items-center justify-center">
           <Dialog.Title as="h3" className="">
-            <p className={clsx("p-3 rounded-full", styles.iconBg)}>
+            <p className={clsx("p-3", styles.iconBg)}>
               <FaQuestion size={60} />
             </p>
           </Dialog.Title>
 
-          <p className="text-center text-gray-500">
+          <p className="text-center text-ink-muted">
             {msg ?? "Are you sure you want to perform this action?"}
           </p>
 
-          <div className="bg-gray-50 py-3 sm:flex sm:flex-row-reverse gap-4">
+          <div className="bg-parchment py-3 sm:flex sm:flex-row-reverse gap-4">
             <Button
               type="button"
               className={clsx(
@@ -79,7 +79,7 @@ export default function ConfirmationDialog({
 
             <Button
               type="button"
-              className="bg-white px-8 text-sm font-semibold text-gray-900 sm:w-auto border"
+              className="bg-white px-8 text-sm font-semibold text-ink sm:w-auto border border-line"
               onClick={() => closeDialog()}
               label="Cancel"
             />
@@ -100,21 +100,21 @@ export function UserAction({ open, setOpen, onClick = () => {} }) {
       <ModalWrapper open={open} setOpen={closeDialog}>
         <div className="py-4 w-full flex flex-col gap-4 items-center justify-center">
           <Dialog.Title as="h3" className="">
-            <p className={clsx("p-3 rounded-full ", "text-red-600 bg-red-200")}>
+            <p className={clsx("p-3 ", "text-red-600 bg-red-50")}>
               <FaQuestion size={60} />
             </p>
           </Dialog.Title>
 
-          <p className="text-center text-gray-500">
+          <p className="text-center text-ink-muted">
             {"Are you sure you want to activate or deactivate this account?"}
           </p>
 
-          <div className="bg-gray-50 py-3 sm:flex sm:flex-row-reverse gap-4">
+          <div className="bg-parchment py-3 sm:flex sm:flex-row-reverse gap-4">
             <Button
               type="button"
               className={clsx(
                 " px-8 text-sm font-semibold text-white sm:w-auto",
-                "bg-red-600 hover:bg-red-500"
+                "bg-red-600 hover:bg-red-700"
               )}
               onClick={onClick}
               label={"Yes"}
@@ -122,7 +122,7 @@ export function UserAction({ open, setOpen, onClick = () => {} }) {
 
             <Button
               type="button"
-              className="bg-white px-8 text-sm font-semibold text-gray-900 sm:w-auto border"
+              className="bg-white px-8 text-sm font-semibold text-ink sm:w-auto border border-line"
               onClick={() => closeDialog()}
               label="No"
             />

@@ -32,17 +32,17 @@ const ChallengeCard = ({
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
-        return "bg-amber-500/10 text-amber-600 border-amber-500/20";
+        return "border-amber-200 bg-amber-50 text-amber-700";
       case "accepted":
       case "in_progress":
-        return "bg-indigo-500/10 text-indigo-600 border-indigo-500/20";
+        return "border-navy/20 bg-navy-wash text-navy";
       case "completed":
-        return "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
+        return "border-emerald-200 bg-emerald-50 text-emerald-700";
       case "cancelled":
       case "expired":
-        return "bg-slate-500/10 text-slate-500 border-slate-500/20";
+        return "border-line bg-parchment text-ink-muted";
       default:
-        return "bg-slate-500/10 text-slate-500 border-slate-500/20";
+        return "border-line bg-parchment text-ink-muted";
     }
   };
 
@@ -84,42 +84,40 @@ const ChallengeCard = ({
   const isWinner = (isChallenger && challenge.winner === "challenger") || (isOpponent && challenge.winner === "opponent");
 
   return (
-    <div className="group relative bg-white/40 backdrop-blur-xl border border-white rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 overflow-hidden flex flex-col">
+    <div className="group relative flex flex-col border border-line bg-white transition-colors hover:border-navy/40">
       {/* Visual Indicator Line */}
       <div className={clsx(
-        "absolute top-0 left-0 right-0 h-1.5",
-        challenge.status === "completed" ? (isWinner ? "bg-emerald-500" : "bg-rose-500") : "bg-indigo-500"
+        "absolute left-0 right-0 top-0 h-1",
+        challenge.status === "completed" ? (isWinner ? "bg-emerald-500" : "bg-rose-500") : "bg-navy"
       )} />
 
       {/* Header Section */}
       <div className="p-5 pb-2">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+             <div className="flex h-9 w-9 items-center justify-center bg-navy text-white">
                 <FontAwesomeIcon icon={challenge.matchingType === "invite" ? faUserFriends : faRandom} className="text-xs" />
              </div>
-             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-               {challenge.matchingType === "invite" ? "Direct Engagement" : "Protocol Match"}
+             <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+               {challenge.matchingType === "invite" ? "Direct invite" : "Random match"}
              </span>
           </div>
           <div className={clsx(
-            "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border flex items-center gap-1.5",
+            "flex items-center gap-1.5 border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]",
             getStatusColor(challenge.status)
           )}>
-            <FontAwesomeIcon icon={getStatusIcon(challenge.status)} className="animate-pulse" />
+            <FontAwesomeIcon icon={getStatusIcon(challenge.status)} />
             {challenge.status.replace("_", " ")}
           </div>
         </div>
 
-        <h3 className="text-base font-black text-slate-800 tracking-tight leading-tight uppercase mb-1 min-h-[2rem] line-clamp-2">
+        <h3 className="mb-1 line-clamp-2 min-h-[2.5rem] font-display text-base font-bold leading-snug text-ink">
           {challenge.topic}
         </h3>
         
-        <div className="flex items-center gap-4 text-slate-400">
-           <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faShieldHalved} className="text-[10px]" />
-              <span className="text-[10px] font-bold uppercase tracking-wide">Opponent: {opponentName}</span>
-           </div>
+        <div className="flex items-center gap-2 text-ink-muted">
+           <FontAwesomeIcon icon={faShieldHalved} className="text-[10px]" />
+           <span className="text-xs">Opponent: {opponentName}</span>
         </div>
       </div>
 
@@ -127,46 +125,46 @@ const ChallengeCard = ({
       <div className="p-5 py-3 flex-1">
         {/* Results Analysis */}
         {challenge.status === "completed" ? (
-          <div className="space-y-4 p-5 bg-slate-50/50 rounded-[2rem] border border-slate-100">
+          <div className="space-y-3 border border-line bg-parchment p-4">
             <div className="flex items-center justify-between">
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Your Evaluation</span>
+               <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">Your score</span>
                <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">
                  {isChallenger ? challenge.challengerResult?.score || 0 : challenge.opponentResult?.score || 0}/5
                </span>
             </div>
             <div className="flex items-center justify-between">
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Peer Evaluation</span>
+               <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">Their score</span>
                <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">
                  {isChallenger ? challenge.opponentResult?.score || 0 : challenge.challengerResult?.score || 0}/5
                </span>
             </div>
             
-            <div className="pt-3 border-t border-slate-200 mt-2">
+            <div className="mt-2 border-t border-line pt-3">
                <div className="flex items-center gap-3">
                   <div className={clsx(
-                    "w-8 h-8 rounded-lg flex items-center justify-center shadow-lg",
+                    "flex h-8 w-8 items-center justify-center",
                     challenge.winner === "tie" ? "bg-amber-500" : isWinner ? "bg-emerald-500" : "bg-rose-500"
                   )}>
                      <FontAwesomeIcon icon={faTrophy} className="text-xs text-white" />
                   </div>
                   <span className={clsx(
-                    "text-[10px] font-black uppercase tracking-widest",
+                    "text-[10px] font-semibold uppercase tracking-[0.14em]",
                     challenge.winner === "tie" ? "text-amber-600" : isWinner ? "text-emerald-600" : "text-rose-600"
                   )}>
-                    {challenge.winner === "tie" ? "Stalemate Achieved" : isWinner ? "Superior Mastery" : "Evaluation Lag"}
+                    {challenge.winner === "tie" ? "Draw" : isWinner ? "You won" : "You lost"}
                   </span>
                </div>
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
-               <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Engagement</p>
-               <p className="text-[10px] font-bold text-slate-700">{challenge.challengeType === "real_time" ? "Synchronous" : "Asynchronous"}</p>
+            <div className="border border-line bg-parchment p-3">
+               <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">Mode</p>
+               <p className="text-xs text-ink">{challenge.challengeType === "real_time" ? "Real time" : "Any time"}</p>
             </div>
-            <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
-               <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Terminal</p>
-               <p className="text-[10px] font-bold text-slate-700 tracking-tight">{formatTimeRemaining(challenge.expiresAt)}</p>
+            <div className="border border-line bg-parchment p-3">
+               <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">Expires</p>
+               <p className="text-xs text-ink">{formatTimeRemaining(challenge.expiresAt)}</p>
             </div>
           </div>
         )}
@@ -174,15 +172,15 @@ const ChallengeCard = ({
         {/* Live Progress */}
         {challenge.status === "in_progress" && (
           <div className="mt-6 space-y-3">
-            <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-400">
-              <span>Synchronizing Status</span>
-              <span className="text-indigo-600">
+            <div className="flex justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+              <span>Progress</span>
+              <span className="text-navy">
                 {((challenge.challengerResult ? 1 : 0) + (challenge.opponentResult ? 1 : 0)) * 50}%
               </span>
             </div>
-            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-1.5 w-full overflow-hidden bg-line-soft">
               <div
-                className="h-full bg-indigo-600 transition-all duration-1000 shadow-[0_0_10px_rgba(79,70,229,0.5)]"
+                className="h-full bg-navy transition-all duration-700"
                 style={{ width: `${((challenge.challengerResult ? 1 : 0) + (challenge.opponentResult ? 1 : 0)) * 50}%` }}
               />
             </div>
@@ -196,13 +194,13 @@ const ChallengeCard = ({
           <>
             <button
               onClick={onAccept}
-              className="flex-1 py-3 bg-emerald-600 text-white rounded-[1rem] font-black text-[9px] uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 active:scale-95"
+              className="h-10 flex-1 bg-navy text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-navy-dark"
             >
-              Authorize
+              Accept
             </button>
             <button
               onClick={onDecline}
-              className="px-6 py-4 bg-rose-50 text-rose-500 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all active:scale-95"
+              className="h-10 w-10 border border-line text-ink-muted transition-colors hover:border-red-200 hover:text-red-600"
             >
               <FontAwesomeIcon icon={faXmark} />
             </button>
@@ -212,29 +210,29 @@ const ChallengeCard = ({
         {canPlay() && (
           <button
             onClick={onStart}
-            className="w-full py-4 bg-indigo-600 text-white rounded-[1rem] font-black text-[9px] uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 active:scale-95 flex items-center justify-center gap-2"
+            className="flex h-10 w-full items-center justify-center gap-2 bg-navy text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-navy-dark"
           >
             <FontAwesomeIcon icon={faPlay} className="text-[9px]" />
-            Engage Topic
+            Start quiz
           </button>
         )}
 
         {challenge.status === "completed" && (
           <button
             onClick={onViewResults}
-            className="w-full py-4 bg-slate-900 text-white rounded-[1rem] font-black text-[9px] uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-100 active:scale-95 flex items-center justify-center gap-2"
+            className="flex h-10 w-full items-center justify-center gap-2 border border-navy bg-white text-[11px] font-semibold uppercase tracking-[0.14em] text-navy transition-colors hover:bg-navy-wash"
           >
             <FontAwesomeIcon icon={faEye} className="text-[9px]" />
-            Deep Analysis
+            View results
           </button>
         )}
 
         {challenge.status === "pending" && isChallenger && (
           <button
             onClick={onCancel}
-            className="w-full py-5 bg-slate-100 text-slate-400 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 transition-all active:scale-95 flex items-center justify-center gap-3"
+            className="flex h-10 w-full items-center justify-center border border-line text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted transition-colors hover:border-red-200 hover:text-red-600"
           >
-            Abort Dispatch
+            Cancel
           </button>
         )}
       </div>

@@ -45,29 +45,28 @@ const Pagination = ({
   if (totalItems === 0) return null;
 
   return (
-    <div className={`flex flex-col items-center gap-6 mt-16 ${className}`}>
-      {/* Premium Navigation Pill */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-white/40 backdrop-blur-xl border border-white rounded-2xl shadow-xl shadow-slate-200/50">
+    <div className={`mt-10 flex flex-col items-center gap-4 ${className}`}>
+      <div className="flex items-center border border-line bg-white">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed group"
+          className="flex h-10 w-10 items-center justify-center text-ink-muted transition-colors hover:bg-navy-wash hover:text-navy disabled:cursor-not-allowed disabled:opacity-30"
         >
-          <FontAwesomeIcon icon={faChevronLeft} className="text-xs group-hover:-translate-x-0.5 transition-transform" />
+          <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
         </button>
 
-        <div className="flex items-center gap-1 px-2 border-x border-slate-100">
+        <div className="flex items-center border-x border-line">
           {getVisiblePages().map((page, index) => (
             <button
               key={index}
               onClick={() => typeof page === "number" && onPageChange(page)}
               disabled={page === "..."}
-              className={`min-w-[40px] h-10 flex items-center justify-center text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${
+              className={`flex h-10 min-w-[2.5rem] items-center justify-center text-[11px] font-semibold transition-colors ${
                 page === currentPage
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
+                  ? "bg-navy text-white"
                   : page === "..."
-                  ? "text-slate-300 cursor-default"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  ? "cursor-default text-ink-muted"
+                  : "text-ink-muted hover:bg-navy-wash hover:text-navy"
               }`}
             >
               {page}
@@ -78,40 +77,36 @@ const Pagination = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed group"
+          className="flex h-10 w-10 items-center justify-center text-ink-muted transition-colors hover:bg-navy-wash hover:text-navy disabled:cursor-not-allowed disabled:opacity-30"
         >
-          <FontAwesomeIcon icon={faChevronRight} className="text-xs group-hover:translate-x-0.5 transition-transform" />
+          <FontAwesomeIcon icon={faChevronRight} className="text-xs" />
         </button>
       </div>
 
-      {/* Meta Stats Row */}
-      <div className="flex flex-col sm:flex-row items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+      <div className="flex flex-col items-center gap-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted sm:flex-row sm:gap-6">
         {showPageInfo && (
-          <div className="flex items-center gap-2">
-             <span className="text-slate-300">Viewing Range</span>
-             <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">{startItem} - {endItem}</span>
-             <span className="text-slate-300">from total</span>
-             <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{totalItems}</span>
-          </div>
+          <span>
+            Showing {startItem}–{endItem} of {totalItems}
+          </span>
         )}
 
         {showItemsPerPage && (
-          <div className="flex items-center gap-4 pl-6 border-l border-slate-100">
-            <span className="text-slate-300">Density</span>
-            <div className="flex gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-100">
-               {[6, 12, 24].map((size) => (
-                 <button
-                   key={size}
-                   onClick={() => onItemsPerPageChange(size)}
-                   className={`px-3 py-1 rounded-lg transition-all ${
-                     itemsPerPage === size 
-                       ? "bg-white text-blue-600 shadow-sm border border-slate-200" 
-                       : "text-slate-400 hover:text-slate-600"
-                   }`}
-                 >
-                   {size}
-                 </button>
-               ))}
+          <div className="flex items-center gap-2">
+            <span>Per page</span>
+            <div className="flex border border-line bg-white">
+              {[6, 12, 24].map((size) => (
+                <button
+                  key={size}
+                  onClick={() => onItemsPerPageChange(size)}
+                  className={`h-8 w-9 transition-colors ${
+                    itemsPerPage === size
+                      ? "bg-navy text-white"
+                      : "text-ink-muted hover:bg-navy-wash hover:text-navy"
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
             </div>
           </div>
         )}

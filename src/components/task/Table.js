@@ -76,104 +76,98 @@ const Table = ({ tasks, onTaskDelete, onTogglePublish, showDeleteButton }) => {
   };
 
   return (
-    <div className="w-full min-w-0 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-700">
-      <div className="w-full max-w-full overflow-x-auto no-scrollbar pb-4">
+    <div className="w-full min-w-0 border border-line bg-white">
+      <div className="w-full max-w-full overflow-x-auto">
         <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
           <thead>
-            <tr className="bg-slate-50/50 border-b border-slate-100">
-              <th className={clsx("px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400", isMyCollaborationsPage ? "w-[20%]" : "w-[25%]")}>Curriculum Details</th>
-              <th className={clsx("px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400", isMyCollaborationsPage ? "w-[10%]" : "w-[12%]")}>Target Persona</th>
-              <th className="w-[10%] px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Lead Author</th>
-              <th className="w-[10%] px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Created</th>
-              <th className="w-[8%] px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Resources</th>
+            <tr className="border-b border-line-soft bg-parchment">
+              <th className={clsx("px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted", isMyCollaborationsPage ? "w-[20%]" : "w-[25%]")}>Curriculum details</th>
+              <th className={clsx("px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted", isMyCollaborationsPage ? "w-[10%]" : "w-[12%]")}>Target persona</th>
+              <th className="w-[10%] px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Lead author</th>
+              <th className="w-[10%] px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Created</th>
+              <th className="w-[8%] px-6 py-4 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Resources</th>
               {isMyCollaborationsPage && (
-                <th className="w-[9%] px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Access</th>
+                <th className="w-[9%] px-6 py-4 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Access</th>
               )}
-              <th className={clsx("px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right", isMyCollaborationsPage ? "w-[23%]" : "w-[23%]")}>Actions</th>
+              <th className={clsx("px-6 py-4 text-right text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted", isMyCollaborationsPage ? "w-[23%]" : "w-[23%]")}>Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-line-soft">
             {tasks.length > 0 ? (
               tasks.map((task, index) => (
                 <tr
                   key={index}
-                  className="group hover:bg-blue-50/30 transition-all duration-300"
+                  className="group transition-colors hover:bg-navy-wash/40"
                 >
-                  <td className="px-8 py-5">
+                  <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100/50 flex-shrink-0 group-hover:scale-110 transition-transform shadow-inner">
-                         <FaList className="text-[14px]" />
+                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center bg-navy-wash text-navy">
+                         <FaList className="text-[13px]" />
                       </div>
-                      <p className="text-sm font-black text-slate-900 group-hover:text-blue-700 transition-colors line-clamp-1 truncate max-w-sm">
+                      <p className="max-w-sm truncate text-sm font-semibold text-ink">
                         {task?.topic || task?.title}
                       </p>
                     </div>
                   </td>
 
-                  <td className="px-6 py-5">
+                  <td className="px-6 py-4">
                     <div className={clsx(
-                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest opacity-80 max-w-full",
-                      PRIOTITYSTYELS[task?.levelOfLearning] || "bg-slate-50 border-slate-100 text-slate-500"
+                      "inline-flex max-w-full items-center gap-1.5 border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]",
+                      PRIOTITYSTYELS[task?.levelOfLearning] || "border-line bg-parchment text-ink-muted"
                     )}>
                       <span className="truncate">{task?.levelOfLearning}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-6 py-4">
                     <div className="flex items-center gap-2 max-w-full">
-                       <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 flex-shrink-0">
-                          {task?.name?.charAt(0) || "U"}
-                       </div>
-                       <span className="text-xs font-bold text-slate-600 truncate">{task?.name || "Author"}</span>
+                       <span className="truncate text-xs text-ink-muted">{task?.name || "Author"}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col">
-                       <span className="text-[11px] font-black text-slate-700">
-                          {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : '---'}
-                       </span>
-                       <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Entry</span>
-                    </div>
+                  <td className="px-6 py-4">
+                    <span className="text-xs text-ink-muted">
+                      {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : '---'}
+                    </span>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center justify-center gap-4 text-slate-400 font-bold text-[11px]">
-                      <div className="flex items-center gap-1.5 hover:text-purple-500 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-center gap-4 text-[11px] text-ink-muted">
+                      <span className="flex items-center gap-1.5">
                         <MdAttachFile className="text-xs" />
-                        <span>{task?.assets?.length || 0}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 hover:text-emerald-500 transition-colors">
+                        {task?.assets?.length || 0}
+                      </span>
+                      <span className="flex items-center gap-1.5">
                         <FaList className="text-[10px]" />
-                        <span>{task?.topics?.length || 0}</span>
-                      </div>
+                        {task?.topics?.length || 0}
+                      </span>
                     </div>
                   </td>
                   {isMyCollaborationsPage && (
-                    <td className="px-6 py-5 text-center">
+                    <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => publishClick(task._id, task.isPublished)}
                         className={clsx(
-                          "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ring-1",
-                          task.isPublished 
-                            ? "bg-emerald-50 text-emerald-600 ring-emerald-100" 
-                            : "bg-slate-50 text-slate-400 ring-slate-100"
+                          "border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors",
+                          task.isPublished
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-line bg-parchment text-ink-muted"
                         )}
                       >
                         {task.isPublished ? "Live" : "Draft"}
                       </button>
                     </td>
                   )}
-                  <td className="px-8 py-5 text-right">
+                  <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => openProjectHandler(task._id)}
-                        className="px-5 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95"
+                        className="h-9 bg-navy px-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-navy-dark"
                       >
-                        View Project
+                        View project
                       </button>
                       
                       {showDeleteButton && (
                         <button
                           onClick={() => deleteClicks(task._id)}
-                          className="px-5 py-2 bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 hover:border-red-100"
+                          className="h-9 border border-line px-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted transition-colors hover:border-red-200 hover:text-red-600"
                         >
                           Archive
                         </button>
@@ -188,7 +182,7 @@ const Table = ({ tasks, onTaskDelete, onTogglePublish, showDeleteButton }) => {
                   colSpan={isMyCollaborationsPage ? 7 : 6}
                   className="px-8 py-20 text-center"
                 >
-                  <p className="text-xs font-black text-slate-300 uppercase tracking-[0.3em]">No data records available.</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">No records available</p>
                 </td>
               </tr>
             )}

@@ -14,6 +14,13 @@ import ErrorPage from "../../../components/ErrorPage";
 import ChallengeCard from "../../../components/challenges/ChallengeCard";
 import ChallengeForm from "../../../components/challenges/ChallengeForm";
 import ChallengeResults from "../../../components/challenges/ChallengeResults";
+import {
+  Button,
+  EmptyState,
+  PageBanner,
+  PageShell,
+  SectionLabel,
+} from "../../../components/ui";
 import { getUser, getPublishedStudyPlans, getChallenges, createChallenge, acceptChallenge, declineChallenge, cancelChallenge } from "../../../utils/apiServices";
 
 const Challenges = () => {
@@ -194,132 +201,117 @@ const Challenges = () => {
   const filteredChallenges = getFilteredChallenges();
 
   return (
-    <div className="w-full min-h-screen p-4 sm:p-6 lg:p-10 bg-slate-50">
+    <PageShell>
       <ToastContainer autoClose={2000} />
-      <div className="max-w-7xl mx-auto">
-        {/* Premium Header - Battle Arena */}
-        <div className="mb-8 mt-4">
-          <div className="relative bg-gradient-to-br from-blue-700 via-indigo-800 to-slate-900 rounded-[2rem] p-5 sm:p-7 text-white shadow-xl overflow-hidden group">
-            {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:scale-110 transition-transform duration-1000 rotate-12">
-              <FontAwesomeIcon icon={faTrophy} className="text-[10rem]" />
-            </div>
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full blur-[120px] -translate-x-1/2 translate-y-1/2" />
-            
-            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="max-w-xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 mb-4 backdrop-blur-md">
-                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                   <span className="text-[9px] font-black uppercase tracking-[0.25em] text-blue-50">Challenges</span>
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-black mb-3 tracking-tight leading-none">Show what you know</h1>
-                <p className="text-blue-100/70 font-medium text-xs leading-relaxed max-w-lg">
-                   Challenge your friends to a quick quiz and see who knows more! Earn points and climb the leaderboard.
-                </p>
-              </div>
 
-              <div className="flex-shrink-0">
-                <button
-                  onClick={handleOpenCreateForm}
-                  className="group relative h-14 px-8 bg-white text-slate-900 rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-lg transition-all hover:scale-[1.03] active:scale-95 flex items-center gap-3 overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative z-10 w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center transition-transform group-hover:rotate-12">
-                    <FontAwesomeIcon icon={faPlus} />
-                  </div>
-                  <span className="relative z-10 whitespace-nowrap">New Challenge</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <PageBanner
+        title="Show what you know"
+        subtitle="Challenge your friends to a quick quiz and see who knows more. Earn points and climb the leaderboard."
+        actions={
+          <Button variant="secondary" size="lg" onClick={handleOpenCreateForm}>
+            <FontAwesomeIcon icon={faPlus} /> New challenge
+          </Button>
+        }
+      />
 
-        {/* Navigation & Stats Bar */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-8 animate-in fade-in slide-in-from-top-6 duration-1000">
-           <div className="inline-flex bg-white/60 backdrop-blur-2xl border border-slate-200/60 p-1.5 rounded-[3rem] shadow-sm overflow-x-auto no-scrollbar">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.id;
-                const count = challenges.filter(c => {
-                  const uid = Cookies.get("uid");
-                  if (tab.id === "my-challenges") return c.challengerId === uid;
-                  if (tab.id === "received") return c.opponentId === uid && c.status === "pending";
-                  if (tab.id === "active") return (c.challengerId === uid || c.opponentId === uid) && (c.status === "accepted" || c.status === "in_progress");
-                  if (tab.id === "completed") return (c.challengerId === uid || c.opponentId === uid) && c.status === "completed";
-                  return false;
-                }).length;
-
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex overflow-x-auto no-scrollbar border border-line bg-white">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const count = challenges.filter((c) => {
+              const uid = Cookies.get("uid");
+              if (tab.id === "my-challenges") return c.challengerId === uid;
+              if (tab.id === "received") return c.opponentId === uid && c.status === "pending";
+              if (tab.id === "active")
                 return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-black text-[9px] uppercase tracking-widest transition-all whitespace-nowrap ${
-                      isActive 
-                        ? "bg-slate-900 text-white shadow-md" 
-                        : "text-slate-400 hover:text-slate-700 hover:bg-slate-100/50"
+                  (c.challengerId === uid || c.opponentId === uid) &&
+                  (c.status === "accepted" || c.status === "in_progress")
+                );
+              if (tab.id === "completed")
+                return (c.challengerId === uid || c.opponentId === uid) && c.status === "completed";
+              return false;
+            }).length;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex h-10 items-center gap-2 whitespace-nowrap px-5 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+                  isActive
+                    ? "bg-navy text-white"
+                    : "text-ink-muted hover:bg-navy-wash hover:text-navy"
+                }`}
+              >
+                <FontAwesomeIcon icon={tab.icon} className="text-xs" />
+                {tab.label}
+                {count > 0 && (
+                  <span
+                    className={`flex h-5 min-w-[1.25rem] items-center justify-center px-1 text-[10px] ${
+                      isActive ? "bg-white/20 text-white" : "bg-parchment text-ink-muted"
                     }`}
                   >
-                    <FontAwesomeIcon icon={tab.icon} className={`text-xs ${isActive ? "text-emerald-400" : ""}`} />
-                    {tab.label}
-                    {count > 0 && (
-                      <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[9px] font-black transition-colors ${isActive ? "bg-white/15 text-white" : "bg-slate-100 text-slate-500"}`}>
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-           </div>
-
-           <div className="flex items-center gap-6 px-6 py-4 bg-white border border-slate-100 rounded-[2rem] shadow-sm self-start xl:self-auto min-w-[120px]">
-              <div className="flex flex-col pr-6">
-                 <span className="text-[16px] font-black text-slate-900 leading-none mb-1">{challenges.length}</span>
-                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Challenges</span>
-              </div>
-           </div>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-
-        {filteredChallenges.length === 0 && !loading ? (
-          <div className="bg-white/60 backdrop-blur-3xl border border-white rounded-[3.5rem] p-32 text-center shadow-xl animate-in zoom-in duration-500">
-             <div className="w-32 h-32 bg-slate-50 rounded-[3rem] flex items-center justify-center mx-auto mb-10 text-slate-200 shadow-inner">
-                <FontAwesomeIcon icon={activeTab === "received" ? faUsers : faTrophy} className="text-5xl" />
-             </div>
-             <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">No challenges found</h3>
-             <p className="text-slate-500 font-medium text-lg mb-12 max-w-sm mx-auto leading-relaxed">You don't have any challenges here yet. Start a new one to begin!</p>
-             {activeTab === "my-challenges" && (
-                <button
-                  onClick={handleOpenCreateForm}
-                  className="h-20 px-12 bg-blue-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:translate-y-[-2px] transition-all"
-                >
-                  Start a Challenge
-                </button>
-             )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 animate-in fade-in slide-in-from-bottom-12 duration-1000">
-            {filteredChallenges.map((challenge) => (
-              <ChallengeCard
-                key={challenge.id}
-                challenge={challenge}
-                currentUserId={Cookies.get("uid")}
-                onAccept={() => handleAcceptChallenge(challenge.id)}
-                onDecline={() => handleDeclineChallenge(challenge.id)}
-                onCancel={() => handleCancelChallenge(challenge.id)}
-                onViewResults={() => { setSelectedChallenge(challenge); setShowResults(true); }}
-                onStart={() => handleStartChallenge(challenge)}
-              />
-            ))}
-          </div>
-        )}
-
-        {showCreateForm && (
-          <ChallengeForm isOpen={showCreateForm} onClose={() => setShowCreateForm(false)} onSubmit={handleCreateChallenge} availableTopics={availableTopics} userData={userData} />
-        )}
-
-        {showResults && selectedChallenge && (
-          <ChallengeResults isOpen={showResults} onClose={() => { setShowResults(false); setSelectedChallenge(null); }} challenge={selectedChallenge} currentUserId={Cookies.get("uid")} />
-        )}
+        <SectionLabel>{challenges.length} challenges</SectionLabel>
       </div>
-    </div>
+
+      {filteredChallenges.length === 0 && !loading ? (
+        <EmptyState
+          title="No challenges here yet"
+          description="Nothing is logged under this tab. Start a new challenge to get going."
+          action={
+            activeTab === "my-challenges" && (
+              <Button onClick={handleOpenCreateForm}>Start a challenge</Button>
+            )
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filteredChallenges.map((challenge) => (
+            <ChallengeCard
+              key={challenge.id}
+              challenge={challenge}
+              currentUserId={Cookies.get("uid")}
+              onAccept={() => handleAcceptChallenge(challenge.id)}
+              onDecline={() => handleDeclineChallenge(challenge.id)}
+              onCancel={() => handleCancelChallenge(challenge.id)}
+              onViewResults={() => {
+                setSelectedChallenge(challenge);
+                setShowResults(true);
+              }}
+              onStart={() => handleStartChallenge(challenge)}
+            />
+          ))}
+        </div>
+      )}
+
+      {showCreateForm && (
+        <ChallengeForm
+          isOpen={showCreateForm}
+          onClose={() => setShowCreateForm(false)}
+          onSubmit={handleCreateChallenge}
+          availableTopics={availableTopics}
+          userData={userData}
+        />
+      )}
+
+      {showResults && selectedChallenge && (
+        <ChallengeResults
+          isOpen={showResults}
+          onClose={() => {
+            setShowResults(false);
+            setSelectedChallenge(null);
+          }}
+          challenge={selectedChallenge}
+          currentUserId={Cookies.get("uid")}
+        />
+      )}
+    </PageShell>
   );
 };
 

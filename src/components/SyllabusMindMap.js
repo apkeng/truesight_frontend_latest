@@ -5,6 +5,7 @@ import { MdUpload, MdDelete, MdOutlineAutoAwesome } from "react-icons/md";
 import { FaBookOpen, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import clsx from "clsx";
 import { uploadSyllabus, getSyllabus, deleteSyllabus, createProject } from "../utils/apiServices";
+import { Highlight } from "./ui";
 
 const LEVELS = [
   { id: "Primary School", label: "Primary School" },
@@ -40,36 +41,36 @@ const CreateProjectModal = ({ topic, open, onClose, onCreated }) => {
   return (
     <div className="fixed inset-0 z-[200] overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
-        <div className="relative w-full max-w-sm bg-white rounded-[2rem] p-6 shadow-2xl z-10">
+        <div className="fixed inset-0 bg-ink/50" onClick={onClose} />
+        <div className="relative z-10 w-full max-w-sm border border-line bg-white p-6">
           <button
             onClick={onClose}
-            className="absolute right-5 top-5 w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors"
+            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center border border-line text-ink-muted transition-colors hover:text-ink"
           >
             <IoMdClose />
           </button>
 
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-1">
-              <MdOutlineAutoAwesome className="text-indigo-500 text-lg" />
-              <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Create Project</h3>
+          <div className="mb-6">
+            <div className="mb-1 flex items-center gap-2">
+              <MdOutlineAutoAwesome className="text-base text-navy" />
+              <h3 className="font-display text-lg font-bold text-ink">Create Project</h3>
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">
-              Topic: <span className="text-slate-800 font-bold">{topic?.name}</span>
+            <p className="text-xs text-ink-muted">
+              Topic: <span className="font-semibold text-ink">{topic?.name}</span>
             </p>
           </div>
 
-          <div className="space-y-2 mb-6">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Complexity Level</p>
+          <div className="mb-6 space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Complexity level</p>
             {LEVELS.map((lvl) => (
               <div
                 key={lvl.id}
                 onClick={() => setLevelOfLearning(lvl.id)}
                 className={clsx(
-                  "cursor-pointer px-4 py-2.5 rounded-xl border transition-all text-[11px] font-bold",
+                  "cursor-pointer border px-4 py-2.5 text-xs font-semibold transition-colors",
                   levelOfLearning === lvl.id
-                    ? "border-slate-900 bg-slate-900 text-white"
-                    : "border-slate-100 bg-slate-50 text-slate-700 hover:border-slate-200"
+                    ? "border-navy bg-navy text-white"
+                    : "border-line bg-white text-ink hover:border-navy/40"
                 )}
               >
                 {lvl.label}
@@ -81,10 +82,10 @@ const CreateProjectModal = ({ topic, open, onClose, onCreated }) => {
             onClick={handleCreate}
             disabled={isLoading}
             className={clsx(
-              "w-full h-11 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
+              "h-11 w-full text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors",
               isLoading
-                ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-lg shadow-indigo-100"
+                ? "cursor-not-allowed bg-line text-ink-muted"
+                : "bg-navy text-white hover:bg-navy-dark"
             )}
           >
             {isLoading ? (
@@ -95,7 +96,7 @@ const CreateProjectModal = ({ topic, open, onClose, onCreated }) => {
                 <span>Generating...</span>
               </span>
             ) : (
-              "Initiate Project"
+              "Create project"
             )}
           </button>
         </div>
@@ -108,22 +109,22 @@ const TopicCard = ({ topic, onCreateProject }) => {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group">
+    <div className="group border border-line bg-white transition-colors hover:border-navy/40">
       <div className="p-4">
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex-1 min-w-0">
-            <h4 className="text-[12px] font-black text-slate-900 uppercase tracking-tight leading-snug truncate">
+            <h4 className="truncate text-[12px] font-bold uppercase tracking-[0.06em] text-ink">
               {topic.name}
             </h4>
             {topic.description && (
-              <p className="text-[10px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2">
+              <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-ink-muted">
                 {topic.description}
               </p>
             )}
           </div>
           <button
             onClick={() => onCreateProject(topic)}
-            className="flex-shrink-0 flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm shadow-indigo-200 whitespace-nowrap"
+            className="flex flex-shrink-0 items-center gap-1 whitespace-nowrap bg-navy px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-navy-dark"
           >
             <IoMdAdd className="text-sm" />
             Project
@@ -134,7 +135,7 @@ const TopicCard = ({ topic, onCreateProject }) => {
           <>
             <button
               onClick={() => setExpanded(!expanded)}
-              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors mt-2"
+              className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted transition-colors hover:text-navy"
             >
               {expanded ? <FaChevronUp className="text-[8px]" /> : <FaChevronDown className="text-[8px]" />}
               {topic.subtopics.length} subtopics
@@ -145,7 +146,7 @@ const TopicCard = ({ topic, onCreateProject }) => {
                 {topic.subtopics.map((sub, i) => (
                   <span
                     key={i}
-                    className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[9px] font-bold rounded-lg border border-indigo-100"
+                    className="border border-navy/15 bg-navy-wash px-2.5 py-1 text-[10px] font-semibold text-navy"
                   >
                     {sub}
                   </span>
@@ -185,8 +186,8 @@ const UploadZone = ({ onUpload, isUploading }) => {
       onDrop={handleDrop}
       onClick={() => !isUploading && inputRef.current?.click()}
       className={clsx(
-        "relative cursor-pointer border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300",
-        dragOver ? "border-indigo-400 bg-indigo-50" : "border-slate-200 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50/50"
+        "relative cursor-pointer border border-dashed p-10 text-center transition-colors",
+        dragOver ? "border-navy bg-navy-wash" : "border-line bg-parchment hover:border-navy/40"
       )}
     >
       <input
@@ -198,20 +199,20 @@ const UploadZone = ({ onUpload, isUploading }) => {
       />
       <div className="flex flex-col items-center gap-3">
         <div className={clsx(
-          "w-14 h-14 rounded-2xl flex items-center justify-center transition-colors",
-          dragOver ? "bg-indigo-100 text-indigo-600" : "bg-white text-slate-400 shadow-sm"
+          "flex h-12 w-12 items-center justify-center border transition-colors",
+          dragOver ? "border-navy bg-white text-navy" : "border-line bg-white text-ink-muted"
         )}>
           {isUploading ? (
-            <div className="w-6 h-6 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-navy" />
           ) : (
             <MdUpload className="text-2xl" />
           )}
         </div>
         <div>
-          <p className="text-sm font-black text-slate-700 mb-0.5">
+          <p className="mb-1 font-display text-base font-bold text-ink">
             {isUploading ? "Analysing syllabus..." : "Drop your syllabus PDF here"}
           </p>
-          <p className="text-[10px] text-slate-400 font-medium">
+          <p className="text-xs text-ink-muted">
             {isUploading ? "AI is extracting topics" : "or click to browse · PDF only · max 10MB"}
           </p>
         </div>
@@ -279,7 +280,7 @@ const SyllabusMindMap = ({ onProjectCreated }) => {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 bg-slate-100 rounded-2xl animate-pulse" />
+          <div key={i} className="h-20 animate-pulse border border-line bg-parchment" />
         ))}
       </div>
     );
@@ -292,32 +293,24 @@ const SyllabusMindMap = ({ onProjectCreated }) => {
       ) : (
         <div className="space-y-4">
           {/* Syllabus header */}
-          <div className="flex items-start justify-between gap-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <FaBookOpen className="text-indigo-600 text-sm" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-0.5">Current Syllabus</p>
-                <h3 className="text-sm font-black text-slate-900 truncate">{syllabus.mindmap?.syllabusTitle || syllabus.filename}</h3>
-                {syllabus.mindmap?.description && (
-                  <p className="text-[10px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2">{syllabus.mindmap.description}</p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+          <Highlight
+            icon={<FaBookOpen />}
+            label="Current syllabus"
+            title={syllabus.mindmap?.syllabusTitle || syllabus.filename}
+            description={syllabus.mindmap?.description}
+            action={
               <button
                 onClick={handleDelete}
-                className="w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-colors"
+                className="flex h-8 w-8 items-center justify-center border border-navy/15 bg-white text-ink-muted transition-colors hover:border-red-200 hover:text-red-600"
                 title="Remove syllabus"
               >
                 <MdDelete className="text-base" />
               </button>
-            </div>
-          </div>
+            }
+          />
 
           {/* Topic cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {syllabus.mindmap?.topics?.map((topic) => (
               <TopicCard
                 key={topic.id}
@@ -330,7 +323,7 @@ const SyllabusMindMap = ({ onProjectCreated }) => {
           {/* Re-upload */}
           <button
             onClick={() => setSyllabus(null)}
-            className="w-full py-2.5 rounded-xl border border-dashed border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-colors"
+            className="w-full border border-dashed border-line py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted transition-colors hover:border-navy/40 hover:text-navy"
           >
             Upload a different syllabus
           </button>

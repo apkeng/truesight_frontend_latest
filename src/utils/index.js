@@ -48,9 +48,11 @@ export function getInitials(fullName) {
   return initialsStr;
 }
 
+// Learning-level chips share one muted treatment so the level reads as a label,
+// not as a status colour.
 export const PRIOTITYSTYELS = {
-  "Undergraduate Student": "bg-red-50 border-red-100 text-red-600",
-  "High School": "bg-yellow-50 border-yellow-100 text-yellow-600",
-  "Primary School": "bg-blue-50 border-blue-100 text-blue-600",
-  "Post Graduate": "bg-green-50 border-green-100 text-green-600",
+  "Undergraduate Student": "bg-parchment border-line text-ink-muted",
+  "High School": "bg-parchment border-line text-ink-muted",
+  "Primary School": "bg-parchment border-line text-ink-muted",
+  "Post Graduate": "bg-parchment border-line text-ink-muted",
 };

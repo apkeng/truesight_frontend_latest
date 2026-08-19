@@ -48,86 +48,77 @@ const ProjectCard = ({ task, onTaskDelete, showDeleteButton }) => {
   };
 
   return (
-    <div className="group relative w-full bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col justify-between hover:-translate-y-1 ring-1 ring-black/5 overflow-hidden">
-      {/* Decorative Background Gradient */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-50/50 to-transparent -mr-10 -mt-10 rounded-full blur-2xl group-hover:bg-purple-100/50 transition-colors duration-500" />
-      
-      {/* Upper Section */}
-      <div className="relative">
-        <div className="flex justify-between items-start mb-3">
-          <div
+    <div className="group flex w-full flex-col justify-between border border-line bg-white transition-colors hover:border-navy/40">
+      <div className="p-5">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <span
             className={clsx(
-              "flex gap-1.5 items-center text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest border",
-              PRIOTITYSTYELS[task?.levelOfLearning] || "bg-slate-50 text-slate-500 border-slate-100"
+              "inline-flex items-center gap-1.5 border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]",
+              PRIOTITYSTYELS[task?.levelOfLearning] || "border-line bg-parchment text-ink-muted"
             )}
           >
             <span className="text-xs opacity-70">{ICONS[task?.levelOfLearning]}</span>
             <span>{task?.levelOfLearning}</span>
-          </div>
-          
-          <div className="bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border border-purple-100">
-             Private
-          </div>
+          </span>
+
+          <span className="border border-navy/20 bg-navy-wash px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy">
+            Private
+          </span>
         </div>
 
-        {/* Project Title */}
-        <div className="flex items-start gap-2.5 mb-4">
-          <div className="p-2.5 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl shadow-md shrink-0">
-            <AiTwotoneFolderOpen className="text-white text-lg" />
+        <div className="mb-4 flex items-start gap-3">
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center bg-navy text-white">
+            <AiTwotoneFolderOpen className="text-base" />
           </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-base font-black text-slate-900 leading-tight mb-1 group-hover:text-purple-600 transition-colors line-clamp-1">
+          <div className="min-w-0 flex-1">
+            <h4 className="line-clamp-2 font-display text-base font-bold leading-snug text-ink">
               {task?.topic || task?.title}
             </h4>
-            <div className="flex flex-wrap items-center gap-y-0.5 gap-x-2">
-              <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1 whitespace-nowrap">
-                <span className="w-1 h-1 rounded-full bg-purple-400" />
-                Personal Workspace
-              </p>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-ink-muted">
+              <span>Personal workspace</span>
               {task?.createdAt && (
-                <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1 whitespace-nowrap">
-                  <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                <span>
                   {(() => {
-                    if (!task?.createdAt) return "N/A";
-                    const date = task.createdAt._seconds 
-                      ? new Date(task.createdAt._seconds * 1000) 
+                    const date = task.createdAt._seconds
+                      ? new Date(task.createdAt._seconds * 1000)
                       : new Date(task.createdAt);
                     return isNaN(date.getTime()) ? "Recent" : date.toLocaleDateString();
                   })()}
-                </p>
+                </span>
               )}
             </div>
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex-1 bg-slate-50 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-slate-100">
-            <MdAttachFile className="text-purple-500 text-[10px]" />
-            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{task?.assets?.length || 0} Assets</span>
+        <div className="flex items-center gap-2">
+          <div className="flex flex-1 items-center justify-center gap-1.5 border border-line bg-parchment py-2">
+            <MdAttachFile className="text-[11px] text-navy" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+              {task?.assets?.length || 0} Assets
+            </span>
           </div>
-          <div className="flex-1 bg-slate-50 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-slate-100">
-            <FaList className="text-emerald-500 text-[10px]" />
-            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{task?.topics?.length || 0} Modules</span>
+          <div className="flex flex-1 items-center justify-center gap-1.5 border border-line bg-parchment py-2">
+            <FaList className="text-[11px] text-navy" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+              {task?.topics?.length || 0} Modules
+            </span>
           </div>
         </div>
-
       </div>
 
-      {/* Footer Actions */}
-      <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
+      <div className="flex items-center gap-2 border-t border-line-soft p-4">
         <button
           onClick={openProjectHandler}
-          className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-[9px] font-black text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-all duration-300 shadow-md uppercase tracking-widest active:scale-95"
+          className="flex h-10 flex-1 items-center justify-center gap-2 bg-navy text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-navy-dark"
         >
-          Resume Building
-          <FaChevronRight className="text-[7px]" />
+          Resume building
+          <FaChevronRight className="text-[8px]" />
         </button>
-        
+
         {showDeleteButton && (
           <button
             onClick={deleteClick}
-            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300 border border-transparent hover:border-red-100 active:scale-90"
+            className="flex h-10 w-10 items-center justify-center border border-line text-ink-muted transition-colors hover:border-red-200 hover:text-red-600"
           >
             <RiDeleteBin6Line className="h-4 w-4" />
           </button>

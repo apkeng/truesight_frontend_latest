@@ -70,17 +70,17 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
       {[1, 2, 3].map((s) => (
         <React.Fragment key={s}>
           <div className="flex flex-col items-center gap-2 relative">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${
-              step >= s ? "bg-slate-900 border-slate-900 text-white shadow-lg" : "bg-white border-slate-200 text-slate-300"
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-all ${
+              step >= s ? "bg-navy border-slate-900 text-white " : "bg-white border-line text-ink-muted"
             }`}>
               {step > s ? <FontAwesomeIcon icon={faCheckCircle} /> : s}
             </div>
-            <span className={`text-[10px] font-black uppercase tracking-widest ${step >= s ? "text-slate-900" : "text-slate-300"}`}>
+            <span className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${step >= s ? "text-ink" : "text-ink-muted"}`}>
               {s === 1 ? "Preview" : s === 2 ? "Address" : "Review"}
             </span>
           </div>
           {s < 3 && (
-            <div className={`flex-1 h-0.5 mx-4 transition-all ${step > s ? "bg-slate-900" : "bg-slate-100"}`} />
+            <div className={`flex-1 h-0.5 mx-4 transition-all ${step > s ? "bg-navy" : "bg-parchment"}`} />
           )}
         </React.Fragment>
       ))}
@@ -93,7 +93,7 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
         <>
           <button 
             onClick={step === 1 ? onBack : prevStep}
-            className="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold mb-8 transition-colors"
+            className="flex items-center gap-2 text-ink-muted hover:text-ink font-bold mb-8 transition-colors"
           >
             <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
             {step === 1 ? "Back to Details" : "Previous Step"}
@@ -102,44 +102,44 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
         </>
       )}
 
-      <div className="bg-white rounded-[3rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden min-h-[500px] flex flex-col">
+      <div className="bg-white    border border-line overflow-hidden min-h-[500px] flex flex-col">
         
         {/* Step 1: Preview */}
         {step === 1 && (
           <div className="p-10 flex-1 flex flex-col">
-            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-8">Redemption Preview</h2>
+            <h2 className="text-2xl font-semibold text-ink uppercase tracking-tight mb-8">Redemption Preview</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 flex-1">
               <div className="space-y-6">
-                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                <div className="p-6 bg-parchment  border border-line">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm overflow-hidden p-2">
-                       <img src={reward.imageUrl} className="w-full h-full object-cover rounded-xl" alt="" />
+                    <div className="w-16 h-16  bg-white  overflow-hidden p-2">
+                       <img src={reward.imageUrl} className="w-full h-full object-cover " alt="" />
                     </div>
                     <div>
-                      <h4 className="font-black text-slate-900 uppercase tracking-tight">{reward.name}</h4>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      <h4 className="font-semibold text-ink uppercase tracking-tight">{reward.name}</h4>
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.14em]">
                         {specifications.color}{specifications.size ? ` • Size ${specifications.size}` : ""}
                       </p>
                     </div>
                   </div>
-                  <div className="space-y-3 pt-4 border-t border-slate-200">
-                    <div className="flex justify-between text-xs font-bold text-slate-500">
+                  <div className="space-y-3 pt-4 border-t border-line">
+                    <div className="flex justify-between text-xs font-bold text-ink-muted">
                       <span>Base Points</span>
                       <span>{reward.pointsRequired}</span>
                     </div>
-                    <div className="flex justify-between text-xs font-bold text-slate-500">
+                    <div className="flex justify-between text-xs font-bold text-ink-muted">
                       <span>Processing Fee</span>
                       <span className="text-emerald-600 uppercase">FREE</span>
                     </div>
-                    <div className="flex justify-between text-sm font-black text-slate-900 pt-3 border-t border-dashed border-slate-200">
+                    <div className="flex justify-between text-sm font-semibold text-ink pt-3 border-t border-dashed border-line">
                       <span>Total Deduction</span>
                       <span>{reward.pointsRequired} Mastery Points</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100/50">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-3 flex items-center gap-2">
+                <div className="p-6 bg-navy-wash/50  border border-navy/15/50">
+                  <h4 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-indigo-400 mb-3 flex items-center gap-2">
                     <FontAwesomeIcon icon={faTicket} />
                     Apply Coupon Code
                   </h4>
@@ -147,24 +147,24 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
                     <input 
                       type="text" 
                       placeholder="Enter code"
-                      className="flex-1 h-12 bg-white border border-indigo-100 rounded-xl px-4 text-xs font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all uppercase"
+                      className="flex-1 h-12 bg-white border border-navy/15  px-4 text-xs font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all uppercase"
                       value={coupon}
                       onChange={(e) => setCoupon(e.target.value)}
                     />
-                    <button className="h-12 px-6 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest">Apply</button>
+                    <button className="h-12 px-6 bg-navy text-white  text-xs font-semibold uppercase tracking-[0.14em]">Apply</button>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-6">
-                 <div className="bg-slate-900 rounded-3xl p-6 text-white relative overflow-hidden group">
+                 <div className="bg-navy  p-6 text-white relative overflow-hidden group">
                     <div className="absolute right-0 top-0 p-8 opacity-10 rotate-12">
                       <FontAwesomeIcon icon={faReceipt} className="text-6xl" />
                     </div>
                     <div className="relative z-10">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white/50">Post-Redemption Balance</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">Post-Redemption Balance</span>
                       <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-3xl font-black">{userPoints - reward.pointsRequired}</span>
+                        <span className="text-3xl font-semibold">{userPoints - reward.pointsRequired}</span>
                         <span className="text-xs font-bold opacity-60">Points</span>
                       </div>
                       <p className="text-[10px] text-white/40 mt-4 leading-relaxed font-medium">
@@ -173,19 +173,19 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
                     </div>
                  </div>
                  
-                 <div className="p-6 border border-slate-100 rounded-3xl space-y-4">
-                    <div className="flex items-center gap-3 text-slate-500">
+                 <div className="p-6 border border-line  space-y-4">
+                    <div className="flex items-center gap-3 text-ink-muted">
                        <FontAwesomeIcon icon={faCreditCard} className="text-xs" />
-                       <span className="text-[10px] font-bold uppercase tracking-widest">Additional Payment Options Available</span>
+                       <span className="text-[10px] font-bold uppercase tracking-[0.14em]">Additional Payment Options Available</span>
                     </div>
-                    <p className="text-[10px] text-slate-400 font-medium">
+                    <p className="text-[10px] text-ink-muted font-medium">
                        Would you like to combine points with cash? (Coming Soon)
                     </p>
                  </div>
               </div>
             </div>
             <div className="mt-10 flex justify-end">
-              <button onClick={nextStep} className="h-16 px-10 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl flex items-center gap-3">
+              <button onClick={nextStep} className="h-16 px-10 bg-navy text-white  text-xs font-semibold uppercase tracking-[0.14em]  flex items-center gap-3">
                 Continue to Shipping
                 <FontAwesomeIcon icon={faArrowRight} />
               </button>
@@ -196,14 +196,14 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
         {/* Step 2: Address */}
         {step === 2 && (
           <div className="p-10 flex-1 flex flex-col">
-            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-8">Shipping Coordinates</h2>
+            <h2 className="text-2xl font-semibold text-ink uppercase tracking-tight mb-8">Shipping Coordinates</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 flex-1">
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Full Name</label>
+                  <label className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] ml-2">Full Name</label>
                   <input 
                     type="text" 
-                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-6 text-xs font-bold outline-none focus:bg-white focus:ring-4 focus:ring-slate-900/5 transition-all"
+                    className="w-full h-14 bg-parchment border border-line  px-6 text-xs font-bold outline-none focus:bg-white focus:ring-4 focus:ring-slate-900/5 transition-all"
                     placeholder="John Doe"
                     value={address.fullName}
                     onChange={(e) => setAddress({...address, fullName: e.target.value})}
@@ -211,20 +211,20 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Email</label>
+                    <label className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] ml-2">Email</label>
                     <input 
                       type="email" 
-                      className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-6 text-xs font-bold outline-none"
+                      className="w-full h-14 bg-parchment border border-line  px-6 text-xs font-bold outline-none"
                       placeholder="john@example.com"
                       value={address.email}
                       onChange={(e) => setAddress({...address, email: e.target.value})}
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Phone</label>
+                    <label className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] ml-2">Phone</label>
                     <input 
                       type="tel" 
-                      className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-6 text-xs font-bold outline-none"
+                      className="w-full h-14 bg-parchment border border-line  px-6 text-xs font-bold outline-none"
                       placeholder="+1 (555) 000"
                       value={address.phone}
                       onChange={(e) => setAddress({...address, phone: e.target.value})}
@@ -232,9 +232,9 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Delivery Address</label>
+                  <label className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] ml-2">Delivery Address</label>
                   <textarea 
-                    className="w-full h-24 bg-slate-50 border border-slate-100 rounded-2xl p-6 text-xs font-bold outline-none resize-none"
+                    className="w-full h-24 bg-parchment border border-line  p-6 text-xs font-bold outline-none resize-none"
                     placeholder="Street name, Apartment, Suite..."
                     value={address.street}
                     onChange={(e) => setAddress({...address, street: e.target.value})}
@@ -245,27 +245,27 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">City</label>
+                    <label className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] ml-2">City</label>
                     <input
                       type="text"
-                      className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-6 text-xs font-bold outline-none focus:bg-white focus:ring-4 focus:ring-slate-900/5 transition-all"
+                      className="w-full h-14 bg-parchment border border-line  px-6 text-xs font-bold outline-none focus:bg-white focus:ring-4 focus:ring-slate-900/5 transition-all"
                       placeholder="Mumbai"
                       value={address.city}
                       onChange={(e) => setAddress({...address, city: e.target.value})}
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">PIN / ZIP Code</label>
+                    <label className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] ml-2">PIN / ZIP Code</label>
                     <input
                       type="text"
-                      className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-6 text-xs font-bold outline-none focus:bg-white focus:ring-4 focus:ring-slate-900/5 transition-all"
+                      className="w-full h-14 bg-parchment border border-line  px-6 text-xs font-bold outline-none focus:bg-white focus:ring-4 focus:ring-slate-900/5 transition-all"
                       placeholder="400001"
                       value={address.zipCode}
                       onChange={(e) => setAddress({...address, zipCode: e.target.value})}
                     />
                   </div>
                 </div>
-                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 text-amber-700 text-[10px] font-bold leading-relaxed">
+                <div className="p-4 bg-amber-50  border border-amber-100 text-amber-700 text-[10px] font-bold leading-relaxed">
                   Make sure the delivery details are accurate as points will be deducted immediately after this step.
                 </div>
               </div>
@@ -274,7 +274,7 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
               <button 
                 onClick={nextStep}
                 disabled={!address.fullName || !address.street}
-                className="h-16 px-10 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl flex items-center gap-3 disabled:opacity-50"
+                className="h-16 px-10 bg-navy text-white  text-xs font-semibold uppercase tracking-[0.14em]  flex items-center gap-3 disabled:opacity-50"
               >
                 Review Order
                 <FontAwesomeIcon icon={faArrowRight} />
@@ -286,32 +286,32 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
         {/* Step 3: Review */}
         {step === 3 && (
           <div className="p-10 flex-1 flex flex-col">
-            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-8">Final Verification</h2>
+            <h2 className="text-2xl font-semibold text-ink uppercase tracking-tight mb-8">Final Verification</h2>
             <div className="space-y-8 flex-1">
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-6">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Acquisition Summary</h4>
-                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                    <h4 className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] ml-2">Acquisition Summary</h4>
+                    <div className="p-6 bg-parchment  border border-line">
                        <div className="flex items-center gap-4 mb-4">
-                          <img src={reward.imageUrl} className="w-12 h-12 rounded-xl object-cover" alt="" />
+                          <img src={reward.imageUrl} className="w-12 h-12  object-cover" alt="" />
                           <div>
-                            <p className="font-black text-slate-900 text-sm">{reward.name}</p>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{specifications.color}{specifications.size ? ` • ${specifications.size}` : ""}</p>
+                            <p className="font-semibold text-ink text-sm">{reward.name}</p>
+                            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.14em]">{specifications.color}{specifications.size ? ` • ${specifications.size}` : ""}</p>
                           </div>
                        </div>
-                       <div className="flex justify-between items-center py-3 border-t border-slate-200">
-                          <span className="text-xs font-bold text-slate-500">Points to be Deducted</span>
-                          <span className="text-sm font-black text-slate-900">-{reward.pointsRequired}</span>
+                       <div className="flex justify-between items-center py-3 border-t border-line">
+                          <span className="text-xs font-bold text-ink-muted">Points to be Deducted</span>
+                          <span className="text-sm font-semibold text-ink">-{reward.pointsRequired}</span>
                        </div>
                     </div>
                   </div>
 
                   <div className="space-y-6">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Logistics Center</h4>
-                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                       <p className="text-xs font-black text-slate-900 mb-1 uppercase tracking-tight">{address.fullName}</p>
-                       <p className="text-xs font-medium text-slate-500 leading-relaxed">{address.street}, {address.city || "Mumbai"}</p>
-                       <div className="flex items-center gap-4 mt-4 text-[10px] font-bold text-slate-400">
+                    <h4 className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] ml-2">Logistics Center</h4>
+                    <div className="p-6 bg-parchment  border border-line">
+                       <p className="text-xs font-semibold text-ink mb-1 uppercase tracking-tight">{address.fullName}</p>
+                       <p className="text-xs font-medium text-ink-muted leading-relaxed">{address.street}, {address.city || "Mumbai"}</p>
+                       <div className="flex items-center gap-4 mt-4 text-[10px] font-bold text-ink-muted">
                           <span>{address.phone}</span>
                           <span className="w-1 h-1 bg-slate-300 rounded-full" />
                           <span>{address.email}</span>
@@ -320,19 +320,19 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
                   </div>
                </div>
 
-               <div className="bg-indigo-600 rounded-3xl p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden shadow-2xl shadow-indigo-200">
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-indigo-600" />
+               <div className="bg-navy  p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden  ">
+                  <div className="absolute inset-0 bg-navy" />
                   <div className="absolute -right-4 -bottom-4 opacity-10">
                      <FontAwesomeIcon icon={faCalendarCheck} className="text-8xl" />
                   </div>
                   <div className="relative z-10">
-                     <h3 className="text-lg font-black uppercase tracking-widest mb-1">Authorization Protocol</h3>
+                     <h3 className="text-lg font-semibold uppercase tracking-[0.14em] mb-1">Authorization Protocol</h3>
                      <p className="text-xs font-medium text-indigo-100 opacity-80">By confirming, you authorize the immediate deduction of {reward.pointsRequired} Mastery Points.</p>
                   </div>
                   <button 
                     disabled={isProcessing}
                     onClick={handleConfirmRedemption}
-                    className="relative z-10 h-14 px-10 bg-white text-indigo-600 rounded-xl text-xs font-black uppercase tracking-widest shadow-xl active:scale-95 disabled:opacity-70 transition-all"
+                    className="relative z-10 h-14 px-10 bg-white text-navy  text-xs font-semibold uppercase tracking-[0.14em]  active:scale-95 disabled:opacity-70 transition-all"
                   >
                     {isProcessing ? "Authorizing..." : "Confirm Acquisition"}
                   </button>
@@ -347,34 +347,34 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
             <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-4xl mb-8 animate-bounce">
                <FontAwesomeIcon icon={faCircleCheck} />
             </div>
-            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-4 leading-none">Order Secured</h2>
-            <p className="text-slate-500 font-medium max-w-md mb-10">
+            <h2 className="text-3xl font-semibold text-ink uppercase tracking-tight mb-4 leading-none">Order Secured</h2>
+            <p className="text-ink-muted font-medium max-w-md mb-10">
                Congratulations achievement hunter! Your institutional reward has been logged and is moving through the logistics pipeline.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-2xl mb-12">
-               <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                  <FontAwesomeIcon icon={faReceipt} className="text-slate-400 mb-3" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Reference ID</span>
-                  <p className="text-xs font-black text-slate-900">{orderId}</p>
+               <div className="p-6 bg-parchment  border border-line">
+                  <FontAwesomeIcon icon={faReceipt} className="text-ink-muted mb-3" />
+                  <span className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] block mb-1">Reference ID</span>
+                  <p className="text-xs font-semibold text-ink">{orderId}</p>
                </div>
-               <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                  <FontAwesomeIcon icon={faBoxOpen} className="text-slate-400 mb-3" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Status</span>
-                  <p className="text-xs font-black text-emerald-600 uppercase">Processing</p>
+               <div className="p-6 bg-parchment  border border-line">
+                  <FontAwesomeIcon icon={faBoxOpen} className="text-ink-muted mb-3" />
+                  <span className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] block mb-1">Status</span>
+                  <p className="text-xs font-semibold text-emerald-600 uppercase">Processing</p>
                </div>
-               <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                  <FontAwesomeIcon icon={faCalendarCheck} className="text-slate-400 mb-3" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Est. Delivery</span>
-                  <p className="text-xs font-black text-slate-900">May 15, 2026</p>
+               <div className="p-6 bg-parchment  border border-line">
+                  <FontAwesomeIcon icon={faCalendarCheck} className="text-ink-muted mb-3" />
+                  <span className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] block mb-1">Est. Delivery</span>
+                  <p className="text-xs font-semibold text-ink">May 15, 2026</p>
                </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-               <button onClick={onBack} className="flex-1 h-14 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all">
+               <button onClick={onBack} className="flex-1 h-14 bg-parchment text-ink-muted  text-xs font-semibold uppercase tracking-[0.14em] hover:bg-slate-200 transition-all">
                   Return to Vault
                </button>
-               <button className="flex-1 h-14 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
+               <button className="flex-1 h-14 bg-navy text-white  text-xs font-semibold uppercase tracking-[0.14em]  flex items-center justify-center gap-3">
                   <FontAwesomeIcon icon={faTruckPlane} />
                   Track Order
                </button>
