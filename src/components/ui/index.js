@@ -51,8 +51,12 @@ export const PageBanner = ({ title, subtitle, stat, actions, children }) => (
   </div>
 );
 
-/** Bordered stat tile for the "Your progress" style rows. */
-export const StatCard = ({ label, value, hint, onClick }) => {
+/**
+ * Bordered stat tile for the "Your progress" style rows. Pass `loading` while
+ * the number is still in flight - the tile keeps its size and shows a
+ * placeholder instead of a stand-in value that reads as real data.
+ */
+export const StatCard = ({ label, value, hint, onClick, loading = false }) => {
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
@@ -65,7 +69,11 @@ export const StatCard = ({ label, value, hint, onClick }) => {
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
         {label}
       </p>
-      <p className="mt-2 font-display text-[2rem] font-bold leading-none text-ink">{value}</p>
+      {loading ? (
+        <span className="skeleton-shimmer mt-2 block h-8 w-24 bg-line-soft" />
+      ) : (
+        <p className="mt-2 font-display text-[2rem] font-bold leading-none text-ink">{value}</p>
+      )}
       {hint && <p className="mt-2 text-xs text-ink-muted">{hint}</p>}
     </Tag>
   );

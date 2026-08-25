@@ -5,7 +5,6 @@ import { getUser, getProjects, getStudyPlans } from "../../../utils/apiServices"
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../../firebase/firebase-config";
 import { toast } from "react-toastify";
-import { SkeletonStatsCard } from "../../../components/SkeletonLoading";
 import { useNavigate } from "react-router-dom";
 import {
   Badge,
@@ -18,12 +17,25 @@ import {
   StatCard,
 } from "../../../components/ui";
 
+// Kept for the lifetime of the tab, keyed by user, so returning to the
+// dashboard shows the last known numbers straight away.
+let dashboardCache = { uid: null, data: null };
+
 const Dashboard = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [totalProjects, setTotalProjects] = useState(0);
-  const [totalTasks, setTotalTasks] = useState(0);
-  const [combinedTasks, setCombinedTasks] = useState([]);
+  const cached =
+    dashboardCache.uid && dashboardCache.uid === Cookies.get("uid")
+      ? dashboardCache.data
+      : null;
+
+  const [users, setUsers] = useState(cached?.users ?? []);
+  const [loading, setLoading] = useState(!cached);
+  // The student roll comes from a second query that needs the institute code
+  // from the first, so it lands later and is tracked separately rather than
+  // holding up the rest of the page.
+  const [studentsLoading, setStudentsLoading] = useState(!cached);
+  const [totalProjects, setTotalProjects] = useState(cached?.totalProjects ?? 0);
+  const [totalTasks, setTotalTasks] = useState(cached?.totalTasks ?? 0);
+  const [combinedTasks, setCombinedTasks] = useState(cached?.combinedTasks ?? []);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -80,6 +92,8 @@ const Dashboard = () => {
         setTotalTasks(combinedTasks.length);
         setCombinedTasks(combinedTasks);
         setTotalProjects(studyPlans.length + privateProjects.length);
+        // Everything above is on screen now; the student roll fills in below.
+        setLoading(false);
 
         // Fetch Users (Student Roll) if instituteCode is resolved
         if (resolvedInstituteCode) {
@@ -105,11 +119,21 @@ const Dashboard = () => {
         toast.error("Failed to load tasks.");
       } finally {
         setLoading(false);
+        setStudentsLoading(false);
       }
     };
 
     fetchData();
   }, []);
+
+  // Keep the cache in step with whatever the page is showing.
+  useEffect(() => {
+    if (loading || studentsLoading) return;
+    dashboardCache = {
+      uid: Cookies.get("uid"),
+      data: { users, totalProjects, totalTasks, combinedTasks },
+    };
+  }, [loading, studentsLoading, users, totalProjects, totalTasks, combinedTasks]);
 
   const students = useMemo(
     () => users.filter((u) => u.role === "Level-2"),
@@ -118,28 +142,31 @@ const Dashboard = () => {
   const totalStudents = students.length;
 
   const stats = useMemo(() => [
-    { _id: "1", label: "Total Students", total: totalStudents || 0 },
+    { _id: "1", label: "Total Students", total: totalStudents || 0, pending: studentsLoading },
     { _id: "2", label: "Total Projects", total: totalProjects || 0 },
     { _id: "3", label: "My Projects", total: totalTasks || 0 },
-    { _id: "4", label: "Active Users", total: users.length },
-  ], [users, totalStudents, totalProjects, totalTasks]);
+    { _id: "4", label: "Active Users", total: users.length, pending: studentsLoading },
+  ], [users, totalStudents, totalProjects, totalTasks, studentsLoading]);
 
   return (
     <PageShell>
       <PageBanner
         title="Teacher Dashboard"
         subtitle="Oversee your academic environment, manage students, and monitor platform activity."
-        stat={!loading ? { value: totalStudents || 0, label: "Students" } : undefined}
+        stat={!studentsLoading ? { value: totalStudents || 0, label: "Students" } : undefined}
       />
 
       <section className="space-y-4">
         <SectionLabel>Your overview</SectionLabel>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {loading
-            ? Array.from({ length: 4 }).map((_, i) => <SkeletonStatsCard key={i} />)
-            : stats.map((stat) => (
-                <StatCard key={stat._id} label={stat.label} value={stat.total} />
-              ))}
+          {stats.map((stat) => (
+            <StatCard
+              key={stat._id}
+              label={stat.label}
+              value={stat.total}
+              loading={loading || stat.pending}
+            />
+          ))}
         </div>
       </section>
 
@@ -153,7 +180,15 @@ const Dashboard = () => {
         }
         bodyClassName="px-0 pb-0"
       >
-        {totalStudents === 0 ? (
+        {studentsLoading && totalStudents === 0 ? (
+          <div className="divide-y divide-line-soft border-t border-line-soft">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="px-6 py-5">
+                <span className="skeleton-shimmer block h-4 w-2/5 bg-line-soft" />
+              </div>
+            ))}
+          </div>
+        ) : totalStudents === 0 ? (
           <div className="px-6 pb-6">
             <EmptyState
               title="No students yet"
@@ -213,7 +248,15 @@ const Dashboard = () => {
         }
         bodyClassName="px-0 pb-0"
       >
-        {combinedTasks.length === 0 ? (
+        {loading && combinedTasks.length === 0 ? (
+          <div className="divide-y divide-line-soft border-t border-line-soft">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="px-6 py-5">
+                <span className="skeleton-shimmer block h-4 w-2/5 bg-line-soft" />
+              </div>
+            ))}
+          </div>
+        ) : combinedTasks.length === 0 ? (
           <div className="px-6 pb-6">
             <EmptyState
               title="No projects yet"

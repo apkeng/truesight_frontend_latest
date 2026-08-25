@@ -98,7 +98,9 @@
   margin-right: 10px;
   border-radius: 10px;
   background-color: #fff;
-  animation: pulse 1.5s infinite ease-in-out;
+  /* Named dot-pulse, not pulse: `pulse` is Tailwind's animate-pulse keyframe
+     name, and redefining it here recoloured every skeleton in the app. */
+  animation: dot-pulse 1.5s infinite ease-in-out;
 }
 
 .dot:last-child {
@@ -117,7 +119,7 @@
   animation-delay: 0.1s;
 }
 
-@keyframes pulse {
+@keyframes dot-pulse {
   0% {
     transform: scale(0.8);
     background-color: #b3d4fc;

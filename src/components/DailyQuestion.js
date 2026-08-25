@@ -163,7 +163,7 @@ const DailyQuestion = () => {
             transform: scale(1);
           }
         }
-        @keyframes pulse {
+        @keyframes soft-pulse {
           0%, 100% {
             transform: scale(1);
           }
@@ -192,7 +192,7 @@ const DailyQuestion = () => {
           animation: scaleIn 0.3s ease-out;
         }
         .animate-pulse-slow {
-          animation: pulse 2s ease-in-out infinite;
+          animation: soft-pulse 2s ease-in-out infinite;
         }
         .animate-coinSpin {
           animation: coinSpin 0.8s ease-out;
