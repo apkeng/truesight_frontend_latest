@@ -56,7 +56,11 @@ const Register = () => {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        toast.error(result.error || "Registration failed. Please check the details and try again.");
+        const serverMessage =
+          result.error ||
+          result.errors?.[0]?.msg ||
+          "Registration failed. Please check the details and try again.";
+        toast.error(serverMessage);
         setIsLoading(false);
         return;
       }
@@ -147,7 +151,9 @@ const Register = () => {
               register={register("email", {
                 required: "Email is required!",
                 pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
+                  // Any TLD of two characters or more - the backend's isEmail()
+                  // accepts .academy, .education and friends, so the form must too.
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
                   message: "Invalid email address",
                 },
               })}
@@ -162,9 +168,12 @@ const Register = () => {
               register={register("phone", {
                 required: "Phone number is required!",
                 pattern: {
-                  value: /^[0-9]+$/,
+                  value: /^[\d\s\-+()]+$/,
                   message: "Invalid phone number",
                 },
+                validate: (value) =>
+                  value.replace(/\D/g, "").length >= 10 ||
+                  "Phone number must have at least 10 digits",
               })}
               error={errors.phone?.message}
             />
