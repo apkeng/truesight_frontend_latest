@@ -15,7 +15,7 @@ import {
 import { createRedemption } from "../../utils/apiServices";
 import { toast } from "react-toastify";
 
-const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete }) => {
+const RedemptionFlow = ({ reward, userPoints, onBack, onComplete }) => {
   const [step, setStep] = useState(1); // 1: Preview, 2: Address, 3: Review, 4: Success
   const [coupon, setCoupon] = useState("");
   const [address, setAddress] = useState({
@@ -52,7 +52,6 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
       onComplete({
         ...address,
         rewardId: reward.docId || reward.id,
-        specifications,
         orderId: newOrderId,
         redeemedAt: res?.redeemedAt || new Date().toISOString()
       });
@@ -117,9 +116,6 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
                     </div>
                     <div>
                       <h4 className="font-semibold text-ink uppercase tracking-tight">{reward.name}</h4>
-                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.14em]">
-                        {specifications.color}{specifications.size ? ` • Size ${specifications.size}` : ""}
-                      </p>
                     </div>
                   </div>
                   <div className="space-y-3 pt-4 border-t border-line">
@@ -296,7 +292,6 @@ const RedemptionFlow = ({ reward, specifications, userPoints, onBack, onComplete
                           <img src={reward.imageUrl} className="w-12 h-12  object-cover" alt="" />
                           <div>
                             <p className="font-semibold text-ink text-sm">{reward.name}</p>
-                            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.14em]">{specifications.color}{specifications.size ? ` • ${specifications.size}` : ""}</p>
                           </div>
                        </div>
                        <div className="flex justify-between items-center py-3 border-t border-line">

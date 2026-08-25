@@ -177,10 +177,8 @@ const Rewards = () => {
           reward={selectedReward}
           userPoints={userStats.totalPoints}
           onBack={() => setView("VIEW_ALL")}
-          onRedeem={(reward, specs) => {
+          onRedeem={(reward) => {
             setSelectedReward(reward);
-            // We'll store specs in a temporary state if needed, or pass them directly
-            setSelectedReward({...reward, selectedSpecs: specs});
             setView("REDEMPTION_FLOW");
           }}
         />
@@ -194,7 +192,6 @@ const Rewards = () => {
         <ToastContainer autoClose={3000} />
         <RedemptionFlow
           reward={selectedReward}
-          specifications={selectedReward.selectedSpecs}
           userPoints={userStats.totalPoints}
           onBack={() => setView("REWARD_DETAILS")}
           onComplete={() => {

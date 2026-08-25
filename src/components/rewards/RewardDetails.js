@@ -3,14 +3,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
   faStar,
-  faTruckFast,
-  faShieldHalved,
   faArrowRight
 } from "@fortawesome/free-solid-svg-icons";
 
 const RewardDetails = ({ reward, userPoints, onBack, onRedeem }) => {
-  const [selectedSize, setSelectedSize] = useState("M");
-  const [selectedColor, setSelectedColor] = useState("Original");
   const [activeImage, setActiveImage] = useState(0);
 
   // Mock additional images for carousel
@@ -21,12 +17,6 @@ const RewardDetails = ({ reward, userPoints, onBack, onRedeem }) => {
   ].filter(Boolean);
 
   const canRedeem = userPoints >= reward.pointsRequired;
-  const isApparel = reward.category === "apparel";
-
-  const specifications = {
-    sizes: ["S", "M", "L", "XL"],
-    colors: ["Original", "Stealth Black", "Titanium", "Midnight"]
-  };
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -81,69 +71,8 @@ const RewardDetails = ({ reward, userPoints, onBack, onRedeem }) => {
               </p>
             </div>
 
-            <div className="space-y-8 flex-1">
-              {/* Specifications */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">Select Specifications</h4>
-
-                <div className="space-y-6">
-                  {isApparel && (
-                    <div>
-                      <span className="text-[10px] font-bold text-ink-muted block mb-2">SIZE</span>
-                      <div className="flex gap-2">
-                        {specifications.sizes.map(size => (
-                          <button
-                            key={size}
-                            onClick={() => setSelectedSize(size)}
-                            className={`w-12 h-12  text-xs font-semibold transition-all ${
-                              selectedSize === size
-                                ? "bg-navy text-white  "
-                                : "bg-parchment text-ink-muted hover:bg-parchment"
-                            }`}
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <span className="text-[10px] font-bold text-ink-muted block mb-2">FINISH / COLOR</span>
-                    <div className="flex flex-wrap gap-2">
-                      {specifications.colors.map(color => (
-                        <button
-                          key={color}
-                          onClick={() => setSelectedColor(color)}
-                          className={`px-4 h-12  text-xs font-bold transition-all border ${
-                            selectedColor === color
-                              ? "bg-navy-wash border-navy/15 text-navy"
-                              : "bg-white border-line text-ink-muted hover:border-line"
-                          }`}
-                        >
-                          {color}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Reward Highlights */}
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="p-4 bg-parchment  flex items-center gap-3">
-                    <FontAwesomeIcon icon={faTruckFast} className="text-ink-muted" />
-                    <span className="text-[10px] font-bold text-ink-muted uppercase">Express Delivery</span>
-                 </div>
-                 <div className="p-4 bg-parchment  flex items-center gap-3">
-                    <FontAwesomeIcon icon={faShieldHalved} className="text-ink-muted" />
-                    <span className="text-[10px] font-bold text-ink-muted uppercase">Authenticity Guard</span>
-                 </div>
-              </div>
-            </div>
-
             {/* Action Bar */}
-            <div className="mt-12 pt-8 border-t border-line flex flex-col sm:flex-row items-center gap-6">
+            <div className="mt-auto pt-8 border-t border-line flex flex-col sm:flex-row items-center gap-6">
               <div className="flex-1">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted block mb-1">Total Points Required</span>
                 <div className="flex items-center gap-3">
@@ -156,7 +85,7 @@ const RewardDetails = ({ reward, userPoints, onBack, onRedeem }) => {
 
               <button
                 disabled={!canRedeem}
-                onClick={() => onRedeem(reward, { size: isApparel ? selectedSize : null, color: selectedColor })}
+                onClick={() => onRedeem(reward)}
                 className={`h-16 px-10  text-xs font-semibold uppercase tracking-[0.14em] transition-all active:scale-95 flex items-center gap-3  ${
                   canRedeem 
                     ? "bg-navy text-white hover:bg-navy " 
