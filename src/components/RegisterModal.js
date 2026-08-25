@@ -13,7 +13,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { db } from "../firebase/firebase-config";
 import { collection, addDoc } from "firebase/firestore";
-export default function RequestDemoModal({ isOpen, onClose }) {
+export default function RegisterModal({ isOpen, onClose }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -99,24 +99,31 @@ export default function RequestDemoModal({ isOpen, onClose }) {
           console.error("Error sending to Google Sheets:", webhookError);
         }
       }
-     try{
-         const demoRequestData = {
-            ...payload,
-            createdAt: new Date(),
-            status: "pending",
-            source: "web-form",
-          };
-          
-          await addDoc(collection(db, "demoRequests"), demoRequestData);
-          firestoreSuccess = true;
-        } catch (firestoreError) {
-          console.error("Error saving to Firestore:", firestoreError);
-        }
+      try {
+        const demoRequestData = {
+          ...payload,
+          createdAt: new Date(),
+          status: "pending",
+          source: "web-form",
+        };
+
+        // Firestore keeps a write pending indefinitely while it is offline, so
+        // this copy is raced against a timeout: a blocked or slow write must not
+        // strand a submission the webhook has already taken.
+        await Promise.race([
+          addDoc(collection(db, "demoRequests"), demoRequestData).then(() => {
+            firestoreSuccess = true;
+          }),
+          new Promise((resolve) => setTimeout(resolve, 4000)),
+        ]);
+      } catch (firestoreError) {
+        console.error("Error saving to Firestore:", firestoreError);
+      }
          
 
       // Show success if either method succeeded
       if (!googleSheetsSuccess && !firestoreSuccess) {
-        setError("Unable to submit your request. Please check your internet connection.");
+        setError("Unable to submit your details. Please check your internet connection.");
         setLoading(false);
         return;
       }
@@ -129,16 +136,18 @@ export default function RequestDemoModal({ isOpen, onClose }) {
       setRole("");
       setUniversity("");
 
-      // Close modal immediately
-      setSuccess(false);
-      onClose();
+      // Let the confirmation be read before the modal goes away.
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+      }, 2500);
     } catch (error) {
-      console.error("Error submitting demo request:", error);
+      console.error("Error submitting registration:", error);
       const errorMessage = error.message || "An unexpected error occurred";
       if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
         setError("Network error: Please check your internet connection and try again.");
       } else {
-        setError(`Unable to submit your request: ${errorMessage}. Please try again or contact support.`);
+        setError(`Unable to submit your details: ${errorMessage}. Please try again or contact support.`);
       }
     } finally {
       setLoading(false);
@@ -160,9 +169,9 @@ export default function RequestDemoModal({ isOpen, onClose }) {
 
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-6">
-          <h2 className="text-2xl font-bold text-white">Request a Demo</h2>
+          <h2 className="text-2xl font-bold text-white">Register</h2>
           <p className="text-blue-100 text-sm mt-1">
-            Fill out the form below and we'll get back to you soon!
+            Share your details and we'll get back to you shortly.
           </p>
         </div>
 
@@ -173,9 +182,9 @@ export default function RequestDemoModal({ isOpen, onClose }) {
             <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
               <FontAwesomeIcon icon={faCheckCircle} className="w-5 h-5 text-green-500 flex-shrink-0" />
               <div>
-                <p className="text-green-800 font-semibold">Request Submitted!</p>
+                <p className="text-green-800 font-semibold">Registration received!</p>
                 <p className="text-green-700 text-sm mt-1">
-                  We've received your request and will contact you shortly.
+                  We've got your details and will be in touch shortly.
                 </p>
               </div>
             </div>
@@ -343,7 +352,7 @@ export default function RequestDemoModal({ isOpen, onClose }) {
                     <span>Submitting...</span>
                   </>
                 ) : (
-                  "Submit Request"
+                  "Register"
                 )}
               </button>
             </div>

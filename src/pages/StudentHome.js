@@ -14,6 +14,7 @@ import { getUser, getRewards, getEvents } from "../utils/apiServices";
 import logo from "../assets/logo_blue.png";
 import Loading from "../components/Loading";
 import DailyQuestion from "../components/DailyQuestion";
+import RegisterModal from "../components/RegisterModal";
 
 const getBackendImageUrl = (url) => {
   if (!url) return null;
@@ -88,6 +89,7 @@ export default function StudentHome() {
   const [rewards, setRewards] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -286,7 +288,7 @@ export default function StudentHome() {
                 Login
               </button>
               <button
-                onClick={() => navigate("/register")}
+                onClick={() => setShowRegisterModal(true)}
                 className="h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-display font-bold text-xs uppercase tracking-[0.18em] rounded-2xl shadow-lg hover:shadow-indigo-500/20 active:scale-95 transition-all duration-300"
               >
                 Register
@@ -491,6 +493,10 @@ export default function StudentHome() {
           </div>
         </div>
       </footer>
+      <RegisterModal
+        isOpen={showRegisterModal}
+        onClose={() => setShowRegisterModal(false)}
+      />
     </div>
   );
 }
