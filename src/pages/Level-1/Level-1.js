@@ -14,11 +14,13 @@ import {
   faUsers,
   faBars,
   faCalendarAlt,
+  faBookOpen,
 } from "@fortawesome/free-solid-svg-icons";
 import { Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Settings from "../shared/components/Settings";
 import Profile from "../shared/components/Profile";
+import TextbookQA from "../shared/components/TextbookQA";
 import Project from "./components/Project";
 import Quiz from "./components/Quiz";
 import QuizResults from "./components/QuizResults";
@@ -71,6 +73,8 @@ function Level1Dashboard() {
         route = `${baseRoute}/project/${submenu.toLowerCase().replace(/ /g, "-")}`;
       } else if (section === "Quiz Results") {
         route = `${baseRoute}/quiz-results`;
+      } else if (section === "Ask a Textbook") {
+        route = `${baseRoute}/ask-a-textbook`;
       } else {
         route = `${baseRoute}/${section.toLowerCase()}`;
       }
@@ -139,6 +143,9 @@ function Level1Dashboard() {
       setSubbar('');
     } else if (path === '/challenges') {
       setMainbar('Challenges');
+      setSubbar('');
+    } else if (path === '/ask-a-textbook') {
+      setMainbar('Ask a Textbook');
       setSubbar('');
     } else if (path === '/events') {
       setMainbar('Events');
@@ -233,6 +240,7 @@ function Level1Dashboard() {
               { key: "Quiz Results", label: "Quiz Results", icon: faStar },
               { key: "Challenges", label: "Challenges", icon: faTrophy },
               { key: "History", label: "Results", icon: faHistory },
+              { key: "Ask a Textbook", label: "Ask a Textbook", icon: faBookOpen },
               { key: "Events", label: "Events", icon: faCalendarAlt },
               { key: "Trash", label: "Trash", icon: faTrash },
             ].map((item) => (
@@ -312,6 +320,7 @@ function Level1Dashboard() {
             <Route path="/quiz-results" element={<QuizResults />} />
             <Route path="/history" element={<History />} />
             <Route path="/challenges" element={<Challenges />} />
+            <Route path="/ask-a-textbook" element={<TextbookQA />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:id" element={<EventDetails />} />
             <Route path="/trash" element={<Trash />} />

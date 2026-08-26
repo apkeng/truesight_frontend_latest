@@ -14,11 +14,13 @@ import {
   faMagicWandSparkles,
   faUserShield,
   faCalendarAlt,
+  faBookOpen,
 } from "@fortawesome/free-solid-svg-icons";
 import { Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Settings from "../shared/components/Settings";
 import Profile from "../shared/components/Profile";
+import TextbookQA from "../shared/components/TextbookQA";
 import Project from "./components/Project";
 import Quiz from "./components/Quiz";
 import { useAuth } from "../../contexts/AuthContext";
@@ -123,6 +125,9 @@ function Level2Dashboard() {
       setSubbar('');
     } else if (path === '/challenges') {
       setMainbar('Challenges');
+      setSubbar('');
+    } else if (path === '/ask-a-textbook') {
+      setMainbar('Ask a Textbook');
       setSubbar('');
     } else if (path === '/events') {
       setMainbar('Events');
@@ -243,6 +248,7 @@ function Level2Dashboard() {
               { key: "Rewards", label: "Rewards", icon: faStar },
               { key: "History", label: "Results", icon: faHistory },
               { key: "Challenges", label: "Challenges", icon: faTrophy },
+              { key: "Ask a Textbook", label: "Ask a Textbook", icon: faBookOpen },
               { key: "Events", label: "Events", icon: faCalendarAlt },
             ].map((item) => (
               <button
@@ -339,6 +345,7 @@ function Level2Dashboard() {
             <Route path="/history" element={<History />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/challenges" element={<Challenges />} />
+            <Route path="/ask-a-textbook" element={<TextbookQA />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:id" element={<EventDetails />} />
             <Route path="/trash" element={<Trash />} />
