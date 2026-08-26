@@ -66,6 +66,16 @@ const TextbookQA = () => {
     refreshTextbooks();
   }, [refreshTextbooks]);
 
+  // Large PDFs are chunked/embedded in the background (see
+  // textbookServiceClient.js) - keep polling while anything is still
+  // "processing" so the list picks up "ready"/"failed" without a manual
+  // refresh.
+  useEffect(() => {
+    if (!textbooks.some((b) => b.status === "processing")) return;
+    const timer = setTimeout(refreshTextbooks, 4000);
+    return () => clearTimeout(timer);
+  }, [textbooks, refreshTextbooks]);
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!uploadFile || !uploadTitle.trim()) {
@@ -75,7 +85,7 @@ const TextbookQA = () => {
     setUploading(true);
     try {
       const book = await uploadTextbook(uploadFile, uploadTitle.trim());
-      toast.success(`"${book.title}" is ready - ask it questions below.`);
+      toast.success(`"${book.title}" is uploading - it'll be ready to ask questions shortly.`);
       setUploadTitle("");
       setUploadFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -105,7 +115,7 @@ const TextbookQA = () => {
 
   const handleAsk = async (e) => {
     e.preventDefault();
-    if (!selectedBookId || !question.trim()) return;
+    if (!selectedBookId || !question.trim() || selectedBook?.status !== "ready") return;
     const asked = question.trim();
     setAsking(true);
     try {
@@ -199,8 +209,17 @@ const TextbookQA = () => {
                           <span className="block truncate text-sm font-semibold text-ink">
                             {book.title}
                           </span>
-                          <span className="block text-[10px] uppercase tracking-[0.14em] text-ink-muted">
-                            {book.chunk_count} chunks
+                          <span
+                            className={cx(
+                              "block text-[10px] uppercase tracking-[0.14em]",
+                              book.status === "failed" ? "text-red-600" : "text-ink-muted"
+                            )}
+                          >
+                            {book.status === "processing"
+                              ? "Processing..."
+                              : book.status === "failed"
+                              ? "Failed to process"
+                              : `${book.chunk_count} chunks`}
                           </span>
                         </span>
                       </span>
@@ -231,7 +250,11 @@ const TextbookQA = () => {
             </h2>
             {selectedBook && (
               <p className="mt-1 text-sm text-ink-muted">
-                {selectedBook.chunk_count} chunks indexed
+                {selectedBook.status === "processing"
+                  ? "Processing - this can take a few minutes for a large PDF."
+                  : selectedBook.status === "failed"
+                  ? `Failed to process: ${selectedBook.error || "unknown error"}`
+                  : `${selectedBook.chunk_count} chunks indexed`}
               </p>
             )}
           </div>
@@ -246,7 +269,19 @@ const TextbookQA = () => {
           ) : (
             <>
               <div className="flex-1 space-y-4 overflow-y-auto px-6 py-6">
-                {conversation.length === 0 ? (
+                {selectedBook.status === "processing" ? (
+                  <EmptyState
+                    title="Still processing"
+                    description="This can take a few minutes for a large PDF. It'll be ready to ask questions here once it's done."
+                  />
+                ) : selectedBook.status === "failed" ? (
+                  <EmptyState
+                    title="Processing failed"
+                    description={
+                      selectedBook.error || "Something went wrong while processing this PDF."
+                    }
+                  />
+                ) : conversation.length === 0 ? (
                   <EmptyState
                     title="No questions yet"
                     description={`Ask anything about "${selectedBook.title}" below.`}
@@ -286,10 +321,13 @@ const TextbookQA = () => {
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder={`Ask something about "${selectedBook.title}"...`}
-                  disabled={asking}
+                  disabled={asking || selectedBook.status !== "ready"}
                   className="flex-1"
                 />
-                <Button type="submit" disabled={asking || !question.trim()}>
+                <Button
+                  type="submit"
+                  disabled={asking || !question.trim() || selectedBook.status !== "ready"}
+                >
                   <FontAwesomeIcon icon={faPaperPlane} />
                   {asking ? "Asking..." : "Ask"}
                 </Button>

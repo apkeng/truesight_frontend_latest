@@ -49,6 +49,8 @@ async function request(path, options = {}) {
 
 export const listTextbooks = () => request("/textbooks").then((r) => r.books);
 
+export const getTextbook = (bookId) => request(`/textbooks/${bookId}`);
+
 export const uploadTextbook = (file, title) => {
   const formData = new FormData();
   formData.append("file", file);
