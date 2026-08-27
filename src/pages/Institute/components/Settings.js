@@ -2,24 +2,19 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {
-  reauthenticateWithCredential,
-  EmailAuthProvider,
-  updatePassword,
-} from "firebase/auth";
-import { auth } from "../../../firebase/firebase-config";
 import Textbox from "../../../components/Textbox";
 import Button from "../../../components/Button";
+import { changeOwnPassword } from "../../../utils/apiServices";
 
 export default function ChangePassword() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm();
 
   const onSubmit = async (data) => {
-    const user = auth.currentUser;
     const { currentPassword, newPassword, confirmPassword } = data;
 
     if (newPassword !== confirmPassword) {
@@ -28,23 +23,12 @@ export default function ChangePassword() {
     }
 
     try {
-      // Reauthenticate the user
-      const credential = EmailAuthProvider.credential(
-        user.email,
-        currentPassword
-      );
-      await reauthenticateWithCredential(user, credential);
-
-      // Update the password
-      await updatePassword(user, newPassword);
+      await changeOwnPassword(currentPassword, newPassword);
       toast.success("Password updated successfully!");
+      reset();
     } catch (error) {
       console.error("Error updating password:", error);
-      if (error.code === "auth/wrong-password") {
-        toast.error("Incorrect current password.");
-      } else {
-        toast.error("Failed to update password. Please try again.");
-      }
+      toast.error(error.message || "Failed to update password. Please try again.");
     }
   };
 

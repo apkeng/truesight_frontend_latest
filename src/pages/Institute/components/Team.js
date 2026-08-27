@@ -7,6 +7,7 @@ import { getInitials } from "../../../utils";
 import clsx from "clsx";
 import ConfirmatioDialog, { UserAction } from "../../../components/Dialogs";
 import AddUser from "../../../components/AddUser";
+import ResetPasswordDialog from "../../../components/ResetPasswordDialog";
 import {
   collection,
   deleteDoc,
@@ -25,6 +26,8 @@ const Team = () => {
   const [selected, setSelected] = useState(null);
   const [instituteCode, setInstituteCode] = useState("");
   const [users, setUsers] = useState([]);
+  const [resetPasswordUser, setResetPasswordUser] = useState(null);
+  const [openResetPassword, setOpenResetPassword] = useState(false);
 
   useEffect(() => {
     const fetchInstituteCode = async () => {
@@ -91,6 +94,11 @@ const Team = () => {
   const editClick = (user) => {
     setSelected(user);
     setOpen(true);
+  };
+
+  const resetPasswordClick = (user) => {
+    setResetPasswordUser(user);
+    setOpenResetPassword(true);
   };
 
   // Helper function to map role codes to display names
@@ -171,6 +179,12 @@ const Team = () => {
           onClick={() => editClick(user)}
         />
         <Button
+          className="text-slate-600 hover:text-slate-500 font-semibold"
+          label="Reset Password"
+          type="button"
+          onClick={() => resetPasswordClick(user)}
+        />
+        <Button
           className="text-red-700 hover:text-red-500 font-semibold"
           label="Delete"
           type="button"
@@ -221,6 +235,12 @@ const Team = () => {
         open={openDialog}
         setOpen={setOpenDialog}
         onClick={deleteHandler}
+      />
+
+      <ResetPasswordDialog
+        open={openResetPassword}
+        setOpen={setOpenResetPassword}
+        user={resetPasswordUser}
       />
 
       <UserAction

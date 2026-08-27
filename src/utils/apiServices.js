@@ -88,6 +88,11 @@ export const updateUser = async (userId, userData) => {
   return response;
 };
 
+export const resetUserPassword = async (userId, newPassword) => {
+  const response = await apiClient.post(`/api/users/${userId}/reset-password`, { newPassword });
+  return response;
+};
+
 /**
  * Projects API
  */
@@ -346,6 +351,11 @@ export const deleteSyllabus = async () => {
 
 export const verifyPassword = async (password) => {
   const response = await apiClient.post('/api/auth/verify-password', { password });
+  return response;
+};
+
+export const changeOwnPassword = async (currentPassword, newPassword) => {
+  const response = await apiClient.post('/api/auth/change-password', { currentPassword, newPassword });
   return response;
 };
 

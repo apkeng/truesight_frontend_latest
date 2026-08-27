@@ -4,7 +4,7 @@ import Cookies from "js-cookie";
 import Textbox from "../../../components/Textbox";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { getUser, updateUser, updateInstituteDetails, verifyPassword } from "../../../utils/apiServices";
+import { getUser, updateUser, updateInstituteDetails, verifyPassword, changeOwnPassword } from "../../../utils/apiServices";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faEnvelope, faBuilding, faGraduationCap, faCamera, faEdit, faUserTie, faUserCircle, faShieldHalved, faFingerprint } from "@fortawesome/free-solid-svg-icons";
 import Loading from "../../../components/Loading";
@@ -67,9 +67,24 @@ export default function Profile({ variant = "level2" }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordStep, setPasswordStep] = useState("verify"); // "verify" | "change"
   const [passwordInput, setPasswordInput] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState("");
+
+  const resetPasswordModal = () => {
+    setIsPasswordModalOpen(false);
+    setPasswordStep("verify");
+    setPasswordInput("");
+    setPasswordError("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setChangePasswordError("");
+  };
 
   const handleVerifyPasswordSubmit = async (e) => {
     e.preventDefault();
@@ -82,9 +97,8 @@ export default function Profile({ variant = "level2" }) {
     try {
       const res = await verifyPassword(passwordInput);
       if (res.success) {
-        toast.success("Password verified successfully!");
-        setIsPasswordModalOpen(false);
-        setPasswordInput("");
+        toast.success("Credentials verified. You can now set a new password.");
+        setPasswordStep("change");
       } else {
         setPasswordError(res.error || "Incorrect password");
         toast.error(res.error || "Incorrect password");
@@ -95,6 +109,31 @@ export default function Profile({ variant = "level2" }) {
       toast.error(err.message || "Incorrect password");
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      setChangePasswordError("New password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setChangePasswordError("Passwords do not match");
+      return;
+    }
+    setChangePasswordError("");
+    setIsChangingPassword(true);
+    try {
+      await changeOwnPassword(passwordInput, newPassword);
+      toast.success("Password changed successfully!");
+      resetPasswordModal();
+    } catch (err) {
+      console.error("Error changing password:", err);
+      setChangePasswordError(err.message || "Failed to change password");
+      toast.error(err.message || "Failed to change password");
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -339,15 +378,15 @@ export default function Profile({ variant = "level2" }) {
              {/* Verify Password Card */}
              <div className="bg-white  border border-line p-8 sm:p-10  relative overflow-hidden group flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                   <h3 className="text-xl font-semibold text-ink tracking-tight">Credentials Verification</h3>
-                   <p className="text-ink-muted text-xs mt-1">Verify your current login credentials securely.</p>
+                   <h3 className="text-xl font-semibold text-ink tracking-tight">Change Password</h3>
+                   <p className="text-ink-muted text-xs mt-1">Verify your current credentials, then set a new password.</p>
                 </div>
                 <button
                    type="button"
                    onClick={() => setIsPasswordModalOpen(true)}
                    className={ui.verifyBtnClass}
                 >
-                   Verify Credentials
+                   Change Password
                 </button>
              </div>
           </div>
@@ -408,62 +447,125 @@ export default function Profile({ variant = "level2" }) {
         </div>
       </form>
 
-      {/* Password Verification Modal */}
-      <ModalWrapper open={isPasswordModalOpen} setOpen={setIsPasswordModalOpen}>
-        <form onSubmit={handleVerifyPasswordSubmit} className="p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10  bg-navy-wash flex items-center justify-center text-navy ">
-              <FontAwesomeIcon icon={faShieldHalved} className="text-sm" />
-            </div>
-            <h3 className="text-xl font-semibold text-ink tracking-tight">Security Check</h3>
-          </div>
-
-          <p className="text-sm text-ink-muted mb-6 leading-relaxed">
-            For security purposes, please enter your current password to verify your credentials.
-          </p>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">Current Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={passwordInput}
-                onChange={(e) => {
-                  setPasswordInput(e.target.value);
-                  if (passwordError) setPasswordError("");
-                }}
-                className="w-full px-4 py-3 border border-line  outline-none text-ink focus:ring-2 ring-blue-300 transition-all"
-                disabled={isVerifying}
-              />
-              {passwordError && (
-                <p className="text-xs text-rose-500 font-medium">{passwordError}</p>
-              )}
+      {/* Change Password Modal: verify current credentials, then set a new password */}
+      <ModalWrapper open={isPasswordModalOpen} setOpen={resetPasswordModal}>
+        {passwordStep === "verify" ? (
+          <form onSubmit={handleVerifyPasswordSubmit} className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10  bg-navy-wash flex items-center justify-center text-navy ">
+                <FontAwesomeIcon icon={faShieldHalved} className="text-sm" />
+              </div>
+              <h3 className="text-xl font-semibold text-ink tracking-tight">Security Check</h3>
             </div>
 
-            <div className="flex gap-4 pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsPasswordModalOpen(false);
-                  setPasswordInput("");
-                  setPasswordError("");
-                }}
-                className="flex-1 py-4  bg-parchment text-ink-muted text-[10px] font-semibold uppercase tracking-[0.14em] hover:bg-parchment transition-all"
-                disabled={isVerifying}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className={ui.modalVerifyBtnClass}
-                disabled={isVerifying}
-              >
-                {isVerifying ? "Verifying..." : "Verify"}
-              </button>
+            <p className="text-sm text-ink-muted mb-6 leading-relaxed">
+              For security purposes, please enter your current password to verify your credentials.
+            </p>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">Current Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={passwordInput}
+                  onChange={(e) => {
+                    setPasswordInput(e.target.value);
+                    if (passwordError) setPasswordError("");
+                  }}
+                  className="w-full px-4 py-3 border border-line  outline-none text-ink focus:ring-2 ring-blue-300 transition-all"
+                  disabled={isVerifying}
+                />
+                {passwordError && (
+                  <p className="text-xs text-rose-500 font-medium">{passwordError}</p>
+                )}
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={resetPasswordModal}
+                  className="flex-1 py-4  bg-parchment text-ink-muted text-[10px] font-semibold uppercase tracking-[0.14em] hover:bg-parchment transition-all"
+                  disabled={isVerifying}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={ui.modalVerifyBtnClass}
+                  disabled={isVerifying}
+                >
+                  {isVerifying ? "Verifying..." : "Verify"}
+                </button>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        ) : (
+          <form onSubmit={handleChangePasswordSubmit} className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10  bg-navy-wash flex items-center justify-center text-navy ">
+                <FontAwesomeIcon icon={faShieldHalved} className="text-sm" />
+              </div>
+              <h3 className="text-xl font-semibold text-ink tracking-tight">Set New Password</h3>
+            </div>
+
+            <p className="text-sm text-ink-muted mb-6 leading-relaxed">
+              Credentials verified. Choose a new password for your account.
+            </p>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">New Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    if (changePasswordError) setChangePasswordError("");
+                  }}
+                  className="w-full px-4 py-3 border border-line  outline-none text-ink focus:ring-2 ring-blue-300 transition-all"
+                  disabled={isChangingPassword}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">Confirm New Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmNewPassword}
+                  onChange={(e) => {
+                    setConfirmNewPassword(e.target.value);
+                    if (changePasswordError) setChangePasswordError("");
+                  }}
+                  className="w-full px-4 py-3 border border-line  outline-none text-ink focus:ring-2 ring-blue-300 transition-all"
+                  disabled={isChangingPassword}
+                />
+                {changePasswordError && (
+                  <p className="text-xs text-rose-500 font-medium">{changePasswordError}</p>
+                )}
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={resetPasswordModal}
+                  className="flex-1 py-4  bg-parchment text-ink-muted text-[10px] font-semibold uppercase tracking-[0.14em] hover:bg-parchment transition-all"
+                  disabled={isChangingPassword}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={ui.modalVerifyBtnClass}
+                  disabled={isChangingPassword}
+                >
+                  {isChangingPassword ? "Saving..." : "Change Password"}
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
       </ModalWrapper>
     </div>
   );
