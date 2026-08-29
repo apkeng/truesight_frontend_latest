@@ -8,7 +8,7 @@ import {
   faArrowLeft,
   faPaperPlane,
 } from "@fortawesome/free-solid-svg-icons";
-import logo from "../assets/logo_blue.png";
+import logo from "../assets/logo_colour.png";
 
 export default function Contact() {
   const navigate = useNavigate();

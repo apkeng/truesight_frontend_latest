@@ -17,7 +17,7 @@ import {
   MdLink,
   MdInfo
 } from "react-icons/md";
-import logo from "../../assets/logo_blue.png";
+import logo from "../../assets/logo_colour_on_shell.png";
 
 export default function EventDetails() {
   const { id } = useParams();

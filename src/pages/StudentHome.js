@@ -11,7 +11,7 @@ import {
 import { FaLinkedin } from "react-icons/fa";
 import Cookies from "js-cookie";
 import { getUser, getRewards, getEvents } from "../utils/apiServices";
-import logo from "../assets/logo_blue.png";
+import logo from "../assets/logo_colour.png";
 import Loading from "../components/Loading";
 import DailyQuestion from "../components/DailyQuestion";
 import RegisterModal from "../components/RegisterModal";

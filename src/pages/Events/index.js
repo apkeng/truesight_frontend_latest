@@ -10,7 +10,7 @@ import {
   MdOutlineArrowBack,
   MdBookmarkAdded
 } from "react-icons/md";
-import logo from "../../assets/logo_blue.png";
+import logo from "../../assets/logo_colour_on_shell.png";
 import { Badge, EmptyState, PageBanner, PageShell } from "../../components/ui";
 
 export default function EventsExplorer() {

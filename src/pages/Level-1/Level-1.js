@@ -28,7 +28,7 @@ import Challenges from "./components/Challenges";
 import { useAuth } from "../../contexts/AuthContext";
 import Trash from "./components/Trash";
 import History from "../../components/History";
-import logo from "../../assets/logo_blue.png";
+import logo from "../../assets/logo_reversed.png";
 import TaskDetails from "../../components/task/TaskDetails";
 import Events from "../Events";
 import EventDetails from "../Events/EventDetails";

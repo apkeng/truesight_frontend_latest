@@ -11,7 +11,7 @@ import {
   faExclamationCircle,
   faArrowRight,
 } from "@fortawesome/free-solid-svg-icons";
-import logo from "../assets/logo_blue.png";
+import logo from "../assets/logo_colour.png";
 
 // Backend API base URL
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
