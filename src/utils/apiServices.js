@@ -382,3 +382,16 @@ export const cancelEventRsvp = async (id) => {
   return response;
 };
 
+/**
+ * Puzzles API
+ */
+export const getRandomPuzzle = async () => {
+  const response = await apiClient.get('/api/puzzles/random');
+  return response.puzzle;
+};
+
+export const attemptPuzzle = async (puzzleId, answer) => {
+  const response = await apiClient.post(`/api/puzzles/${puzzleId}/attempt`, { answer });
+  return response;
+};
+

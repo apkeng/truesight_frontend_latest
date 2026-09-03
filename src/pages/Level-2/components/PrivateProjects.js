@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import SkeletonLoading, { SkeletonProjectCard } from "../../../components/SkeletonLoading";
 import Tabs from "../../../components/Tabs";
 import { toast, ToastContainer } from "react-toastify";
@@ -10,9 +11,13 @@ import ProjectCard from "../../../components/privateProject/ProjectCard";
 import Table from "../../../components/privateProject/Table";
 import Pagination from "../../../components/Pagination";
 import { useProjectSearch } from "../../../hooks/useProjectSearch";
+import { useProjectCreation } from "../../../hooks/useProjectCreation";
+import PuzzleGate from "../../../components/projectCreation/PuzzleGate";
 import {
   Button,
   EmptyState,
+  Notification,
+  NotificationViewport,
   PageBanner,
   PageShell,
   SectionLabel,
@@ -49,52 +54,38 @@ const Modal = ({ open, children, onClose }) => {
   );
 };
 
-const AddProject = ({ open, setOpen, onTaskAdd }) => {
+const AddProject = ({ open, setOpen, onCreateStart }) => {
   const [topic, setTopic] = useState("");
   const [levelOfLearning, setLevelOfLearning] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   const resetForm = () => {
     setTopic("");
     setLevelOfLearning("");
   };
 
-  const handleSubmit = async (e) => {
+  // Creation itself now runs in the background (see useProjectCreation) —
+  // this just validates, hands the payload off, and closes the modal so the
+  // puzzle/dashboard gate can take over immediately.
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    try {
-      const uid = Cookies.get("uid");
-      if (!uid) {
-        toast.error("User not authenticated.");
-        setIsLoading(false);
-        return;
-      }
-
-      if (!topic || topic.trim().length < 3) {
-        toast.error("Please enter a valid research topic.");
-        setIsLoading(false);
-        return;
-      }
-
-      toast.info("Synthesizing private study plan...");
-      setOpen(false);
-      resetForm();
-
-      const savedProject = await createProject({
-        topic: topic.trim(),
-        levelOfLearning,
-        autoGenerate: true
-      });
-
-      onTaskAdd(savedProject);
-      toast.success("Scientific roadmap generated!");
-    } catch (error) {
-      console.error("Error in project creation:", error);
-      const errorMessage = error.response?.data?.error || error.message || "Roadmap generation failed.";
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
+    const uid = Cookies.get("uid");
+    if (!uid) {
+      toast.error("User not authenticated.");
+      return;
     }
+
+    if (!topic || topic.trim().length < 3) {
+      toast.error("Please enter a valid research topic.");
+      return;
+    }
+
+    setOpen(false);
+    onCreateStart({
+      topic: topic.trim(),
+      levelOfLearning,
+      autoGenerate: true
+    });
+    resetForm();
   };
 
   const LEVELS = [
@@ -172,27 +163,15 @@ const AddProject = ({ open, setOpen, onTaskAdd }) => {
         <div className="pt-2">
           <button
             type="submit"
-            disabled={isLoading || !topic || !levelOfLearning}
+            disabled={!topic || !levelOfLearning}
             className={clsx(
               "h-12 w-full text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors",
-              isLoading || !topic || !levelOfLearning
+              !topic || !levelOfLearning
                 ? "cursor-not-allowed bg-line text-ink-muted"
                 : "bg-navy text-white hover:bg-navy-dark"
             )}
           >
-            {isLoading ? (
-              <div className="flex items-center justify-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-white/40 animate-pulse" />
-                <div className="h-1.5 w-1.5 rounded-full bg-white/60 animate-pulse [animation-delay:-0.15s]" />
-                <div className="h-1.5 w-1.5 rounded-full bg-white/80 animate-pulse [animation-delay:-0.3s]" />
-                <span>Processing</span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center gap-2">
-                <span>Create project</span>
-                
-              </div>
-            )}
+            Create project
           </button>
         </div>
       </form>
@@ -201,6 +180,8 @@ const AddProject = ({ open, setOpen, onTaskAdd }) => {
 };
 
 const PrivateProjects = ({ searchQuery }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -247,15 +228,57 @@ const PrivateProjects = ({ searchQuery }) => {
     }
   };
 
+  // Creation runs in the background behind the puzzle/dashboard gate — once
+  // it settles, fold the new project into the list whether or not the user
+  // stuck around to see it happen.
+  const projectCreation = useProjectCreation(createProject);
+  useEffect(() => {
+    if (projectCreation.status === "done" && projectCreation.result) {
+      handleTaskAdd(projectCreation.result);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectCreation.status, projectCreation.result]);
+
+  const handleViewProject = (project) => {
+    projectCreation.dismissGate();
+    navigate(`${location.pathname}/${project._id}`);
+  };
+
   return (
     <PageShell>
       <ToastContainer autoClose={2000} />
+
+      <NotificationViewport>
+        {projectCreation.notification && (
+          <Notification
+            tone={projectCreation.notification.tone}
+            title={
+              projectCreation.notification.tone === "positive"
+                ? "Your roadmap is ready"
+                : "Roadmap generation failed"
+            }
+            message={
+              projectCreation.notification.tone === "positive"
+                ? `"${projectCreation.notification.project?.topic || "Your project"}" has finished generating.`
+                : projectCreation.notification.error?.message || "Please try creating your project again."
+            }
+            actionLabel={projectCreation.notification.tone === "positive" ? "View project" : undefined}
+            onAction={() => handleViewProject(projectCreation.notification.project)}
+            onDismiss={projectCreation.dismissNotification}
+          />
+        )}
+      </NotificationViewport>
 
       <PageBanner
         title="Private Projects"
         subtitle="Confidential drafts and ongoing research. Only you can see these study plans until you publish them."
         actions={
-          <Button variant="secondary" size="lg" onClick={() => setOpen(true)}>
+          <Button
+            variant="secondary"
+            size="lg"
+            onClick={() => setOpen(true)}
+            disabled={projectCreation.status === "pending"}
+          >
             <MdAdd className="text-base" /> New project
           </Button>
         }
@@ -326,7 +349,15 @@ const PrivateProjects = ({ searchQuery }) => {
         </>
       )}
 
-      <AddProject open={open} setOpen={setOpen} onTaskAdd={handleTaskAdd} />
+      <AddProject open={open} setOpen={setOpen} onCreateStart={projectCreation.start} />
+      <PuzzleGate
+        open={projectCreation.gateOpen}
+        status={projectCreation.status}
+        result={projectCreation.result}
+        error={projectCreation.error}
+        onDismiss={projectCreation.dismissGate}
+        onViewProject={handleViewProject}
+      />
     </PageShell>
   );
 };

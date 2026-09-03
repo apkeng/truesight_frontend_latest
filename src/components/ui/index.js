@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { IoMdClose } from "react-icons/io";
+import { MdCheckCircle, MdErrorOutline, MdInfoOutline } from "react-icons/md";
 
 /**
  * Shared building blocks for the student dashboards.
@@ -230,4 +232,67 @@ export const Highlight = ({ icon, label, title, description, action, className }
 /** Standard page wrapper: consistent max width and rhythm on every screen. */
 export const PageShell = ({ children, className }) => (
   <div className={cx("mx-auto w-full max-w-[1400px] space-y-8 pb-16", className)}>{children}</div>
+);
+
+const NOTIFICATION_TONES = {
+  navy: { bar: "bg-navy", icon: <MdInfoOutline /> },
+  positive: { bar: "bg-emerald-600", icon: <MdCheckCircle /> },
+  negative: { bar: "bg-red-600", icon: <MdErrorOutline /> },
+};
+
+/**
+ * Institutional replacement for a default toast: square corners, hairline
+ * border, navy/emerald/red accent bar, Space Grotesk heading. Self-dismisses
+ * after `autoCloseMs` (pass 0/false to require manual dismissal).
+ */
+export const Notification = ({
+  tone = "navy",
+  title,
+  message,
+  actionLabel,
+  onAction,
+  onDismiss,
+  autoCloseMs = 7000,
+}) => {
+  useEffect(() => {
+    if (!autoCloseMs) return undefined;
+    const timer = setTimeout(() => onDismiss && onDismiss(), autoCloseMs);
+    return () => clearTimeout(timer);
+  }, [autoCloseMs, onDismiss]);
+
+  const { bar, icon } = NOTIFICATION_TONES[tone] || NOTIFICATION_TONES.navy;
+
+  return (
+    <div className="pointer-events-auto flex w-full items-stretch border border-line bg-white shadow-lg shadow-ink/10">
+      <div className={cx("flex w-10 flex-shrink-0 items-center justify-center text-lg text-white", bar)}>
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1 py-3 pl-4 pr-2">
+        <p className="font-display text-sm font-bold text-ink">{title}</p>
+        {message && <p className="mt-1 text-xs leading-relaxed text-ink-muted">{message}</p>}
+        {actionLabel && (
+          <button
+            onClick={onAction}
+            className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy transition-colors hover:text-navy-dark"
+          >
+            {actionLabel} &rarr;
+          </button>
+        )}
+      </div>
+      <button
+        onClick={onDismiss}
+        aria-label="Dismiss notification"
+        className="flex flex-shrink-0 items-start px-3 py-3 text-ink-muted transition-colors hover:text-ink"
+      >
+        <IoMdClose className="text-base" />
+      </button>
+    </div>
+  );
+};
+
+/** Fixed top-right stack that hosts one or more <Notification />. */
+export const NotificationViewport = ({ children }) => (
+  <div className="pointer-events-none fixed right-4 top-4 z-[200] flex w-full max-w-sm flex-col gap-3 sm:right-6 sm:top-6">
+    {children}
+  </div>
 );
