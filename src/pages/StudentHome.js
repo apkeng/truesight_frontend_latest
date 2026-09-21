@@ -487,9 +487,17 @@ export default function StudentHome() {
             <span className="text-sm font-bold tracking-tight">TRUESIGHT</span>
           </div>
           <p className="font-display text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">© 2026 Truesight Student Platform. All Performance Data Encrypted.</p>
-          <div className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100"></div>
-            <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100"></div>
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => navigate("/privacy-policy")}
+              className="font-display text-[10px] font-bold text-slate-500 uppercase tracking-[0.18em] hover:text-blue-600 transition-colors"
+            >
+              Privacy Policy
+            </button>
+            <div className="flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100"></div>
+              <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100"></div>
+            </div>
           </div>
         </div>
       </footer>
