@@ -44,7 +44,7 @@ export function NewProjectDialog({ open, onClose, initialTopic = "", initialLeve
       tone="navy"
       eyebrow={source === "syllabus" ? "From your syllabus" : "Self-directed research"}
       title="Create a new roadmap"
-      description="AI drafts modules, subtopics, study notes and quizzes for your topic. It takes about a minute - we'll notify you when it's ready."
+      description="AI researches your topic, drafts the modules, then reviews and fact-checks every one. It takes a few minutes - we'll notify you when it's ready."
       footer={
         <>
           <Button variant="secondary" size="sm" onClick={onClose}>Cancel</Button>

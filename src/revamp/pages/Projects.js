@@ -312,9 +312,21 @@ function JobRow({ job, onRetry, onDismiss }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-[14px] font-bold text-ts-ink">{job.topic}</p>
         <p className="mt-0.5 text-[11.5px] text-ts-muted">
-          {failed ? job.error || "Generation failed." : `Generating your ${job.levelOfLearning.toLowerCase()} roadmap… we'll notify you when it's ready.`}
+          {failed
+            ? job.error || "Generation failed."
+            : job.stageMessage || `Generating your ${job.levelOfLearning.toLowerCase()} roadmap… we'll notify you when it's ready.`}
         </p>
-        {!failed && <div className="mt-2 h-1 w-48 overflow-hidden rounded-full bg-slate-200"><div className="h-full w-1/3 animate-pulse rounded-full bg-ts-navy" /></div>}
+        {!failed && (
+          <div className="mt-2 flex items-center gap-2">
+            <div className="h-1 w-56 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className={cx("h-full rounded-full bg-ts-navy transition-[width] duration-700", job.progress == null && "w-1/3 animate-pulse")}
+                style={job.progress != null ? { width: `${Math.max(4, job.progress)}%` } : undefined}
+              />
+            </div>
+            <span className="text-[10.5px] text-ts-faint">Research → outline → review → write → fact-check · usually 3-5 min</span>
+          </div>
+        )}
       </div>
       {failed && (
         <>

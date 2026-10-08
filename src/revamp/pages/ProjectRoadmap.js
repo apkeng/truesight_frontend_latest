@@ -14,6 +14,8 @@ import {
   LuWandSparkles,
   LuBookOpenText,
   LuTrash2,
+  LuShieldCheck,
+  LuExternalLink,
 } from "react-icons/lu";
 import { api, keys } from "../lib/api";
 import { invalidate, setQueryData, useQuery } from "../lib/query";
@@ -105,6 +107,13 @@ export default function ProjectRoadmap() {
                 <h1 className="mt-3 text-[26px] font-extrabold leading-tight tracking-tight">{project.title}</h1>
                 {project.introduction && <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-white/80">{project.introduction}</p>}
                 <p className="mt-3 text-xs text-white/60">Updated {formatDate(project.updatedAt)} · {project.modules} modules · {project.subtopics} subtopics</p>
+                {project.generation && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-100 ring-1 ring-emerald-300/30">
+                    <LuShieldCheck aria-hidden /> Researched & fact-checked
+                    {project.generation.averageFinalScore != null && ` · accuracy ${project.generation.averageFinalScore}/100`}
+                    {project.generation.sources.length > 0 && ` · ${project.generation.sources.length} sources`}
+                  </p>
+                )}
               </div>
               <div className="w-full shrink-0 rounded-xl bg-white/10 p-4 ring-1 ring-white/15 lg:w-72">
                 <div className="flex items-baseline justify-between">
@@ -179,6 +188,22 @@ export default function ProjectRoadmap() {
               )}
             </section>
           </div>
+
+          {project.generation?.sources?.length > 0 && (
+            <Card className="mt-5 p-5">
+              <h2 className="flex items-center gap-2 text-[14px] font-bold text-ts-ink"><LuShieldCheck aria-hidden className="text-emerald-600" /> Sources used to research this roadmap</h2>
+              <p className="mt-0.5 text-xs text-ts-muted">Every module was fact-checked against these references; flagged facts were re-verified with a web search before being corrected.</p>
+              <ul className="mt-3 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+                {project.generation.sources.map((src) => (
+                  <li key={src.uri} className="min-w-0">
+                    <a href={src.uri} target="_blank" rel="noreferrer" className="inline-flex max-w-full items-center gap-1.5 text-[12.5px] text-ts-blue hover:underline">
+                      <LuExternalLink aria-hidden className="shrink-0" /> <span className="truncate">{src.title}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
         </>
       )}
 

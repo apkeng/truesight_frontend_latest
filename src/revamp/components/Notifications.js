@@ -88,7 +88,9 @@ export function NotificationProvider({ initialUnread, children }) {
   useEffect(() => {
     const interval = pendingJobs.length ? FAST_POLL : SLOW_POLL;
     const tick = async () => {
-      if (document.visibilityState !== "visible") return;
+      // Hidden tabs are skipped unless a roadmap is generating, so its
+      // notification is waiting the moment the student comes back.
+      if (document.visibilityState !== "visible" && !pendingJobs.length) return;
       try {
         const count = await api.unreadCount();
         if (count > lastUnread.current) await loadList();
