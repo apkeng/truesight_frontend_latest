@@ -55,6 +55,14 @@ export default function AppShell({ children }) {
 
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
+  // The student app is for Level-2 accounts; send faculty/admins to their own
+  // dashboards if a shared link or old bookmark lands them here.
+  const role = boot.data?.profile?.role;
+  useEffect(() => {
+    const home = { "Level-1": "/l1dashboard", "Institute Admin": "/institutedashboard" }[role];
+    if (home) navigate(home, { replace: true });
+  }, [role, navigate]);
+
   const toggleCollapsed = useCallback(() => {
     setCollapsed((c) => {
       try {

@@ -18,7 +18,10 @@ const TopicItem = ({ subtopic, index, attempted, projectTopic }) => {
   const handleStartQuiz = () => {
     const quizTopic = encodeURIComponent(subtopic.subtopic);
     const query = projectTopic ? `?projectTopic=${encodeURIComponent(projectTopic)}` : "";
-    window.location.href = `/l2dashboard/quiz/${quizTopic}${query}`;
+    // Shared by the faculty (/l1dashboard) and student dashboards - stay in
+    // whichever one we're in, so faculty get their own quiz screen.
+    const base = window.location.pathname.startsWith("/l1dashboard") ? "/l1dashboard" : "/l2dashboard";
+    window.location.href = `${base}/quiz/${quizTopic}${query}`;
   };
 
   return (
