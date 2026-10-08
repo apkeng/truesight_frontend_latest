@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { LuRotateCcw, LuCircleCheck, LuChevronRight, LuCalendar, LuClock, LuTrash2, LuBadgeCheck, LuChartLine, LuPlay } from "react-icons/lu";
 import { api, keys } from "../lib/api";
@@ -16,6 +16,12 @@ export default function Results() {
   const [tab, setTab] = useState("all");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(null);
+  const [params] = useSearchParams();
+  const openId = params.get("open");
+  useEffect(() => {
+    const target = openId && data?.results.find((r) => r.id === openId);
+    if (target) setOpen(target);
+  }, [openId, data]);
   const [limit, setLimit] = useState(30);
 
   const list = useMemo(

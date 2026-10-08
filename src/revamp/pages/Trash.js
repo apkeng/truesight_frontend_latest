@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { useSearchParams } from "react-router-dom";
+import { useHighlight } from "../lib/useHighlight";
 import { LuTrash2, LuRotateCcw, LuMap, LuBookOpen, LuClipboardList, LuMessagesSquare, LuArchive } from "react-icons/lu";
 import { api, keys, uidKey } from "../lib/api";
 import { invalidate, setQueryData, useQuery } from "../lib/query";
@@ -29,6 +31,8 @@ export default function Trash() {
   const [confirm, setConfirm] = useState(null); // { kind: 'delete'|'empty', items? }
   const [busy, setBusy] = useState(false);
   const expiredHandled = useRef(false);
+  const [params] = useSearchParams();
+  const highlight = params.get("highlight"); // "<type>:<id>"
 
   // Finish the 30-day purge for textbooks (the backend can't delete those itself).
   useEffect(() => {
@@ -159,7 +163,7 @@ export default function Trash() {
             const Icon = t.icon;
             const key = itemKey(i);
             return (
-              <Card key={key} className={cx("flex items-center gap-4 px-4 py-3.5", selected.has(key) && "ring-1 ring-ts-blue/40")}>
+              <TrashRow key={key} highlight={highlight === key || (highlight === `textbook:${i.id}` && i.type === "textbook")} className={cx("flex items-center gap-4 px-4 py-3.5", selected.has(key) && "ring-1 ring-ts-blue/40")}>
                 <Checkbox checked={selected.has(key)} onChange={(on) => setSelected((s) => { const n = new Set(s); on ? n.add(key) : n.delete(key); return n; })} label={`Select ${i.title}`} />
                 <span className={cx("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", t.box)}><Icon aria-hidden /></span>
                 <div className="min-w-0 flex-1">
@@ -175,7 +179,7 @@ export default function Trash() {
                 <button type="button" disabled={busy} onClick={() => setConfirm({ kind: "delete", items: [i] })} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50" aria-label={`Delete ${i.title} forever`}>
                   <LuTrash2 aria-hidden />
                 </button>
-              </Card>
+              </TrashRow>
             );
           })
         )}
@@ -199,3 +203,8 @@ export default function Trash() {
     </Page>
   );
 }
+
+const TrashRow = ({ highlight, className, children }) => {
+  const ref = useHighlight(highlight);
+  return <Card ref={ref} className={cx(className, highlight && "ring-2 ring-ts-yellow")}>{children}</Card>;
+};

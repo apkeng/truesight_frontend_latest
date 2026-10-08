@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { LuArrowLeft, LuPackageCheck, LuTruck, LuCircleCheck, LuCircleX, LuWarehouse, LuMapPin, LuBuilding2, LuPackage, LuClipboardCheck, LuStore } from "react-icons/lu";
 import { api, keys } from "../lib/api";
@@ -7,6 +7,7 @@ import { invalidate, setQueryData, useQuery } from "../lib/query";
 import { cx, formatDate, num } from "../lib/format";
 import { Badge, Button, Card, ConfirmDialog, EmptyState, ErrorState, SegmentTabs, Skeleton } from "../ui";
 import { Page } from "../layout/AppShell";
+import { useHighlight } from "../lib/useHighlight";
 import { RewardImage } from "../components/ShopBits";
 
 const B = "/l2dashboard";
@@ -26,8 +27,10 @@ const DONE = new Set(["delivered", "collected"]);
 
 export default function Orders() {
   const { state } = useLocation();
+  const [params] = useSearchParams();
+  const highlightId = state?.highlight || params.get("highlight");
   const { data, error, isLoading, refetch } = useQuery(keys.orders(), api.orders, { staleMs: 30_000 });
-  const [tab, setTab] = useState("active");
+  const [tab, setTab] = useState(params.get("highlight") ? "all" : "active");
   const orders = data || [];
   const active = orders.filter((o) => !DONE.has(o.status) && o.status !== "cancelled");
   const list = tab === "active" ? active : tab === "done" ? orders.filter((o) => DONE.has(o.status)) : orders;
@@ -60,7 +63,7 @@ export default function Orders() {
         ) : !list.length ? (
           <EmptyState icon={LuPackage} title={orders.length ? "Nothing here" : "No orders yet"} description={orders.length ? "Switch tabs to see other orders." : "Redeem a reward and you can track it here."} action={!orders.length && <Button size="sm" to={`${B}/rewards`}>Browse rewards</Button>} />
         ) : (
-          list.map((o) => <OrderCard key={o.id} order={o} highlight={state?.highlight === o.id} />)
+          list.map((o) => <OrderCard key={o.id} order={o} highlight={highlightId === o.id} />)
         )}
       </div>
     </Page>
@@ -68,6 +71,7 @@ export default function Orders() {
 }
 
 function OrderCard({ order: o, highlight }) {
+  const cardRef = useHighlight(highlight);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const cancelled = o.status === "cancelled";
@@ -91,7 +95,7 @@ function OrderCard({ order: o, highlight }) {
   };
 
   return (
-    <Card className={cx("overflow-hidden", highlight && "ring-2 ring-ts-yellow")}>
+    <Card ref={cardRef} className={cx("overflow-hidden", highlight && "ring-2 ring-ts-yellow")}>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ts-border bg-ts-subtle/60 px-5 py-3">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ts-muted">
           <span className="font-mono text-[13px] font-bold text-ts-ink">{o.orderNumber}</span>

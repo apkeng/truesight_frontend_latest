@@ -34,6 +34,7 @@ import AnswerMarkdown from "../../pages/shared/components/AnswerMarkdown";
 import TextbookViewer from "../../pages/shared/components/TextbookViewer";
 import { listTextbooks, uploadTextbook, askTextbook, isSessionExpired } from "../../utils/textbookServiceClient";
 import mark from "../assets/mark-reversed-96.png";
+import { NotificationBell } from "../components/Notifications";
 
 const B = "/l2dashboard/ask-a-textbook";
 const booksKey = () => uidKey("assistant:books");
@@ -139,7 +140,8 @@ function AssistantSidebar({ books, chats, loading, activeBook, activeChat, searc
       <div className="flex h-16 items-center gap-2 px-4">
         <img src={mark} alt="" width={26} height={26} className="h-[26px] w-[26px] rounded" />
         <span className="flex items-center gap-1.5 text-[15px] font-bold"><LuSparkles aria-hidden className="text-ts-yellow" /> Ask Text Book</span>
-        <Link to="/l2dashboard/dashboard" className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-white/60 hover:bg-white/10 hover:text-white" aria-label="Back to main menu" title="Back to main menu">
+        <NotificationBell variant="icon" className="ml-auto h-8 w-8 text-white/70 hover:bg-white/10 hover:text-white" />
+        <Link to="/l2dashboard/dashboard" className="flex h-8 w-8 items-center justify-center rounded-lg text-white/60 hover:bg-white/10 hover:text-white" aria-label="Back to main menu" title="Back to main menu">
           <LuPanelLeftClose aria-hidden />
         </Link>
       </div>

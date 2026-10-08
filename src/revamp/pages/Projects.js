@@ -1,18 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { LuPlus, LuCalendar, LuTrash2, LuSlidersHorizontal, LuArrowDownWideNarrow, LuFolderOpen, LuChevronDown } from "react-icons/lu";
+import { LuPlus, LuCalendar, LuTrash2, LuSlidersHorizontal, LuArrowDownWideNarrow, LuFolderOpen, LuChevronDown, LuSparkles, LuCircleAlert, LuRotateCcw, LuX } from "react-icons/lu";
 import { api, keys } from "../lib/api";
 import { invalidate, prefetch, setQueryData, useQuery } from "../lib/query";
 import { cx, coverFor, formatDate, levelLabel } from "../lib/format";
-import { Badge, Button, Card, ConfirmDialog, Dialog, EmptyState, ErrorState, Field, Input, ProgressBar, SearchField, Skeleton, ViewToggle } from "../ui";
+import { Badge, Button, Card, ConfirmDialog, EmptyState, ErrorState, ProgressBar, SearchField, Skeleton, ViewToggle } from "../ui";
 import { Page } from "../layout/AppShell";
-import { useProjectCreation } from "../../hooks/useProjectCreation";
-import PuzzleGate from "../../components/projectCreation/PuzzleGate";
+import { NewProjectDialog, LEVELS } from "../components/NewProjectDialog";
+import { useNotifications } from "../components/Notifications";
 
 const B = "/l2dashboard";
 const VIEW_KEY = "ts-projects-view";
-const LEVELS = ["Primary School", "High School", "Undergraduate", "Postgraduate"];
 const SORTS = {
   newest: { label: "Newest first", fn: (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0) },
   oldest: { label: "Oldest first", fn: (a, b) => new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0) },
@@ -29,7 +28,6 @@ const readView = () => {
 };
 
 export default function Projects() {
-  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const { data, error, isLoading, refetch } = useQuery(keys.projects(), api.projects);
   const [tab, setTab] = useState(params.get("tab") || "all");
@@ -39,12 +37,14 @@ export default function Projects() {
   const [levels, setLevels] = useState([]);
   const [status, setStatus] = useState("any");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [creating, setCreating] = useState(params.get("new") === "1");
+  // null | { topic, level } - also opened by ?new=1&topic=&level= (e.g. a "Try again" notification link)
+  const [creating, setCreating] = useState(params.get("new") === "1" ? { topic: params.get("topic") || "", level: params.get("level") || "" } : null);
   const [toTrash, setToTrash] = useState(null);
   const [trashing, setTrashing] = useState(false);
   const [limit, setLimit] = useState(30);
 
-  const creation = useProjectCreation(api.createProject);
+  const { jobs, refreshJobs } = useNotifications();
+  const visibleJobs = jobs.filter((j) => j.status === "pending" || j.status === "failed");
 
   useEffect(() => {
     try {
@@ -54,25 +54,10 @@ export default function Projects() {
     }
   }, [view]);
 
-  // Fold a finished background creation into the cached list.
-  useEffect(() => {
-    if (creation.status !== "done" || !creation.result) return;
-    invalidate(keys.projects(), keys.dashboard(), keys.challengeTopics());
-    if (!creation.gateOpen) {
-      toast.success(
-        <span>
-          Your roadmap is ready.{" "}
-          <button type="button" className="font-bold underline" onClick={() => navigate(`${B}/projects/self/${creation.result._id}`)}>View project</button>
-        </span>,
-        { autoClose: 8000 }
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [creation.status, creation.result]);
-
-  useEffect(() => {
-    if (creation.status === "error" && !creation.gateOpen) toast.error(creation.error?.message || "Roadmap generation failed - please try again.");
-  }, [creation.status, creation.error, creation.gateOpen]);
+  const dismissJob = async (job) => {
+    setQueryData(keys.projectJobs(), (d) => (d || []).filter((j) => j.id !== job.id));
+    api.dismissJob(job.id).catch(() => refreshJobs());
+  };
 
   const activeFilters = levels.length + (status !== "any" ? 1 : 0);
   const list = useMemo(() => {
@@ -114,7 +99,7 @@ export default function Projects() {
           <h1 className="text-[26px] font-extrabold tracking-tight text-ts-ink">Project Roadmaps</h1>
           <p className="mt-1 text-sm text-ts-muted">Build structured study plans, or explore the roadmaps your educators have assigned.</p>
         </div>
-        <Button icon={LuPlus} onClick={() => setCreating(true)}>New project</Button>
+        <Button icon={LuPlus} onClick={() => setCreating({})}>New project</Button>
       </div>
 
       <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -155,6 +140,12 @@ export default function Projects() {
         </div>
       </div>
 
+      {visibleJobs.length > 0 && (
+        <div className="mt-5 space-y-2">
+          {visibleJobs.map((j) => <JobRow key={j.id} job={j} onRetry={() => { dismissJob(j); setCreating({ topic: j.topic, level: j.levelOfLearning }); }} onDismiss={() => dismissJob(j)} />)}
+        </div>
+      )}
+
       <div className="mt-5">
         {error && !data ? (
           <ErrorState error={error} onRetry={refetch} />
@@ -165,7 +156,7 @@ export default function Projects() {
             icon={LuFolderOpen}
             title={data.projects.length ? "No roadmaps match these filters" : "No roadmaps yet"}
             description={data.projects.length ? "Try clearing filters or searching for something else." : "Create your first self-directed roadmap - AI builds the modules, notes and quizzes."}
-            action={!data.projects.length && <Button icon={LuPlus} onClick={() => setCreating(true)}>New project</Button>}
+            action={!data.projects.length && <Button icon={LuPlus} onClick={() => setCreating({})}>New project</Button>}
           />
         ) : view === "grid" ? (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -184,26 +175,12 @@ export default function Projects() {
       </div>
 
       <NewProjectDialog
-        open={creating}
-        initialTopic={params.get("topic") || ""}
+        open={Boolean(creating)}
+        initialTopic={creating?.topic || ""}
+        initialLevel={creating?.level || ""}
         onClose={() => {
-          setCreating(false);
-          if (params.get("new")) setParams((p) => { p.delete("new"); p.delete("topic"); return p; }, { replace: true });
-        }}
-        onCreate={(payload) => {
-          setCreating(false);
-          creation.start(payload);
-        }}
-      />
-      <PuzzleGate
-        open={creation.gateOpen}
-        status={creation.status}
-        result={creation.result}
-        error={creation.error}
-        onDismiss={creation.dismissGate}
-        onViewProject={(project) => {
-          creation.dismissGate();
-          navigate(`${B}/projects/self/${project._id}`);
+          setCreating(null);
+          if (params.get("new")) setParams((p) => { p.delete("new"); p.delete("topic"); p.delete("level"); return p; }, { replace: true });
         }}
       />
       <ConfirmDialog
@@ -324,46 +301,27 @@ const BookArt = ({ seed, large }) => (
   </span>
 );
 
-function NewProjectDialog({ open, onClose, onCreate, initialTopic }) {
-  const [topic, setTopic] = useState(initialTopic);
-  const [level, setLevel] = useState("");
-  useEffect(() => {
-    if (open) {
-      setTopic(initialTopic);
-      setLevel("");
-    }
-  }, [open, initialTopic]);
-  const valid = topic.trim().length >= 3 && level;
+/** Placeholder for a roadmap still being generated (or one that failed). */
+function JobRow({ job, onRetry, onDismiss }) {
+  const failed = job.status === "failed";
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      tone="navy"
-      eyebrow="Self-directed research"
-      title="Create a new roadmap"
-      description="AI drafts modules, subtopics, study notes and quizzes for your topic."
-      footer={
-        <>
-          <Button variant="secondary" size="sm" onClick={onClose}>Cancel</Button>
-          <Button size="sm" disabled={!valid} onClick={() => onCreate({ topic: topic.trim(), levelOfLearning: level, autoGenerate: true })}>Create project</Button>
-        </>
-      }
-    >
-      <div className="space-y-5">
-        <Field label="1. Research topic" required hint="Be specific, e.g. “Kerala Building Rules 2025 amendment” or “MOSFET circuits”.">
-          <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="What do you want to master?" autoFocus />
-        </Field>
-        <div>
-          <p className="mb-1.5 text-[13px] font-semibold text-ts-ink">2. Level of learning *</p>
-          <div className="grid grid-cols-2 gap-2">
-            {LEVELS.map((l) => (
-              <button key={l} type="button" onClick={() => setLevel(l)} className={cx("rounded-lg border px-3 py-2.5 text-left text-sm font-semibold transition-colors", level === l ? "border-ts-deep bg-ts-deep text-white" : "border-ts-border text-ts-ink hover:border-ts-field")}>
-                {l}
-              </button>
-            ))}
-          </div>
-        </div>
+    <Card className={cx("flex items-center gap-4 p-3 pr-4", failed ? "border-red-200 bg-red-50/40" : "border-dashed border-ts-blue/40 bg-ts-wash/40")}>
+      <span className={cx("flex h-14 w-[84px] shrink-0 items-center justify-center rounded-lg", failed ? "bg-red-100 text-red-500" : "bg-white text-ts-navy")}>
+        {failed ? <LuCircleAlert aria-hidden className="text-xl" /> : <LuSparkles aria-hidden className="animate-pulse text-xl" />}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14px] font-bold text-ts-ink">{job.topic}</p>
+        <p className="mt-0.5 text-[11.5px] text-ts-muted">
+          {failed ? job.error || "Generation failed." : `Generating your ${job.levelOfLearning.toLowerCase()} roadmap… we'll notify you when it's ready.`}
+        </p>
+        {!failed && <div className="mt-2 h-1 w-48 overflow-hidden rounded-full bg-slate-200"><div className="h-full w-1/3 animate-pulse rounded-full bg-ts-navy" /></div>}
       </div>
-    </Dialog>
+      {failed && (
+        <>
+          <Button size="sm" variant="secondary" icon={LuRotateCcw} onClick={onRetry}>Try again</Button>
+          <button type="button" onClick={onDismiss} className="flex h-8 w-8 items-center justify-center rounded-lg text-ts-faint hover:bg-white hover:text-ts-ink" aria-label="Dismiss"><LuX aria-hidden /></button>
+        </>
+      )}
+    </Card>
   );
 }

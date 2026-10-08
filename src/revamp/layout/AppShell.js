@@ -11,6 +11,7 @@ import { cx } from "../lib/format";
 import { Avatar, Skeleton } from "../ui";
 import { NAV, BASE, warm, activeNavId } from "../routes";
 import mark from "../assets/mark-colour-96.png";
+import { NotificationBell, NotificationProvider } from "../components/Notifications";
 
 const COLLAPSE_KEY = "ts-sidebar-collapsed";
 
@@ -87,6 +88,7 @@ export default function AppShell({ children }) {
 
   return (
     <ShellContext.Provider value={ctx}>
+      <NotificationProvider initialUnread={boot.data?.badges?.notifications}>
       <div className="ts-app min-h-screen bg-ts-canvas text-ts-ink antialiased">
         {mobileOpen && <div className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden" onClick={() => setMobileOpen(false)} aria-hidden />}
 
@@ -157,6 +159,7 @@ export default function AppShell({ children }) {
                 })}
               </nav>
 
+              <div className="px-3 pb-1"><NotificationBell collapsed={collapsed} /></div>
               <div className={cx("border-t border-ts-border p-3", collapsed && "lg:px-2")}>
                 <Link
                   to={`${BASE}/profile`}
@@ -190,6 +193,7 @@ export default function AppShell({ children }) {
             </button>
             <img src={mark} alt="" width={24} height={24} className="h-6 w-6" />
             <span className="font-bold text-ts-navy">Truesight</span>
+            <NotificationBell variant="icon" className="ml-auto text-ts-ink" />
           </div>
           <main className="flex-1">
             <PageErrorBoundary resetKey={location.pathname}>
@@ -199,6 +203,7 @@ export default function AppShell({ children }) {
         </div>
         <ToastContainer position="top-right" autoClose={2600} hideProgressBar newestOnTop theme="light" />
       </div>
+      </NotificationProvider>
     </ShellContext.Provider>
   );
 }

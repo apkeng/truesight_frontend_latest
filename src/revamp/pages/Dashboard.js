@@ -29,6 +29,7 @@ import { Badge, Button, Card, CardTitle, ErrorState, ProgressBar, SearchField, S
 import { Page } from "../layout/AppShell";
 import { Composer } from "../components/Composer";
 import { DailyQuestionDialog, PuzzleDialog } from "../components/DailyPlay";
+import { NewProjectDialog } from "../components/NewProjectDialog";
 
 const B = "/l2dashboard";
 
@@ -436,6 +437,7 @@ function SyllabusMindMap({ summary }) {
   const syllabus = useQuery(summary ? keys.syllabus() : null, api.syllabus);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [creatingTopic, setCreatingTopic] = useState(null);
   const fileRef = useRef(null);
 
   const upload = async (file) => {
@@ -482,7 +484,7 @@ function SyllabusMindMap({ summary }) {
                     <li key={j} className="truncate text-[11px] text-ts-muted">• {typeof s === "string" ? s : s.name || s.title}</li>
                   ))}
                 </ul>
-                <Link to={`${B}/projects?new=1&topic=${encodeURIComponent(t.name || t.title || t.topic || "")}`} className="mt-2 inline-block text-[11px] font-semibold text-ts-blue hover:underline">Create project →</Link>
+                <button type="button" onClick={() => setCreatingTopic(t.name || t.title || t.topic || "")} className="mt-2 inline-block text-[11px] font-semibold text-ts-blue hover:underline">Create project →</button>
               </div>
             ))}
           </div>
@@ -504,6 +506,12 @@ function SyllabusMindMap({ summary }) {
         </button>
       )}
       <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
+      <NewProjectDialog
+        open={creatingTopic !== null}
+        onClose={() => setCreatingTopic(null)}
+        initialTopic={[creatingTopic, syllabus.data?.mindmap?.syllabusTitle].filter(Boolean).join(" - ").slice(0, 200)}
+        source="syllabus"
+      />
     </Card>
   );
 }

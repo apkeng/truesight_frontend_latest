@@ -50,6 +50,8 @@ export const keys = {
   chats: (bookId) => uidKey(`chats:${bookId || "all"}`),
   chat: (id) => uidKey(`chat:${id}`),
   syllabus: () => uidKey("syllabus"),
+  notifications: () => uidKey("notifications"),
+  projectJobs: () => uidKey("learn:project-jobs"),
 };
 
 const v2 = (path) => `/api/v2${path}`;
@@ -83,6 +85,11 @@ export const api = {
   project: (kind, id) => apiClient.get(v2(`/learn/projects/${kind}/${id}`)),
   trashProject: (id) => apiClient.post(v2(`/learn/projects/${id}/trash`), {}),
   createProject: (payload) => createProject(payload),
+  // Background roadmap generation: returns at once, ends with a notification.
+  generateProject: ({ topic, levelOfLearning, source }) =>
+    apiClient.post(v2("/learn/projects/generate"), { topic, levelOfLearning, source }).then((r) => r.job),
+  projectJobs: () => apiClient.get(v2("/learn/projects/jobs")).then((r) => r.jobs),
+  dismissJob: (id) => apiClient.delete(v2(`/learn/projects/jobs/${id}`)),
   results: () => apiClient.get(v2("/learn/results")),
   result: (id) => apiClient.get(v2(`/learn/results/${id}`)).then((r) => r.result),
   trashResult: (id) => apiClient.delete(v2(`/learn/results/${id}`)),
@@ -122,6 +129,13 @@ export const api = {
   appendChat: (id, messages) => apiClient.post(v2(`/chats/${id}/messages`), { messages }),
   renameChat: (id, title) => apiClient.patch(v2(`/chats/${id}`), { title }),
   trashChat: (id) => apiClient.delete(v2(`/chats/${id}`)),
+
+  // notifications
+  notifications: (before) => apiClient.get(v2(`/notifications?limit=30${before ? `&before=${encodeURIComponent(before)}` : ""}`)),
+  unreadCount: () => apiClient.get(v2("/notifications/unread-count")).then((r) => r.unread),
+  markRead: (id, read = true) => apiClient.post(v2(`/notifications/${id}/read`), { read }),
+  markAllRead: () => apiClient.post(v2("/notifications/read-all"), {}),
+  deleteNotification: (id) => apiClient.delete(v2(`/notifications/${id}`)),
 
   // syllabus mind map + daily question (v1)
   syllabus: getSyllabus,

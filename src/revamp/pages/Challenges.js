@@ -23,6 +23,7 @@ import { invalidate, setQueryData, useQuery } from "../lib/query";
 import { cx, countdown } from "../lib/format";
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, ErrorState, PageHeader, SegmentTabs, Skeleton, Spinner } from "../ui";
 import { Page } from "../layout/AppShell";
+import { useHighlight } from "../lib/useHighlight";
 import { NewChallengeDialog } from "../components/NewChallengeDialog";
 
 const B = "/l2dashboard";
@@ -43,7 +44,8 @@ export default function Challenges() {
   const tab = params.get("tab") === "requests" ? "requests" : "mine";
   const { data, error, isLoading, refetch } = useQuery(keys.challenges(), api.challenges, { staleMs: 15_000 });
   const [dialog, setDialog] = useState(null); // { preset } | null
-  const [compareId, setCompareId] = useState(null);
+  const [compareId, setCompareId] = useState(params.get("compare"));
+  const highlight = params.get("highlight") || params.get("compare");
   const [, tick] = useState(0);
 
   // Keep the "expires in" countdowns moving.
@@ -51,6 +53,16 @@ export default function Challenges() {
     const t = setInterval(() => tick((n) => n + 1), 30_000);
     return () => clearInterval(t);
   }, []);
+
+  // A notification link may point at a challenge on the other tab.
+  useEffect(() => {
+    const target = data?.challenges.find((c) => c.id === highlight);
+    if (!target) return;
+    const want = target.state === "invite_received" ? "requests" : "mine";
+    if (want !== tab) setParams((p) => { if (want === "requests") p.set("tab", "requests"); else p.delete("tab"); return p; }, { replace: true });
+    // only when the target or data changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, highlight]);
 
   const list = useMemo(
     () => (data?.challenges || []).filter((c) => (tab === "requests" ? c.state === "invite_received" : c.state !== "invite_received")),
@@ -92,7 +104,7 @@ export default function Challenges() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {list.map((c) => (
-              <ChallengeCard key={c.id} c={c} onRechallenge={() => setDialog({ preset: { topic: c.topic, domain: c.domain, peer: c.peer } })} onCompare={() => setCompareId(c.id)} />
+              <ChallengeCard key={c.id} c={c} highlight={highlight === c.id} onRechallenge={() => setDialog({ preset: { topic: c.topic, domain: c.domain, peer: c.peer } })} onCompare={() => setCompareId(c.id)} />
             ))}
           </div>
         )}
@@ -114,8 +126,9 @@ const Stats = ({ challenges }) => {
   );
 };
 
-function ChallengeCard({ c, onRechallenge, onCompare }) {
+function ChallengeCard({ c, highlight, onRechallenge, onCompare }) {
   const navigate = useNavigate();
+  const cardRef = useHighlight(highlight);
   const [busy, setBusy] = useState(null);
   const badge = STATE_BADGE[c.state] || STATE_BADGE.expired;
 
@@ -146,7 +159,7 @@ function ChallengeCard({ c, onRechallenge, onCompare }) {
   const peerRole = c.role === "challenger" ? "Invited peer" : "Challenger";
 
   return (
-    <Card className="flex flex-col p-4">
+    <Card ref={cardRef} className={cx("flex flex-col p-4 transition-shadow", highlight && "ring-2 ring-ts-yellow")}>
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex min-w-0 items-center gap-1.5 rounded-md border border-ts-border bg-ts-subtle px-2 py-1 text-[10.5px] font-semibold text-ts-body">
           <LuBook aria-hidden className="shrink-0" /> <span className="truncate">{c.domain || "Peer quiz"}</span>

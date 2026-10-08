@@ -125,11 +125,13 @@ export const CountPill = ({ children, active = false, tone }) => (
 
 // -------------------------------------------------------------------- Card
 
-export const Card = ({ as: Tag = "div", className, children, ...props }) => (
-  <Tag className={cx("rounded-xl border border-ts-border bg-white shadow-card", className)} {...props}>
-    {children}
-  </Tag>
-);
+export const Card = React.forwardRef(function Card({ as: Tag = "div", className, children, ...props }, ref) {
+  return (
+    <Tag ref={ref} className={cx("rounded-xl border border-ts-border bg-white shadow-card", className)} {...props}>
+      {children}
+    </Tag>
+  );
+});
 
 export const CardTitle = ({ icon: Icon, children, action, className }) => (
   <div className={cx("flex items-center justify-between gap-3", className)}>
