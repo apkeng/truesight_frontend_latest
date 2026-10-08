@@ -23,7 +23,8 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const ResetPasswordWithOTP = lazy(() => import("./pages/ResetPasswordWithOTP"));
 const Level1Dashboard = lazy(() => import("./pages/Level-1/Level-1"));
-const Level2Dashboard = lazy(() => import("./pages/Level-2/Level-2"));
+// Revamped student app (Figma "TrueSights" design system) - src/revamp.
+const Level2Dashboard = lazy(() => import("./revamp/StudentApp"));
 const Events = lazy(() => import("./pages/Events"));
 const EventDetails = lazy(() => import("./pages/Events/EventDetails"));
 
