@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LuShieldCheck, LuHeart, LuShirt, LuWand, LuFlame, LuShoppingBag, LuArrowRight, LuArrowDownWideNarrow, LuChevronDown, LuLock, LuGift } from "react-icons/lu";
+import { LuShieldCheck, LuHeart, LuShirt, LuWand, LuFlame, LuShoppingBag, LuArrowRight, LuArrowDownWideNarrow, LuChevronDown, LuGift, LuStar } from "react-icons/lu";
 import { api, keys } from "../lib/api";
 import { prefetch, useQuery } from "../lib/query";
 import { cx, num } from "../lib/format";
-import { Button, Card, EmptyState, ErrorState, ProgressBar, SearchField, Skeleton } from "../ui";
+import { Button, Card, EmptyState, ErrorState, SearchField, Skeleton } from "../ui";
 import { Page, useShell } from "../layout/AppShell";
-import { HeartButton, RewardImage, ShopCounters, useWishlist } from "../components/ShopBits";
+import { HeartButton, RewardImage, ShopHeaderActions, useWishlist } from "../components/ShopBits";
 
 const B = "/l2dashboard";
 const PAGE = 24;
@@ -43,18 +43,14 @@ export default function Rewards() {
 
   return (
     <Page wide>
-      <Card className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+      {/* Rewards header (Figma 10) */}
+      <header className="flex flex-col gap-4 rounded-2xl bg-ts-navy px-6 py-5 text-white shadow-lift md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-[24px] font-extrabold tracking-tight text-ts-ink">Rewards</h1>
-          <p className="mt-0.5 text-sm text-ts-muted">Redeem your points for gear, collectibles and wellness picks - delivered to you or your campus.</p>
+          <h1 className="text-[24px] font-extrabold tracking-tight">Rewards</h1>
+          <p className="mt-0.5 text-[13px] text-white/80">Exchange the points you have earned for the rewards available to your institute.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex h-10 items-center gap-2 rounded-lg bg-ts-yellow/30 px-3.5 text-sm font-bold text-ts-ink">
-            <LuGift aria-hidden className="text-ts-navy" /> {num(points)} pts available
-          </span>
-          <ShopCounters badges={badges} orders={activeOrders} />
-        </div>
-      </Card>
+        <ShopHeaderActions badges={badges} orders={activeOrders} points={points} />
+      </header>
 
       <div className="mt-5 flex flex-col gap-3 xl:flex-row xl:items-center">
         <div className="flex max-w-full items-center gap-1.5 overflow-x-auto rounded-xl border border-ts-border bg-white p-1 shadow-card no-scrollbar">
@@ -112,28 +108,36 @@ const CatButton = ({ active, onClick, icon: Icon, label, count }) => (
 function RewardCard({ reward: r, points, wished, onWish }) {
   const navigate = useNavigate();
   const to = `${B}/rewards/${r.id}`;
-  const pct = Math.min(100, Math.round((points / Math.max(1, r.pointsRequired)) * 100));
-  const unlocked = points >= r.pointsRequired;
+  const affordable = points >= r.pointsRequired;
   const out = r.stock === 0;
   return (
     <Card className="group flex flex-col overflow-hidden transition-shadow hover:shadow-lift" onMouseEnter={() => prefetch(keys.reward(r.id), () => api.reward(r.id))}>
       <Link to={to} className="relative block aspect-[4/3] overflow-hidden bg-ts-subtle">
-        <RewardImage src={r.imageUrl} alt={r.name} className="transition-transform duration-300 group-hover:scale-[1.03]" />
-        <HeartButton on={wished} onClick={onWish} className="absolute right-2.5 top-2.5" />
-        {out && <span className="absolute left-2.5 top-2.5 rounded bg-ts-ink/80 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Out of stock</span>}
-        {typeof r.stock === "number" && r.stock > 0 && r.stock <= 3 && <span className="absolute left-2.5 top-2.5 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Only {r.stock} left</span>}
+        <RewardImage src={r.imageUrl} alt={r.name} className="object-contain transition-transform duration-300 group-hover:scale-[1.03]" />
+        <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-md bg-ts-navy px-1.5 py-0.5 text-[10px] font-extrabold text-white shadow">
+          <LuStar aria-hidden className="fill-ts-yellow text-ts-yellow" /> {num(r.pointsRequired)} PTS
+        </span>
+        <span className="absolute right-11 top-2.5 rounded-md border border-ts-border bg-white px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.06em] text-ts-ink">
+          {CATEGORY[r.category]?.label || r.category}
+        </span>
+        <HeartButton on={wished} onClick={onWish} className="absolute right-2.5 top-2 h-7 w-7" />
+        {out && <span className="absolute bottom-2.5 left-2.5 rounded bg-ts-ink/80 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Out of stock</span>}
+        {!out && typeof r.stock === "number" && r.stock <= 3 && <span className="absolute bottom-2.5 left-2.5 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Only {r.stock} left</span>}
       </Link>
-      <div className="flex flex-1 flex-col p-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-ts-faint">{r.brand || CATEGORY[r.category]?.label || r.category}</p>
-        <Link to={to} className="mt-0.5 line-clamp-2 text-[14px] font-bold leading-snug text-ts-ink hover:text-ts-navy">{r.name}</Link>
-        <p className="mt-1.5 text-[17px] font-extrabold text-ts-navy">{num(r.pointsRequired)} <span className="text-[11px] font-bold text-ts-muted">PTS</span></p>
-        <div className="mt-auto pt-3">
-          <div className="mb-1 flex items-center justify-between text-[10.5px]">
-            <span className={unlocked ? "font-semibold text-emerald-600" : "text-ts-muted"}>{unlocked ? "Unlocked" : `${num(r.pointsRequired - points)} pts to unlock`}</span>
-            {!unlocked && <LuLock aria-hidden className="text-ts-faint" />}
-          </div>
-          <ProgressBar value={pct} tone={unlocked ? "green" : "navy"} className="h-1" />
-          <Button size="sm" block className="mt-3" iconRight={LuArrowRight} disabled={out} onClick={() => navigate(to)}>View & Redeem</Button>
+      <div className="flex flex-1 flex-col border-t border-ts-border p-4">
+        {affordable && !out && <span className="mb-1.5 w-fit rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10.5px] font-semibold text-emerald-700">Available to Redeem</span>}
+        <Link to={to} className="line-clamp-2 text-[14px] font-bold leading-snug text-ts-ink hover:text-ts-navy">{r.name}</Link>
+        {r.summary && <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-ts-muted">{r.summary}</p>}
+        <div className="mt-auto pt-4">
+          {affordable && !out ? (
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" className="flex-1" onClick={() => navigate(to)}>Details</Button>
+              <Button size="sm" className="flex-[1.6]" iconRight={LuArrowRight} onClick={() => navigate(to)}>Redeem Now</Button>
+            </div>
+          ) : (
+            <Button size="sm" block iconRight={LuArrowRight} disabled={out} onClick={() => navigate(to)}>View &amp; Redeem</Button>
+          )}
+          {!affordable && !out && <p className="mt-1.5 text-center text-[10.5px] text-ts-muted">{num(r.pointsRequired - points)} more points to unlock</p>}
         </div>
       </div>
     </Card>

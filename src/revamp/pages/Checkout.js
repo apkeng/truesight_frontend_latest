@@ -145,47 +145,75 @@ export default function Checkout() {
           </Card>
         </div>
 
-        {/* Card / Order Summary */}
+        {/* Card / Order Summary (Figma 11) */}
         <Card className="h-fit p-5 lg:sticky lg:top-6">
-          <h2 className="text-[15px] font-bold text-ts-ink">Order summary</h2>
-          <ul className="mt-3 space-y-3">
+          <ul className="space-y-3 border-b border-ts-border pb-4">
             {lines.map((l) => (
               <li key={l.key} className="flex items-center gap-3">
-                <span className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-ts-subtle"><RewardImage src={l.reward.imageUrl} /></span>
+                <span className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-ts-border bg-ts-subtle"><RewardImage src={l.reward.imageUrl} className="object-contain" /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="line-clamp-1 text-[13px] font-semibold text-ts-ink">{l.reward.name}</span>
-                  <span className="text-[11px] text-ts-muted">{l.option ? `${l.option} · ` : ""}Qty {l.qty}</span>
+                  <span className="block text-[10px] font-extrabold uppercase tracking-[0.08em] text-ts-blue">{l.reward.category}</span>
+                  <span className="line-clamp-1 text-[13.5px] font-bold text-ts-ink">{l.reward.name}</span>
+                  <span className="text-[11px] text-ts-muted">
+                    {l.option ? `Option: ${l.option} · ` : ""}Qty {l.qty}
+                    {l.reward.stock !== 0 && <span className="font-semibold text-emerald-600"> · In Stock</span>}
+                  </span>
                 </span>
-                <span className="text-[13px] font-bold text-ts-ink">{num(l.reward.pointsRequired * l.qty)}</span>
               </li>
             ))}
           </ul>
 
-          <div className="mt-4 border-t border-ts-border pt-3">
-            {coupon ? (
-              <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
-                <span className="flex items-center gap-1.5 font-bold text-emerald-700"><LuTicketPercent aria-hidden /> {coupon.coupon.code}{coupon.coupon.description ? ` · ${coupon.coupon.description}` : ""}</span>
-                <button type="button" onClick={() => setCoupon(null)} className="text-emerald-700 hover:text-emerald-900" aria-label="Remove coupon"><LuX aria-hidden /></button>
-              </div>
-            ) : couponOpen ? (
-              <div className="flex gap-2">
-                <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="STUDENT CODE" className="h-9 font-mono uppercase" onKeyDown={(e) => e.key === "Enter" && applyCoupon()} autoFocus />
-                <Button variant="navy" size="sm" className="h-9" loading={checking} onClick={applyCoupon}>Apply</Button>
-              </div>
-            ) : (
-              <button type="button" onClick={() => setCouponOpen(true)} className="text-[13px] font-semibold text-ts-blue hover:underline">+ Apply Student Coupon</button>
-            )}
+          <dl className="space-y-2 border-b border-ts-border py-4 text-[13px]">
+            <div className="flex justify-between"><dt className="text-ts-muted">Base Points Price</dt><dd className="font-semibold text-ts-ink">{num(subtotal)} PTS</dd></div>
+            <div className="flex justify-between"><dt className="text-ts-muted">Cash Payment</dt><dd className="font-semibold text-emerald-600">FREE (₹0.00)</dd></div>
+            <div className="flex justify-between"><dt className="text-ts-muted">{fulfilment === "pickup" ? "Campus pickup" : "Delivery"}</dt><dd className="font-semibold text-emerald-600">Free</dd></div>
+            {discount > 0 && <div className="flex justify-between text-emerald-700"><dt>Coupon {coupon?.coupon.code}</dt><dd className="font-semibold">−{num(discount)} PTS</dd></div>}
+            <div className="pt-1">
+              {coupon ? (
+                <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
+                  <span className="flex items-center gap-1.5 font-bold text-emerald-700"><LuTicketPercent aria-hidden /> {coupon.coupon.code}{coupon.coupon.description ? ` · ${coupon.coupon.description}` : ""}</span>
+                  <button type="button" onClick={() => setCoupon(null)} className="text-emerald-700 hover:text-emerald-900" aria-label="Remove coupon"><LuX aria-hidden /></button>
+                </div>
+              ) : couponOpen ? (
+                <div className="flex gap-2">
+                  <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="STUDENT CODE" className="h-9 font-mono uppercase" onKeyDown={(e) => e.key === "Enter" && applyCoupon()} autoFocus />
+                  <Button variant="navy" size="sm" className="h-9" loading={checking} onClick={applyCoupon}>Apply</Button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setCouponOpen(true)} className="text-[13px] font-semibold text-ts-blue hover:underline">+ Apply Student Coupon</button>
+              )}
+            </div>
+          </dl>
+
+          <div className="border-b border-ts-border py-4">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[14px] font-bold text-ts-ink">Total Deduction</span>
+              <span className="text-[22px] font-extrabold text-ts-navy">{num(total)} PTS</span>
+            </div>
+            <div className="mt-0.5 flex justify-between text-[12px]">
+              <span className="text-ts-muted">Post-Redemption Balance:</span>
+              <span className={cx("font-semibold", short ? "text-red-600" : "text-emerald-600")}>{num(points - total)} PTS (from {num(points)} PTS)</span>
+            </div>
           </div>
 
-          <dl className="mt-4 space-y-1.5 text-sm">
-            <div className="flex justify-between"><dt className="text-ts-muted">Subtotal</dt><dd className="font-semibold">{num(subtotal)} pts</dd></div>
-            {discount > 0 && <div className="flex justify-between text-emerald-700"><dt>Coupon</dt><dd className="font-semibold">−{num(discount)} pts</dd></div>}
-            <div className="flex justify-between"><dt className="text-ts-muted">{fulfilment === "pickup" ? "Campus pickup" : "Delivery"}</dt><dd className="font-semibold text-emerald-700">Free</dd></div>
-            <div className="flex justify-between border-t border-ts-border pt-2 text-base"><dt className="font-bold">Total</dt><dd className="font-extrabold text-ts-navy">{num(total)} pts</dd></div>
-            <div className="flex justify-between text-xs"><dt className="text-ts-muted">Balance after</dt><dd className={cx("font-bold", short ? "text-red-600" : "text-ts-ink")}>{num(points - total)} pts</dd></div>
-          </dl>
+          <fieldset className="pt-4">
+            <legend className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-ts-faint">Payment method</legend>
+            <label className="mt-2 flex cursor-pointer items-center justify-between gap-2 rounded-lg border border-ts-deep px-3 py-2.5 ring-1 ring-ts-deep/20">
+              <span className="flex items-center gap-2 text-[13px] font-semibold text-ts-ink">
+                <input type="radio" name="payment" checked readOnly className="accent-[#0B3A6F]" /> 100% Mastery Points
+              </span>
+              <span className="text-[11px] font-semibold text-emerald-600">Instant ({num(total)} PTS)</span>
+            </label>
+            <label className="mt-2 flex cursor-not-allowed items-center justify-between gap-2 rounded-lg border border-ts-border bg-ts-subtle px-3 py-2.5 opacity-70">
+              <span className="flex items-center gap-2 text-[13px] text-ts-muted">
+                <input type="radio" name="payment" disabled className="accent-[#0B3A6F]" /> Cash on Points (Hybrid)
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-ts-faint">Coming soon</span>
+            </label>
+          </fieldset>
+
           {short > 0 && <p className="mt-3 rounded-lg bg-red-50 p-2.5 text-xs text-red-700">You're {num(short)} points short. Earn more through quizzes, challenges and events.</p>}
-          <Button block size="lg" className="mt-4" iconRight={LuCheck} disabled={!valid} loading={placing} onClick={place}>Authorize & Confirm Acquisition</Button>
+          <Button block size="lg" className="mt-4" iconRight={LuCheck} disabled={!valid} loading={placing} onClick={place}>Authorize &amp; Confirm Acquisition</Button>
           <p className="mt-2 text-center text-[11px] text-ts-faint">Points are deducted now. You can cancel until the order is packed.</p>
         </Card>
       </div>

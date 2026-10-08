@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { LuPlus, LuCalendar, LuTrash2, LuSlidersHorizontal, LuArrowDownWideNarrow, LuFolderOpen, LuChevronDown, LuSparkles, LuCircleAlert, LuRotateCcw, LuX } from "react-icons/lu";
+import { LuPlus, LuCalendar, LuTrash2, LuSlidersHorizontal, LuArrowDownWideNarrow, LuFolderOpen, LuChevronDown, LuSparkles, LuCircleAlert, LuRotateCcw, LuX, LuArrowLeft } from "react-icons/lu";
 import { api, keys } from "../lib/api";
 import { invalidate, prefetch, setQueryData, useQuery } from "../lib/query";
 import { cx, coverFor, formatDate, levelLabel } from "../lib/format";
@@ -94,50 +94,62 @@ export default function Projects() {
 
   return (
     <Page wide>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[26px] font-extrabold tracking-tight text-ts-ink">Project Roadmaps</h1>
-          <p className="mt-1 text-sm text-ts-muted">Build structured study plans, or explore the roadmaps your educators have assigned.</p>
-        </div>
-        <Button icon={LuPlus} onClick={() => setCreating({})}>New project</Button>
-      </div>
-
-      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-ts-border bg-white p-1 shadow-card no-scrollbar" role="tablist">
-          {tabs.map((t) => (
-            <button
-              key={t.value}
-              role="tab"
-              aria-selected={tab === t.value}
-              type="button"
-              onClick={() => {
-                setTab(t.value);
-                setParams((p) => { p.set("tab", t.value); return p; }, { replace: true });
-              }}
-              className={cx("inline-flex h-8 shrink-0 items-center gap-2 rounded-lg px-3 text-[13px] font-semibold", tab === t.value ? "bg-ts-navy text-white" : "text-ts-muted hover:text-ts-ink")}
-            >
-              {t.label}
-              {t.count !== undefined && <span className={cx("rounded-full px-1.5 text-[10px] leading-[18px]", tab === t.value ? "bg-white/20" : "bg-slate-100")}>{t.count}</span>}
-            </button>
-          ))}
-        </div>
-        <SearchField value={q} onChange={setQ} placeholder="Search roadmaps by title or topic…" className="min-w-[200px] flex-1" />
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Button variant="secondary" size="md" icon={LuSlidersHorizontal} onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}>
-              Filters {activeFilters > 0 && <Badge tone="blue">{activeFilters} active</Badge>}
-            </Button>
-            {filtersOpen && <FiltersPopover levels={levels} setLevels={setLevels} status={status} setStatus={setStatus} onClose={() => setFiltersOpen(false)} />}
+      {/* Header / Project (Figma 08): title, hub chip, back link and every list control live in the banner. */}
+      <header className="relative rounded-2xl bg-ts-navy px-5 py-5 text-white shadow-lift sm:px-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-[26px] font-extrabold tracking-tight">Project Roadmaps</h1>
+              <span className="rounded bg-ts-yellow px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-ts-ink">Study &amp; research hub</span>
+              <Link to="/l2dashboard/dashboard" className="inline-flex items-center gap-1 rounded-md border border-white/25 bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-white/20">
+                <LuArrowLeft aria-hidden /> Dashboard
+              </Link>
+            </div>
+            <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-white/80">
+              Unified study workspace combining faculty-assigned academic curriculums and your self-directed personal research projects in one intelligent roadmap hub.
+            </p>
           </div>
-          <label className="relative inline-flex h-9 items-center gap-2 rounded-lg border border-ts-border bg-white pl-3 pr-8 text-sm font-semibold text-ts-ink shadow-card">
-            <LuArrowDownWideNarrow aria-hidden className="text-ts-muted" />
-            <select value={sort} onChange={(e) => setSort(e.target.value)} className="appearance-none bg-transparent outline-none" aria-label="Sort roadmaps">
-              {Object.entries(SORTS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}
-            </select>
-            <LuChevronDown aria-hidden className="pointer-events-none absolute right-2.5 text-ts-muted" />
-          </label>
-          <ViewToggle value={view} onChange={setView} />
+          <Button pill icon={LuPlus} onClick={() => setCreating({})}>New project</Button>
         </div>
+        <div className="mt-4 flex flex-col gap-2 lg:flex-row lg:items-center">
+          <SearchField value={q} onChange={setQ} placeholder="Search projects, authors, or modules" className="min-w-[200px] flex-1" />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <Button variant="secondary" size="md" className="h-10 border-white" icon={LuSlidersHorizontal} onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}>
+                Filters {activeFilters > 0 && <Badge tone="blue">{activeFilters} active</Badge>}
+              </Button>
+              {filtersOpen && <FiltersPopover levels={levels} setLevels={setLevels} status={status} setStatus={setStatus} onClose={() => setFiltersOpen(false)} />}
+            </div>
+            <label className="relative inline-flex h-10 items-center gap-2 rounded-lg bg-white pl-3 pr-8 text-sm font-semibold text-ts-ink">
+              <LuArrowDownWideNarrow aria-hidden className="text-ts-muted" />
+              <select value={sort} onChange={(e) => setSort(e.target.value)} className="appearance-none bg-transparent outline-none" aria-label="Sort roadmaps">
+                {Object.entries(SORTS).map(([k, sv]) => <option key={k} value={k}>{sv.label}</option>)}
+              </select>
+              <LuChevronDown aria-hidden className="pointer-events-none absolute right-2.5 text-ts-muted" />
+            </label>
+            <ViewToggle value={view} onChange={setView} />
+          </div>
+        </div>
+      </header>
+
+      {/* Tab / Roadmaps */}
+      <div className="mt-5 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-ts-border bg-white p-1 shadow-card no-scrollbar" role="tablist">
+        {tabs.map((t) => (
+          <button
+            key={t.value}
+            role="tab"
+            aria-selected={tab === t.value}
+            type="button"
+            onClick={() => {
+              setTab(t.value);
+              setParams((p) => { p.set("tab", t.value); return p; }, { replace: true });
+            }}
+            className={cx("inline-flex h-8 shrink-0 items-center gap-2 rounded-lg px-3 text-[13px] font-semibold", tab === t.value ? "bg-ts-navy text-white" : "text-ts-muted hover:text-ts-ink")}
+          >
+            {t.label}
+            {t.count !== undefined && <span className={cx("rounded-full px-1.5 text-[10px] leading-[18px]", tab === t.value ? "bg-white/20" : "bg-slate-100")}>{t.count}</span>}
+          </button>
+        ))}
       </div>
 
       {visibleJobs.length > 0 && (
@@ -232,18 +244,39 @@ const KindTag = ({ project }) =>
     <Badge tone="blue" caps>Educator assigned{project.ownerName ? ` • ${project.ownerName}` : ""}</Badge>
   );
 
+// Overlay chip on the cover (Card / Project): solid, high-contrast.
+const CoverTag = ({ project }) =>
+  project.kind === "self" ? (
+    <span className="absolute left-2.5 top-2.5 rounded bg-emerald-700 px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.06em] text-white shadow">Self-directed</span>
+  ) : (
+    <span className="absolute left-2.5 top-2.5 max-w-[85%] truncate rounded bg-ts-navy px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.06em] text-white shadow">
+      Assigned{project.ownerName ? ` • ${project.ownerName}` : ""}
+    </span>
+  );
+
+/** Generated cover art when available; illustrated gradient while it's being made. */
+const Cover = ({ project, className, large }) => (
+  <span className={cx("relative block overflow-hidden", className)} style={coverFor(project.id)}>
+    {project.coverUrl ? (
+      <img src={project.coverUrl} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+    ) : (
+      <BookArt seed={project.title} large={large} />
+    )}
+  </span>
+);
+
 const warmProject = (p) => prefetch(keys.project(p.kind, p.id), () => api.project(p.kind, p.id));
 
 function ProjectRow({ project: p, onTrash }) {
   const to = `${B}/projects/${p.kind}/${p.id}`;
   return (
     <Card className="flex items-center gap-4 p-3 pr-4 transition-shadow hover:shadow-lift" onMouseEnter={() => warmProject(p)}>
-      <Link to={to} className="h-14 w-[84px] shrink-0 overflow-hidden rounded-lg" style={coverFor(p.id)} aria-hidden tabIndex={-1}>
-        <BookArt seed={p.title} />
+      <Link to={to} className="h-[60px] w-[92px] shrink-0 overflow-hidden rounded-lg" aria-hidden tabIndex={-1}>
+        <Cover project={p} className="h-full w-full" />
       </Link>
       <div className="min-w-0 flex-1">
         <Link to={to} className="block truncate text-[14px] font-bold text-ts-ink hover:text-ts-navy">{p.title}</Link>
-        <p className="mt-0.5 flex items-center gap-1 text-[11px] text-ts-muted"><LuCalendar aria-hidden /> {formatDate(p.updatedAt || p.createdAt)}</p>
+        <p className="mt-0.5 flex items-center gap-1 text-[11px] text-ts-muted"><LuCalendar aria-hidden /> {formatDate(p.createdAt || p.updatedAt)}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           <KindTag project={p} />
           <Badge caps>{levelLabel(p.levelOfLearning)}</Badge>
@@ -265,31 +298,37 @@ function ProjectCard({ project: p, onTrash }) {
   const to = `${B}/projects/${p.kind}/${p.id}`;
   return (
     <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lift" onMouseEnter={() => warmProject(p)}>
-      <Link to={to} className="relative block h-36" style={coverFor(p.id)} tabIndex={-1} aria-hidden>
-        <BookArt seed={p.title} large />
+      <Link to={to} className="relative block" tabIndex={-1} aria-hidden>
+        <Cover project={p} className="aspect-[16/7]" large />
+        <CoverTag project={p} />
       </Link>
       <div className="flex flex-1 flex-col p-4">
-        <div className="flex flex-wrap gap-1.5"><KindTag project={p} /></div>
-        <Link to={to} className="mt-2 line-clamp-2 text-[15px] font-bold leading-snug text-ts-ink hover:text-ts-navy">{p.title}</Link>
-        <p className="mt-1 flex items-center gap-1 text-[11px] text-ts-muted"><LuCalendar aria-hidden /> {formatDate(p.updatedAt || p.createdAt)} · {levelLabel(p.levelOfLearning)} · {p.modules} Modules</p>
-        <div className="mt-auto pt-4">
-          <div className="mb-1 flex justify-between text-[11px]"><span className="text-ts-muted">{p.completedSubtopics}/{p.subtopics} subtopics</span><span className="font-bold text-ts-ink">{p.progress}%</span></div>
-          <ProgressBar value={p.progress} />
-          <div className="mt-3 flex items-center gap-2">
-            <Button pill size="sm" block to={to}>{p.kind === "self" ? "Resume building" : "Explore roadmap"}</Button>
-            {p.kind === "self" && (
-              <button type="button" onClick={() => onTrash(p)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ts-faint hover:bg-red-50 hover:text-red-500" aria-label={`Move ${p.title} to trash`}>
-                <LuTrash2 aria-hidden />
-              </button>
-            )}
+        <Link to={to} className="line-clamp-2 text-[15px] font-bold leading-snug text-ts-ink hover:text-ts-navy">{p.title}</Link>
+        <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-ts-muted">
+          <span className="inline-flex items-center gap-1"><LuCalendar aria-hidden /> {formatDate(p.createdAt || p.updatedAt)}</span>
+          <Badge caps>{levelLabel(p.levelOfLearning)}</Badge>
+          <span>{p.modules} Modules</span>
+        </div>
+        {p.progress > 0 && (
+          <div className="mt-3">
+            <div className="mb-1 flex justify-between text-[10.5px]"><span className="text-ts-muted">{p.completedSubtopics}/{p.subtopics} subtopics</span><span className="font-bold text-ts-ink">{p.progress}%</span></div>
+            <ProgressBar value={p.progress} className="h-1" />
           </div>
+        )}
+        <div className="mt-auto flex items-center gap-2 pt-4">
+          <Button pill size="sm" block to={to}>{p.kind === "self" ? "Resume building" : "Explore roadmap"}</Button>
+          {p.kind === "self" && (
+            <button type="button" onClick={() => onTrash(p)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-ts-border text-ts-faint hover:bg-red-50 hover:text-red-500" aria-label={`Move ${p.title} to trash`}>
+              <LuTrash2 aria-hidden />
+            </button>
+          )}
         </div>
       </div>
     </Card>
   );
 }
 
-/** Book-cover illustration drawn in CSS so lists don't wait on image downloads. */
+/** Book-cover illustration drawn in CSS, shown until generated cover art exists. */
 const BookArt = ({ seed, large }) => (
   <span className="flex h-full w-full items-center justify-center">
     <span className={cx("relative rounded-sm bg-white/15 shadow-[4px_6px_12px_rgba(0,0,0,0.35)] ring-1 ring-white/25", large ? "h-24 w-[70px]" : "h-11 w-8")}>

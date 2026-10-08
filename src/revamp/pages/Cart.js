@@ -19,13 +19,31 @@ export default function Cart() {
 
   return (
     <Page>
-      <Card className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link to={`${B}/rewards`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-ts-muted hover:text-ts-ink"><LuArrowLeft aria-hidden /> Back to Rewards</Link>
-          <h1 className="mt-1 text-[22px] font-extrabold tracking-tight text-ts-ink">Wished Rewards & Cart</h1>
-          <p className="text-sm text-ts-muted">Save rewards you love, then redeem them together in one order.</p>
+      <Link to={`${B}/rewards`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-ts-muted hover:text-ts-ink"><LuArrowLeft aria-hidden /> Back to Rewards</Link>
+      {/* Wished Rewards & Cart header (Figma 10) */}
+      <Card className="mt-2 flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3.5">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-xl text-rose-500"><LuHeart aria-hidden className="fill-rose-500" /></span>
+          <div>
+            <h1 className="flex flex-wrap items-center gap-2 text-[19px] font-extrabold tracking-tight text-ts-ink">
+              Wished Rewards &amp; Cart <span className="rounded-full border border-blue-200 bg-ts-wash px-2 py-0.5 text-[10.5px] font-semibold text-ts-blue">{wish.items.length} Saved</span>
+            </h1>
+            <p className="text-[12.5px] text-ts-muted">Products you have marked with the heart icon. Redeem anytime with zero cash required.</p>
+          </div>
         </div>
-        <Button variant="indigo" to={`${B}/rewards/orders`}>Track My Orders</Button>
+        <div className="flex items-center gap-5 sm:text-right">
+          <div>
+            <p className="text-[9.5px] font-bold uppercase tracking-[0.1em] text-ts-faint">Total points needed</p>
+            <p className="text-[20px] font-extrabold text-ts-ink">{num(cart.subtotal)} PTS</p>
+          </div>
+          <div className="h-10 w-px bg-ts-border" aria-hidden />
+          <div>
+            <p className="text-[9.5px] font-bold uppercase tracking-[0.1em] text-ts-faint">Wallet balance</p>
+            <p className={cx("text-[20px] font-extrabold", short ? "text-red-600" : "text-emerald-600")}>
+              {num(points)} PTS <span className="text-[11px] font-semibold text-ts-muted">({short ? `${num(short)} short` : `+${num(points - cart.subtotal)} left`})</span>
+            </p>
+          </div>
+        </div>
       </Card>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_340px]">

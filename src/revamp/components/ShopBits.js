@@ -120,6 +120,30 @@ export function ShopCounters({ badges = {}, orders = 0 }) {
   );
 }
 
+/** Dark-surface counter buttons + points box used in the navy shop headers (Figma 10/11). */
+export function ShopHeaderActions({ badges = {}, orders = 0, points = 0 }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2.5">
+      <Link to={`${B}/rewards/cart`} className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 text-[13px] font-semibold text-white hover:bg-white/20">
+        <LuHeart aria-hidden className="fill-ts-yellow text-ts-yellow" /> Wishlist Cart
+        <span className="rounded-full bg-ts-yellow px-1.5 text-[10.5px] font-bold leading-[18px] text-ts-ink">{num((badges.cart || 0) + (badges.wishlist || 0))}</span>
+      </Link>
+      <Link to={`${B}/rewards/orders`} className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 text-[13px] font-semibold text-white hover:bg-white/20">
+        <LuTruck aria-hidden className="text-ts-yellow" /> Track My Orders
+        <span className="rounded-full bg-ts-yellow px-1.5 text-[10.5px] font-bold leading-[18px] text-ts-ink">{orders}</span>
+      </Link>
+      <PointsBox points={points} />
+    </div>
+  );
+}
+
+export const PointsBox = ({ points, label = "Available", suffix = "" }) => (
+  <span className="inline-flex flex-col items-center rounded-lg bg-white px-4 py-1.5 text-ts-ink shadow">
+    <span className="text-[19px] font-extrabold leading-none">{num(points)}{suffix}</span>
+    <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-ts-muted">{label}</span>
+  </span>
+);
+
 export const CATEGORY_META = {
   all: { label: "All Vaults", icon: LuShoppingBag },
 };

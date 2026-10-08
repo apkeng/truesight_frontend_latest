@@ -6,14 +6,16 @@ import { getQueryData, useQuery } from "../lib/query";
 import { cx, num } from "../lib/format";
 import { Badge, Button, Card, EmptyState, ErrorState, Skeleton } from "../ui";
 import { Page, useShell } from "../layout/AppShell";
-import { HeartButton, RewardImage, useCart, useWishlist } from "../components/ShopBits";
+import { HeartButton, RewardImage, ShopHeaderActions, useCart, useWishlist } from "../components/ShopBits";
 
 const B = "/l2dashboard";
 
 export default function RewardDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { profile } = useShell();
+  const { profile, badges } = useShell();
+  const ordersQ = useQuery(keys.orders(), api.orders, { staleMs: 60_000 });
+  const activeOrders = (ordersQ.data || []).filter((o) => !["delivered", "collected", "cancelled"].includes(o.status)).length;
   // Seed from the catalog list so the header renders instantly.
   const seed = getQueryData(keys.rewards())?.rewards.find((r) => r.id === id);
   const { data, error, isLoading, refetch } = useQuery(keys.reward(id), () => api.reward(id), { staleMs: 300_000 });
@@ -42,12 +44,14 @@ export default function RewardDetail() {
   const needsOption = r.options.length > 0 && !option;
   const out = r.stock === 0;
   const maxQty = Math.min(5, typeof r.stock === "number" ? r.stock : 5);
-  const specs = r.specifications || [
-    ["Category", r.category],
-    ["Type", r.type === "voucher" ? "Digital voucher" : "Physical product"],
-    ["Points", `${num(r.pointsRequired)} pts`],
+  // Product / Specifications: key-value rows. Uses the reward's own fields when the
+  // catalog has them, otherwise what we know for every reward.
+  const specs = [
+    ["Fulfillment Pickup", r.pickupLocation || (profile?.instituteName ? `${profile.instituteName} · Campus desk` : "Campus desk") + " (or home delivery)"],
+    ["Specifications", Array.isArray(r.specifications) && r.specifications.length
+      ? r.specifications.map((x) => (typeof x === "string" ? x : [x.label, x.value].filter(Boolean).join(": "))).join(" · ")
+      : [r.type === "voucher" ? "Digital voucher" : "Physical product", r.category, r.options.length ? `${r.optionLabel || "Options"}: ${r.options.join(", ")}` : null].filter(Boolean).join(" · ")],
     ["Availability", typeof r.stock === "number" ? (r.stock ? `${r.stock} in stock` : "Out of stock") : "In stock"],
-    ...(r.options.length ? [[r.optionLabel || "Options", r.options.join(", ")]] : []),
   ].map(([label, value]) => ({ label, value }));
 
   const addToCart = async () => {
@@ -65,13 +69,21 @@ export default function RewardDetail() {
 
   return (
     <Page>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link to={`${B}/rewards`} className="inline-flex h-9 items-center gap-2 rounded-lg bg-ts-yellow px-4 text-sm font-bold text-ts-ink shadow-card hover:bg-ts-yellow-hover">
-          <LuArrowLeft aria-hidden /> Back to Rewards Catalog
-        </Link>
-        <Link to={`${B}/rewards/cart`} className="inline-flex items-center gap-2 text-sm font-semibold text-ts-muted hover:text-ts-ink">
-          <LuShoppingCart aria-hidden /> Cart ({cart.count})
-        </Link>
+      {/* Back to Products bar (Figma 10): breadcrumb + shop counters + wallet */}
+      <div className="flex flex-col gap-3 rounded-2xl bg-ts-navy px-4 py-3 text-white shadow-lift lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
+          <Link to={`${B}/rewards`} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 text-[13px] font-semibold text-ts-ink hover:bg-ts-subtle">
+            <LuArrowLeft aria-hidden /> Back to Products
+          </Link>
+          <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-[13px]">
+            <Link to={`${B}/rewards`} className="text-white/70 hover:text-white">Rewards</Link>
+            <span className="text-white/40">/</span>
+            <span className="capitalize text-white/70">{r.category}</span>
+            <span className="text-white/40">/</span>
+            <span className="truncate font-semibold">{r.name}</span>
+          </nav>
+        </div>
+        <ShopHeaderActions badges={badges} orders={activeOrders} points={points} />
       </div>
 
       <Card className="mt-4 grid gap-6 p-5 md:grid-cols-2 md:p-6">
@@ -82,10 +94,18 @@ export default function RewardDetail() {
             <HeartButton on={wish.ids.has(r.id)} onClick={() => wish.toggle(r)} className="absolute right-3 top-3 h-9 w-9" />
           </div>
           {images.length > 1 && (
-            <div className="mt-3 grid grid-cols-5 gap-2">
-              {images.slice(0, 5).map((src, i) => (
-                <button key={src || i} type="button" onClick={() => setImg(i)} className={cx("aspect-square overflow-hidden rounded-lg border-2 bg-ts-subtle", i === img ? "border-ts-blue" : "border-transparent opacity-80 hover:opacity-100")} aria-label={`View image ${i + 1}`}>
-                  <RewardImage src={src} />
+            <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {images.slice(0, 8).map((src, i) => (
+                <button
+                  key={src || i}
+                  type="button"
+                  onClick={() => setImg(i)}
+                  className={cx("rounded-lg border bg-white p-1.5 text-center transition-colors", i === img ? "border-ts-blue ring-1 ring-ts-blue/40" : "border-ts-border hover:border-ts-field")}
+                  aria-label={`View image ${i + 1}`}
+                  aria-pressed={i === img}
+                >
+                  <span className="block aspect-[4/3] overflow-hidden rounded bg-ts-subtle"><RewardImage src={src} className="object-contain" /></span>
+                  <span className={cx("mt-1 block text-[10.5px]", i === img ? "font-semibold text-ts-blue" : "text-ts-muted")}>View {i + 1}</span>
                 </button>
               ))}
             </div>
@@ -146,17 +166,14 @@ export default function RewardDetail() {
       </Card>
 
       {/* Product / Specifications */}
-      <Card className="mt-5 overflow-hidden">
-        <h2 className="border-b border-ts-border px-5 py-3 text-[14px] font-bold text-ts-ink">Specifications</h2>
-        <dl className="grid sm:grid-cols-2 lg:grid-cols-4">
-          {specs.map((s) => (
-            <div key={s.label} className="border-b border-ts-border px-5 py-3 sm:border-r">
-              <dt className="text-[10px] font-bold uppercase tracking-wider text-ts-faint">{s.label}</dt>
-              <dd className="mt-0.5 text-[13px] font-semibold capitalize text-ts-ink">{s.value}</dd>
-            </div>
-          ))}
-        </dl>
-      </Card>
+      <dl className="mt-5 space-y-1.5 rounded-xl border border-ts-border bg-ts-subtle px-5 py-4 text-[13px]">
+        {specs.map((s) => (
+          <div key={s.label} className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
+            <dt className="shrink-0 text-ts-muted">{s.label}:</dt>
+            <dd className="font-semibold text-ts-ink sm:text-right">{s.value}</dd>
+          </div>
+        ))}
+      </dl>
 
       {data?.related?.length > 0 && (
         <div className="mt-6">
