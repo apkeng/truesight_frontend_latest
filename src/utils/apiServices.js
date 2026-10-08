@@ -25,6 +25,12 @@ export const submitQuizResult = async (quizData) => {
   return response.quizResult;
 };
 
+/** Faculty / Institute Admin: progress of every student in the caller's institute. */
+export const getInstituteQuizResults = async () => {
+  const response = await apiClient.get('/api/quiz-results/institute');
+  return response;
+};
+
 export const getQuizStats = async () => {
   const response = await apiClient.get('/api/quiz-results/user/stats');
   return response.stats;
