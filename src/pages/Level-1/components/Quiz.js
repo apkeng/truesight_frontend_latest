@@ -96,7 +96,13 @@ const Quiz = () => {
             timeTaken: timeTaken
           };
           
-          await submitChallengeResult(challengeId, challengeResultData);
+          const challenge = await submitChallengeResult(challengeId, challengeResultData);
+          // Challenge questions arrive without the answer key, so show the server's marking.
+          const mine = challenge?.challengerId === uid ? challenge?.challengerResult : challenge?.opponentResult;
+          if (Array.isArray(mine?.answers)) {
+            setAnswers(mine.answers);
+            setScore(mine.score || 0);
+          }
           toast.success('Challenge results submitted successfully!');
           
           // Clear challenge ID from session storage

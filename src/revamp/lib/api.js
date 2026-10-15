@@ -8,8 +8,6 @@ import {
   declineChallenge,
   cancelChallenge,
   getChallengeById,
-  submitChallengeResult,
-  generateQuizQuestions,
   submitQuizResult,
   changeOwnPassword,
   createProject,
@@ -93,7 +91,8 @@ export const api = {
   results: () => apiClient.get(v2("/learn/results")),
   result: (id) => apiClient.get(v2(`/learn/results/${id}`)).then((r) => r.result),
   trashResult: (id) => apiClient.delete(v2(`/learn/results/${id}`)),
-  generateQuiz: (topic, projectTopic) => generateQuizQuestions(topic, projectTopic),
+  // -> { quizId, questions }; questions carry no answer key - the server grades on submit.
+  generateQuiz: (topicName, projectTopic) => apiClient.post("/api/llm/generate-quiz-questions", { topicName, projectTopic }),
   submitQuiz: (payload) => submitQuizResult(payload),
 
   // challenges
@@ -107,7 +106,8 @@ export const api = {
   declineChallenge,
   cancelChallenge,
   getChallenge: getChallengeById,
-  submitChallenge: submitChallengeResult,
+  // -> { challenge, answers } with answers graded by the server.
+  submitChallenge: (id, payload) => apiClient.post(`/api/challenges/${id}/submit`, payload),
 
   // events
   events: () => apiClient.get(v2("/events")),

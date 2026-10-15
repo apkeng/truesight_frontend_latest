@@ -58,6 +58,7 @@ export default function Quiz() {
 
   const [phase, setPhase] = useState("launching"); // launching | playing | submitting | done | error
   const [questions, setQuestions] = useState([]);
+  const [quizId, setQuizId] = useState(null);
   const [answers, setAnswers] = useState({}); // index -> option
   const [index, setIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -73,6 +74,7 @@ export default function Quiz() {
     const draft = readDraft(key);
     if (draft?.questions?.length) {
       setQuestions(draft.questions);
+      setQuizId(draft.quizId || null);
       setAnswers(draft.answers || {});
       setIndex(draft.index || 0);
       setTimeLeft(draft.timeLeft || draft.questions.length * SECONDS_PER_QUESTION);
@@ -83,12 +85,14 @@ export default function Quiz() {
     const load = challengeId
       ? api.getChallenge(challengeId).then((c) => {
           if (!c?.questions?.length) throw new Error("This challenge has no questions.");
-          return c.questions;
+          return { questions: c.questions };
         })
       : api.generateQuiz(topic, projectTopic);
     load
-      .then((qs) => {
+      .then((res) => {
         if (!alive) return;
+        const qs = res?.questions;
+        setQuizId(res?.quizId || null);
         if (!Array.isArray(qs) || !qs.length) throw new Error("No questions came back - please try again.");
         setQuestions(qs);
         setTimeLeft(qs.length * SECONDS_PER_QUESTION);
@@ -120,17 +124,18 @@ export default function Quiz() {
     const total = questions.length * SECONDS_PER_QUESTION;
     const used = total - timeLeft;
     const timeTaken = mmss(Math.max(0, used));
-    const rows = questions.map((q, i) => {
-      const userAnswer = answers[i] ?? null;
-      const isCorrect = userAnswer !== null && userAnswer === q.correctAnswer;
-      return { question: q.question, userAnswer, correctAnswer: q.correctAnswer, points: isCorrect ? 1 : 0, isCorrect, ...(q.explanation ? { explanation: q.explanation } : {}) };
-    });
+    // Only the picked options go up; the server marks them against its key.
+    const picked = questions.map((q, i) => ({ question: q.question, userAnswer: answers[i] ?? null }));
     try {
       let challenge = null;
+      let rows;
       if (challengeId) {
-        challenge = await api.submitChallenge(challengeId, { answers: rows, timeTaken });
+        const res = await api.submitChallenge(challengeId, { answers: picked, timeTaken });
+        challenge = res.challenge;
+        rows = res.answers;
       } else {
-        await api.submitQuiz({ answers: rows, timeLeft, timeTaken, subtopic: topic, role: "Level-2" });
+        const result = await api.submitQuiz({ quizId, answers: picked, timeLeft, timeTaken, subtopic: topic });
+        rows = result.answers;
       }
       writeDraft(key, null);
       invalidate(keys.results(), keys.dashboard(), keys.bootstrap(), keys.projects(), `${uidKey("learn:project:")}*`, keys.challenges());
@@ -139,7 +144,8 @@ export default function Quiz() {
       setPhase("done");
     } catch (e) {
       submittingRef.current = false;
-      if (e.status === 429) {
+      // 429 = daily limit, 409 = this quiz/challenge was already submitted (e.g. another tab).
+      if (e.status === 429 || e.status === 409) {
         toast.error(e.message || "Daily quiz limit reached. Come back tomorrow!");
         writeDraft(key, null);
         navigate(backTo);
@@ -148,7 +154,7 @@ export default function Quiz() {
       toast.error(e.message || "Couldn't submit - your answers are saved, try again.");
       setPhase("playing");
     }
-  }, [questions, answers, timeLeft, challengeId, topic, key, from, navigate, backTo]);
+  }, [questions, quizId, answers, timeLeft, challengeId, topic, key, from, navigate, backTo]);
 
   // Countdown; auto-submits at zero.
   const submitRef = useRef(submit);
@@ -169,7 +175,7 @@ export default function Quiz() {
   }, [phase]);
 
   const saveAndExit = () => {
-    writeDraft(key, { questions, answers, index, timeLeft });
+    writeDraft(key, { questions, quizId, answers, index, timeLeft });
     toast.success("Progress saved - pick up where you left off any time this session.");
     navigate(backTo);
   };
