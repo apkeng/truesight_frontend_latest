@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { LuCircleCheck, LuCircleX, LuSparkles } from "react-icons/lu";
+import { LuCircleCheck, LuCircleX, LuSparkles, LuTimer } from "react-icons/lu";
+import useCountdown from "../../hooks/useCountdown";
 import { getRandomPuzzle, attemptPuzzle, getDailyQuestionAttemptStatus } from "../../utils/apiServices";
 import { api, keys } from "../lib/api";
 import { invalidate } from "../lib/query";
@@ -105,7 +106,7 @@ export function DailyQuestionDialog({ open, onClose }) {
   );
 }
 
-/** Riddle-poem puzzle (same backend as the project-creation puzzle gate). +10 points. */
+/** Riddle-poem puzzle (same backend as the project-creation puzzle gate). +10 points, 60 s per riddle. */
 export function PuzzleDialog({ open, onClose }) {
   const [puzzle, setPuzzle] = useState(null);
   const [error, setError] = useState(null);
@@ -121,16 +122,20 @@ export function PuzzleDialog({ open, onClose }) {
     getRandomPuzzle().then(setPuzzle).catch(setError);
   };
 
+  const secondsLeft = useCountdown(puzzle?.timeLimitSeconds, puzzle?.sessionId);
+  const timedOut = !feedback?.correct && (secondsLeft === 0 || Boolean(feedback?.expired));
+  const locked = Boolean(feedback?.correct) || timedOut;
+
   useEffect(() => {
     if (open) load();
   }, [open]);
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!answer.trim()) return;
+    if (!answer.trim() || locked) return;
     setBusy(true);
     try {
-      const r = await attemptPuzzle(puzzle.id, answer.trim());
+      const r = await attemptPuzzle(puzzle.id, answer.trim(), puzzle.sessionId);
       setFeedback(r);
       if (r.correct && r.pointsAwarded) {
         toast.success(`Solved! +${r.pointsAwarded} points`);
@@ -144,19 +149,38 @@ export function PuzzleDialog({ open, onClose }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} eyebrow="Word quest" title="Solve the riddle" description="First correct solve of each riddle earns 10 points.">
+    <Dialog open={open} onClose={onClose} eyebrow="Word quest" title="Solve the riddle" description="You have 1 minute per riddle. First correct solve of each riddle earns 10 points.">
       {error ? (
         <p className="text-sm text-red-600">{error.message}</p>
       ) : !puzzle ? (
         <div className="flex justify-center py-10"><Spinner className="text-2xl" /></div>
       ) : (
         <form onSubmit={submit}>
+          {secondsLeft !== null && !feedback?.correct && (
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className={cx("inline-flex items-center gap-1.5 text-sm font-semibold tabular-nums", timedOut ? "text-red-600" : secondsLeft <= 10 ? "text-amber-600" : "text-ts-ink")}>
+                <LuTimer aria-hidden />
+                {timedOut ? "Time's up" : `0:${String(secondsLeft).padStart(2, "0")}`}
+              </span>
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ts-border" aria-hidden>
+                <div
+                  className={cx("h-full rounded-full transition-[width] duration-300 ease-linear", secondsLeft <= 10 ? "bg-amber-500" : "bg-ts-blue")}
+                  style={{ width: `${(secondsLeft / puzzle.timeLimitSeconds) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
           <blockquote className="whitespace-pre-line rounded-xl border border-ts-border bg-ts-subtle p-4 text-sm italic leading-relaxed text-ts-body">{puzzle.poem}</blockquote>
           <div className="mt-4 flex gap-2">
-            <Input value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Your answer" disabled={feedback?.correct} />
-            <Button type="submit" variant="primary" loading={busy} disabled={feedback?.correct}>Check</Button>
+            <Input value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Your answer" disabled={locked} />
+            <Button type="submit" variant="primary" loading={busy} disabled={locked}>Check</Button>
           </div>
-          {feedback && (
+          {timedOut ? (
+            <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-red-600">
+              <LuTimer aria-hidden />
+              Time's up for this riddle - try a different one.
+            </p>
+          ) : feedback && (
             <p className={cx("mt-3 flex items-center gap-1.5 text-sm font-semibold", feedback.correct ? "text-emerald-700" : "text-red-600")}>
               {feedback.correct ? <LuSparkles aria-hidden /> : <LuCircleX aria-hidden />}
               {feedback.correct ? (feedback.pointsAwarded ? `Correct - +${feedback.pointsAwarded} points!` : "Correct! (already solved before, no new points)") : "Not quite - try again."}

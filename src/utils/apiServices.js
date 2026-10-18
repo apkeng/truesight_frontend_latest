@@ -396,8 +396,8 @@ export const getRandomPuzzle = async () => {
   return response.puzzle;
 };
 
-export const attemptPuzzle = async (puzzleId, answer) => {
-  const response = await apiClient.post(`/api/puzzles/${puzzleId}/attempt`, { answer });
+export const attemptPuzzle = async (puzzleId, answer, sessionId) => {
+  const response = await apiClient.post(`/api/puzzles/${puzzleId}/attempt`, { answer, sessionId });
   return response;
 };
 

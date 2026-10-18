@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { IoMdClose } from "react-icons/io";
-import { MdExtension, MdCheckCircle } from "react-icons/md";
+import { MdExtension, MdCheckCircle, MdTimer } from "react-icons/md";
 import clsx from "clsx";
 import { getRandomPuzzle, attemptPuzzle } from "../../utils/apiServices";
 import { Button } from "../ui";
+import useCountdown from "../../hooks/useCountdown";
 
 /**
  * Full-screen gate shown the instant a project-creation request fires.
@@ -20,6 +21,8 @@ const PuzzleGate = ({ open, status, result, error, onDismiss, onViewProject }) =
   const [submitting, setSubmitting] = useState(false);
   const [attemptFeedback, setAttemptFeedback] = useState(null); // { correct, points } | null
   const [solved, setSolved] = useState(false);
+  const secondsLeft = useCountdown(puzzle?.timeLimitSeconds, puzzle?.sessionId);
+  const timedOut = !solved && (secondsLeft === 0 || Boolean(attemptFeedback?.expired));
 
   useEffect(() => {
     if (!open) {
@@ -56,11 +59,11 @@ const PuzzleGate = ({ open, status, result, error, onDismiss, onViewProject }) =
 
   const handleSubmitAnswer = async (e) => {
     e.preventDefault();
-    if (!puzzle || !answer.trim() || submitting || solved) return;
+    if (!puzzle || !answer.trim() || submitting || solved || timedOut) return;
     setSubmitting(true);
     setAttemptFeedback(null);
     try {
-      const res = await attemptPuzzle(puzzle.id, answer.trim());
+      const res = await attemptPuzzle(puzzle.id, answer.trim(), puzzle.sessionId);
       if (res.correct) {
         setSolved(true);
         setAttemptFeedback({
@@ -69,7 +72,7 @@ const PuzzleGate = ({ open, status, result, error, onDismiss, onViewProject }) =
           alreadySolved: res.alreadySolved,
         });
       } else {
-        setAttemptFeedback({ correct: false });
+        setAttemptFeedback({ correct: false, expired: Boolean(res.expired) });
       }
     } catch (err) {
       setAttemptFeedback({ correct: false, error: err.message || "Could not check your answer." });
@@ -171,8 +174,19 @@ const PuzzleGate = ({ open, status, result, error, onDismiss, onViewProject }) =
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-ink-muted">
-                  Solve it for +10 points. Your roadmap keeps generating in the background.
+                  Solve it within 1 minute for +10 points. Your roadmap keeps generating in the background.
                 </p>
+                {secondsLeft !== null && !solved && (
+                  <p
+                    className={clsx(
+                      "mt-3 flex items-center gap-1.5 text-sm font-semibold tabular-nums",
+                      timedOut ? "text-red-600" : secondsLeft <= 10 ? "text-amber-600" : "text-navy"
+                    )}
+                  >
+                    <MdTimer />
+                    {timedOut ? "Time's up" : `0:${String(secondsLeft).padStart(2, "0")} left`}
+                  </p>
+                )}
 
                 <div className="mt-5 border border-line bg-parchment p-6">
                   {puzzleLoading ? (
@@ -204,18 +218,22 @@ const PuzzleGate = ({ open, status, result, error, onDismiss, onViewProject }) =
                         type="text"
                         value={answer}
                         onChange={(e) => setAnswer(e.target.value)}
-                        disabled={puzzleLoading || !puzzle || submitting}
+                        disabled={puzzleLoading || !puzzle || submitting || timedOut}
                         placeholder="What am I?"
                         className="h-11 w-full border border-line bg-white px-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-muted focus:border-navy"
                       />
                       <Button
                         type="submit"
-                        disabled={puzzleLoading || !puzzle || !answer.trim() || submitting}
+                        disabled={puzzleLoading || !puzzle || !answer.trim() || submitting || timedOut}
                       >
                         {submitting ? "Checking…" : "Submit"}
                       </Button>
                     </div>
-                    {attemptFeedback && !attemptFeedback.correct && (
+                    {timedOut ? (
+                      <p className="text-xs font-semibold text-red-600">
+                        Time's up for this puzzle — try a different one.
+                      </p>
+                    ) : attemptFeedback && !attemptFeedback.correct && (
                       <p className="text-xs font-semibold text-red-600">
                         {attemptFeedback.error || "Not quite — read it again."}
                       </p>
