@@ -7,11 +7,10 @@ import {
   MdCalendarToday, 
   MdLocationOn, 
   MdLaptop, 
-  MdOutlineArrowBack,
-  MdBookmarkAdded
+  MdOutlineArrowBack
 } from "react-icons/md";
 import logo from "../../assets/logo_colour_on_shell.png";
-import { Badge, EmptyState, PageBanner, PageShell } from "../../components/ui";
+import { EmptyState, PageBanner, PageShell } from "../../components/ui";
 
 export default function EventsExplorer() {
   const navigate = useNavigate();
@@ -20,7 +19,6 @@ export default function EventsExplorer() {
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("all"); // 'all' | 'registered'
 
   useEffect(() => {
     fetchEvents();
@@ -30,7 +28,7 @@ export default function EventsExplorer() {
     filterEvents();
     // filterEvents is recreated every render; its inputs are already listed here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, activeTab, events]);
+  }, [searchTerm, events]);
 
   const fetchEvents = async () => {
     try {
@@ -46,11 +44,6 @@ export default function EventsExplorer() {
 
   const filterEvents = () => {
     let filtered = [...events];
-
-    // Filter by tab
-    if (activeTab === "registered") {
-      filtered = filtered.filter(e => e.isRegistered);
-    }
 
     // Filter by search
     if (searchTerm.trim() !== "") {
@@ -92,33 +85,11 @@ export default function EventsExplorer() {
 
       <PageBanner
         title="Events"
-        subtitle="Register for live masterclasses, Q&A panels, cohort updates, and study sprints."
+        subtitle="Industry expos, conferences and trade shows. Registration is handled by each organiser on their official site."
         stat={{ value: events.length, label: "Listed" }}
       />
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex border border-line bg-white">
-          <button
-            onClick={() => setActiveTab("all")}
-            className={`flex h-10 items-center px-5 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors ${
-              activeTab === "all"
-                ? "bg-navy text-white"
-                : "text-ink-muted hover:bg-navy-wash hover:text-navy"
-            }`}
-          >
-            All events ({events.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("registered")}
-            className={`flex h-10 items-center px-5 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors ${
-              activeTab === "registered"
-                ? "bg-navy text-white"
-                : "text-ink-muted hover:bg-navy-wash hover:text-navy"
-            }`}
-          >
-            My RSVPs ({events.filter((e) => e.isRegistered).length})
-          </button>
-        </div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-end">
 
         <div className="relative w-full lg:w-80">
           <MdSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base text-ink-muted" />
@@ -169,10 +140,6 @@ export default function EventsExplorer() {
                     </div>
                   )}
 
-                  <div className="absolute right-3 top-3 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy">
-                    {event.costInPoints > 0 ? `${event.costInPoints} Pts` : "Free"}
-                  </div>
-
                   <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-ink/80 px-2 py-1 text-[10px] font-semibold text-white">
                     <MdCalendarToday className="text-xs" />
                     {formattedDate}
@@ -205,15 +172,9 @@ export default function EventsExplorer() {
                         </>
                       )}
                     </span>
-                    {event.isRegistered ? (
-                      <Badge tone="positive">
-                        <MdBookmarkAdded className="text-xs" /> Registered
-                      </Badge>
-                    ) : (
-                      <span className="border border-navy/30 bg-navy-wash px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy transition-colors group-hover:bg-navy group-hover:text-white">
-                        View details
-                      </span>
-                    )}
+                    <span className="border border-navy/30 bg-navy-wash px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy transition-colors group-hover:bg-navy group-hover:text-white">
+                      View details
+                    </span>
                   </div>
                 </div>
               </div>
