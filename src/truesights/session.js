@@ -22,7 +22,7 @@ export const pathFor = (screen, arg) => {
     case 'challenges': return `${BASE}/challenges`;
     case 'ask-textbook': return arg ? `${BASE}/ask-a-textbook/${arg}` : `${BASE}/ask-a-textbook`;
     case 'events': return arg ? `${BASE}/events/${arg}` : `${BASE}/events`;
-    case 'rewards': return `${BASE}/rewards`;
+    case 'rewards': return arg ? `${BASE}/rewards/${arg}` : `${BASE}/rewards`;
     case 'orders': return `${BASE}/rewards/orders`;
     case 'cart': return `${BASE}/rewards/cart`;
     case 'trash': return `${BASE}/trash`;

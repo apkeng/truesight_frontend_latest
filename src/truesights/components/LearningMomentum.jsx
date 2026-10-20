@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { toast } from 'react-toastify';
 import Icon from '../design-system/icons';
 import ModalPortal from './ModalPortal';
+import { DailyQuestionModal, WordQuestModal } from './DailyPlayModals';
+import { api, invalidate, keys, setQueryData, useDashboard } from '../data';
+import { useTS } from '../session';
 
-const KERALA_PROJECT = {
-  id: 'priv-kerala-2025',
-  title: 'Kerala Building Rules 2025 Amendment',
-  name: 'Kerala Building Rules 2025 Amendment',
-  level: 'Postgraduate',
-  visibility: 'Private',
-  type: 'private',
-  progress: 50,
-  description: 'Comprehensive architectural compliance & municipal zoning analysis under the 2025 amended Kerala building bylaws.'
+/** Hours (rounded up) until an ISO time, for "3h left" labels. */
+const hoursUntil = (iso) => Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 3_600_000));
+
+/** Map a score series (oldest first) onto the 124x32 sparkline box. */
+const sparkline = (series) => {
+  const pts = series.slice(-6);
+  if (!pts.length) return { points: [], path: '' };
+  const x0 = 10;
+  const x1 = 115;
+  const step = pts.length > 1 ? (x1 - x0) / (pts.length - 1) : 0;
+  const points = pts.map((p, i) => ({
+    attempt: i + 1,
+    score: p.percent,
+    label: p.label,
+    cx: Math.round(pts.length > 1 ? x0 + i * step : (x0 + x1) / 2),
+    cy: Math.round(28 - (Math.max(0, Math.min(100, p.percent)) / 100) * 24)
+  }));
+  const path = points.map((p, i) => `${i ? 'L' : 'M'} ${p.cx} ${p.cy}`).join(' ');
+  return { points, path };
 };
 
 export default function LearningMomentum({
@@ -19,22 +33,12 @@ export default function LearningMomentum({
   onOpenWorkspace,
   onNavigate
 }) {
+  const { go, points: sessionPoints } = useTS();
+  const { data } = useDashboard();
   const [selectedReward, setSelectedReward] = useState(0);
-  const [pointsBalance, setPointsBalance] = useState(2480);
-  const [wishlist, setWishlist] = useState({ 0: false, 1: false, 2: false, 3: false, 4: false });
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
-  const [activeChallengeModal, setActiveChallengeModal] = useState(null); // 'algebra' | 'word' | null
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [challengeResult, setChallengeResult] = useState(null);
-  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
-  const [projectTasks, setProjectTasks] = useState([
-    { id: 1, title: 'Review 2025 Kerala Building By-laws Section 4', completed: true },
-    { id: 2, title: 'Floor Area Ratio (FAR) calculations & setback requirements', completed: true },
-    { id: 3, title: 'Fire safety & rainwater harvesting compliance checklist', completed: false },
-    { id: 4, title: 'Draft zoning permit submission documentation', completed: false }
-  ]);
+  const [dailyModal, setDailyModal] = useState(null); // 'question' | 'quest' | null
   const [hoveredScorePoint, setHoveredScorePoint] = useState(null);
-  const [toastMessage, setToastMessage] = useState(null);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
@@ -47,96 +51,41 @@ export default function LearningMomentum({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3200);
-  };
+  const pointsBalance = data?.rewards?.points ?? sessionPoints ?? 0;
+  const rewards = useMemo(
+    () =>
+      (data?.rewards?.featured || []).map((r) => ({
+        id: r.id,
+        title: r.name,
+        points: r.pointsRequired,
+        image: r.imageUrl,
+        wished: r.wished
+      })),
+    [data]
+  );
+  const currentReward = rewards[Math.min(selectedReward, Math.max(0, rewards.length - 1))] || null;
 
-  const rewards = [
-    {
-      id: 0,
-      title: 'Yoga Mat',
-      points: 150,
-      image: '/assets/Product visual.png',
-      category: 'Fitness & Wellness',
-      desc: 'Eco-friendly non-slip natural rubber yoga mat with alignment markers and travel strap.'
-    },
-    {
-      id: 1,
-      title: 'Curated Gift Box',
-      points: 200,
-      image: '/assets/Image Container.png',
-      category: 'Lifestyle',
-      desc: 'Handcrafted luxury gift box with artisanal snacks and custom study essentials.'
-    },
-    {
-      id: 2,
-      title: 'Retro Instant Camera',
-      points: 450,
-      image: '/assets/Image Container-1.png',
-      category: 'Electronics',
-      desc: 'Vintage film instant camera with auto exposure and built-in flash for creative students.'
-    },
-    {
-      id: 3,
-      title: 'Executive Journal',
-      points: 120,
-      image: '/assets/Image Container-2.png',
-      category: 'Stationery',
-      desc: 'Premium vegan leather notebook with heavyweight bleed-proof paper and luxury ballpoint pen.'
-    },
-    {
-      id: 4,
-      title: 'Sapphire Paperweight',
-      points: 300,
-      image: '/assets/Image Container-3.png',
-      category: 'Collectibles',
-      desc: 'Optical-grade precision cut sapphire blue crystal prism for your study desk.'
-    }
-  ];
-
-  const currentReward = rewards[selectedReward];
-
-  const handleToggleWishlist = (idx) => {
-    const nextState = !wishlist[idx];
-    setWishlist({ ...wishlist, [idx]: nextState });
-    showToast(nextState ? `Saved ${rewards[idx].title} to Wishlist!` : `Removed ${rewards[idx].title} from Wishlist`);
-  };
-
-  const handleRedeemReward = () => {
-    if (pointsBalance >= currentReward.points) {
-      setPointsBalance((prev) => prev - currentReward.points);
-      setIsRewardModalOpen(false);
-      showToast(`Redeemed ${currentReward.title} for ${currentReward.points} PTS`);
-    } else {
-      showToast(`You need ${currentReward.points - pointsBalance} more points to unlock this.`);
+  const handleToggleWishlist = async (reward) => {
+    if (!reward) return;
+    const next = !reward.wished;
+    const flip = (d) => d && { ...d, rewards: { ...d.rewards, featured: d.rewards.featured.map((r) => (r.id === reward.id ? { ...r, wished: next } : r)) } };
+    setQueryData(keys.dashboard(), flip);
+    try {
+      await (next ? api.wish(reward.id) : api.unwish(reward.id));
+      toast.success(next ? `Saved ${reward.title} to your wishlist` : `Removed ${reward.title} from your wishlist`);
+      invalidate(keys.wishlist(), keys.bootstrap());
+    } catch (err) {
+      setQueryData(keys.dashboard(), (d) => d && { ...d, rewards: { ...d.rewards, featured: d.rewards.featured.map((r) => (r.id === reward.id ? { ...r, wished: !next } : r)) } });
+      toast.error(err.message);
     }
   };
 
-  const handleChallengeSubmit = (correctIdx) => {
-    if (selectedAnswer === correctIdx) {
-      setChallengeResult('correct');
-      setPointsBalance((prev) => prev + 25);
-      showToast('+25 Points Earned for completing challenge');
-    } else {
-      setChallengeResult('wrong');
-    }
-  };
-
-  const toggleTask = (id) => {
-    setProjectTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
-    );
-  };
-
-  const scorePoints = [
-    { attempt: 1, score: 72, cx: 10, cy: 22 },
-    { attempt: 2, score: 78, cx: 32, cy: 19 },
-    { attempt: 3, score: 74, cx: 54, cy: 21 },
-    { attempt: 4, score: 82, cx: 74, cy: 15 },
-    { attempt: 5, score: 86, cx: 94, cy: 14 },
-    { attempt: 6, score: 92, cx: 115, cy: 4 }
-  ];
+  const { points: scorePoints, path: scorePath } = sparkline(data?.latestScore?.series || []);
+  const latest = data?.latestScore;
+  const delta = latest?.delta;
+  const daily = data?.daily;
+  const project = data?.continueProject;
+  const openProject = () => (project ? onOpenWorkspace?.(project) : go('projects'));
 
   return (
     <div
@@ -251,7 +200,7 @@ export default function LearningMomentum({
 
             {/* View all link: Bold 14px with underline */}
             <button
-              onClick={() => setIsRewardModalOpen(true)}
+              onClick={() => go('rewards')}
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -272,6 +221,7 @@ export default function LearningMomentum({
           </div>
 
           {/* Right Product Card: Active Reward Item */}
+          {currentReward ? (
           <div
             style={{
               width: isMobile ? '100%' : '188px',
@@ -290,7 +240,7 @@ export default function LearningMomentum({
           >
             {/* Wishlist Heart Button */}
             <button
-              onClick={() => handleToggleWishlist(selectedReward)}
+              onClick={() => handleToggleWishlist(currentReward)}
               aria-label="Save to Wishlist"
               style={{
                 position: 'absolute',
@@ -305,7 +255,7 @@ export default function LearningMomentum({
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                color: wishlist[selectedReward] ? '#EF4444' : '#64748B',
+                color: currentReward.wished ? '#EF4444' : '#64748B',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                 zIndex: 2,
                 transition: 'transform 180ms ease'
@@ -316,10 +266,10 @@ export default function LearningMomentum({
               <Icon
                 name="heart"
                 size={13}
-                color={wishlist[selectedReward] ? '#EF4444' : '#64748B'}
+                color={currentReward.wished ? '#EF4444' : '#64748B'}
                 style={{
-                  fill: wishlist[selectedReward] ? '#EF4444' : 'none',
-                  animation: wishlist[selectedReward] ? 'heartPop 0.3s ease' : 'none'
+                  fill: currentReward.wished ? '#EF4444' : 'none',
+                  animation: currentReward.wished ? 'heartPop 0.3s ease' : 'none'
                 }}
               />
             </button>
@@ -450,14 +400,36 @@ export default function LearningMomentum({
               </button>
             </div>
           </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => go('rewards')}
+              style={{
+                width: isMobile ? '100%' : '188px',
+                flexShrink: 0,
+                background: 'rgba(255, 255, 255, 0.12)',
+                border: '1px dashed rgba(255, 255, 255, 0.5)',
+                borderRadius: '14px',
+                padding: '14px',
+                color: '#FFFFFF',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-primary)'
+              }}
+            >
+              Browse the rewards store →
+            </button>
+          )}
         </div>
 
         {/* Bottom Section: 5 Reward Thumbnails & Carousel Dots */}
+        {rewards.length > 0 && (
         <div style={{ zIndex: 1, position: 'relative', marginTop: '10px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
             {rewards.map((r, idx) => (
               <div
-                key={idx}
+                key={r.id}
                 onClick={() => setSelectedReward(idx)}
                 style={{
                   flex: 1,
@@ -505,6 +477,7 @@ export default function LearningMomentum({
             ))}
           </div>
         </div>
+        )}
       </div>
 
       {/* 2. RIGHT COLUMN: 3 Activity Modules */}
@@ -554,15 +527,7 @@ export default function LearningMomentum({
             </div>
             <button
               type="button"
-              onClick={() => {
-                if (onViewChallenges) {
-                  onViewChallenges();
-                } else if (onNavigate) {
-                  onNavigate('challenges');
-                } else {
-                  setActiveChallengeModal('algebra');
-                }
-              }}
+              onClick={() => (onViewChallenges ? onViewChallenges() : go('challenges'))}
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -600,16 +565,12 @@ export default function LearningMomentum({
                 flexShrink: 0
               }}
             >
-              373
+              {data?.challenges?.taken ?? '–'}
             </div>
 
             <div style={{ display: 'flex', gap: '6px', overflow: 'hidden' }}>
               <button
-                onClick={() => {
-                  setActiveChallengeModal('algebra');
-                  setSelectedAnswer(null);
-                  setChallengeResult(null);
-                }}
+                onClick={() => setDailyModal('question')}
                 style={{
                   background: '#F8FAFC',
                   border: '1px solid #E2E8F0',
@@ -623,16 +584,18 @@ export default function LearningMomentum({
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#2563EB')}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#E2E8F0')}
               >
-                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--primary-text)' }}>Algebra sprint</div>
-                <div style={{ fontSize: '9px', color: 'var(--muted-text)' }}>3h left · Click to play</div>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--primary-text)' }}>Daily question</div>
+                <div style={{ fontSize: '9px', color: 'var(--muted-text)' }}>
+                  {daily?.question?.attempted
+                    ? 'Done today · Click to review'
+                    : daily?.question?.closesAt
+                      ? `${hoursUntil(daily.question.closesAt)}h left · Click to play`
+                      : 'Click to play'}
+                </div>
               </button>
 
               <button
-                onClick={() => {
-                  setActiveChallengeModal('word');
-                  setSelectedAnswer(null);
-                  setChallengeResult(null);
-                }}
+                onClick={() => setDailyModal('quest')}
                 style={{
                   background: '#F8FAFC',
                   border: '1px solid #E2E8F0',
@@ -647,7 +610,7 @@ export default function LearningMomentum({
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#E2E8F0')}
               >
                 <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--primary-text)' }}>Word quest</div>
-                <div style={{ fontSize: '9px', color: 'var(--muted-text)' }}>Tomorrow · Click to preview</div>
+                <div style={{ fontSize: '9px', color: 'var(--muted-text)' }}>1-min riddle · Click to play</div>
               </button>
             </div>
           </div>
@@ -702,10 +665,11 @@ export default function LearningMomentum({
                 Latest Score
               </h3>
             </div>
+            {typeof delta === 'number' && delta !== 0 && (
             <span
               style={{
-                background: '#EFF6FF',
-                color: '#2563EB',
+                background: delta > 0 ? '#EFF6FF' : '#FEF2F2',
+                color: delta > 0 ? '#2563EB' : '#DC2626',
                 fontFamily: 'var(--font-primary)',
                 fontSize: '10px',
                 fontWeight: 700,
@@ -714,8 +678,9 @@ export default function LearningMomentum({
                 whiteSpace: 'nowrap'
               }}
             >
-              ↑ 8% better
+              {delta > 0 ? `↑ ${delta}% better` : `↓ ${Math.abs(delta)}% lower`}
             </span>
+            )}
           </div>
 
           <div
@@ -736,18 +701,26 @@ export default function LearningMomentum({
                   color: 'var(--primary-text)'
                 }}
               >
-                92%
+                {latest ? `${latest.percent}%` : '–'}
               </div>
-              <div style={{ fontSize: '10px', color: 'var(--muted-text)' }}>
-                {hoveredScorePoint ? `Attempt ${hoveredScorePoint.attempt}: ${hoveredScorePoint.score}%` : 'Excellent work!'}
+              <div
+                style={{ fontSize: '10px', color: 'var(--muted-text)', maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                title={hoveredScorePoint?.label || latest?.subtopic}
+              >
+                {hoveredScorePoint
+                  ? `${hoveredScorePoint.label}: ${hoveredScorePoint.score}%`
+                  : latest
+                    ? latest.subtopic
+                    : 'Take a quiz to see your score'}
               </div>
             </div>
 
             {/* Interactive Blue Sparkline Wave Curve with Data Points */}
+            {scorePoints.length > 1 && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
               <svg width="124" height="32" viewBox="0 0 124 32" fill="none">
                 <path
-                  d="M10 22 Q 22 24, 32 19 T 54 21 T 74 15 T 94 14 T 115 4"
+                  d={scorePath}
                   stroke="#3C4F8E"
                   strokeWidth="2.5"
                   strokeLinecap="round"
@@ -767,12 +740,13 @@ export default function LearningMomentum({
                   />
                 ))}
 
-                <circle cx="115" cy="4" r="7" fill="#3C4F8E" opacity="0.2" />
+                <circle cx={scorePoints[scorePoints.length - 1].cx} cy={scorePoints[scorePoints.length - 1].cy} r="7" fill="#3C4F8E" opacity="0.2" />
               </svg>
               <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--muted-text)' }}>
                 Hover points to inspect
               </span>
             </div>
+            )}
           </div>
         </div>
 
@@ -819,20 +793,12 @@ export default function LearningMomentum({
                 borderRadius: '4px'
               }}
             >
-              Private
+              {project ? (project.kind === 'self' ? 'Private' : 'Educator') : 'New'}
             </span>
           </div>
 
           <div
-            onClick={() => {
-              if (onOpenWorkspace) {
-                onOpenWorkspace(KERALA_PROJECT);
-              } else if (onNavigate) {
-                onNavigate('workspace');
-              } else {
-                setIsProjectModalOpen(true);
-              }
-            }}
+            onClick={openProject}
             style={{ marginTop: '2px', cursor: 'pointer' }}
             title="Open project workspace"
           >
@@ -847,7 +813,7 @@ export default function LearningMomentum({
                 textOverflow: 'ellipsis'
               }}
             >
-              kerala building rules 2025 amendment
+              {project ? project.title : 'No project in progress'}
             </div>
 
             <div
@@ -866,10 +832,10 @@ export default function LearningMomentum({
                   userSelect: 'none'
                 }}
               >
-                Personal workspace
+                {project ? (project.kind === 'self' ? 'Personal workspace' : project.instituteName || 'Assigned by your educator') : 'Start a roadmap to track progress'}
               </span>
               <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--primary-text)' }}>
-                {Math.round((projectTasks.filter((t) => t.completed).length / projectTasks.length) * 100)}%
+                {project ? `${project.progress}%` : ''}
               </span>
             </div>
 
@@ -886,7 +852,7 @@ export default function LearningMomentum({
             >
               <div
                 style={{
-                  width: `${Math.round((projectTasks.filter((t) => t.completed).length / projectTasks.length) * 100)}%`,
+                  width: `${project?.progress || 0}%`,
                   height: '100%',
                   background: '#3C4F8E',
                   borderRadius: '999px',
@@ -898,15 +864,7 @@ export default function LearningMomentum({
 
           <button
             type="button"
-            onClick={() => {
-              if (onOpenWorkspace) {
-                onOpenWorkspace(KERALA_PROJECT);
-              } else if (onNavigate) {
-                onNavigate('workspace');
-              } else {
-                setIsProjectModalOpen(true);
-              }
-            }}
+            onClick={openProject}
             style={{
               width: '100%',
               height: '26px',
@@ -935,13 +893,13 @@ export default function LearningMomentum({
               e.currentTarget.style.transform = 'scale(1)';
             }}
           >
-            continue
+            {project ? 'continue' : 'browse projects'}
           </button>
         </div>
       </div>
 
-      {/* REWARD DETAILS & REDEEM MODAL */}
-      {isRewardModalOpen && (
+      {/* REWARD PREVIEW MODAL */}
+      {isRewardModalOpen && currentReward && (
         <ModalPortal isOpen={true} onClose={() => setIsRewardModalOpen(false)}>
         <div
           style={{
@@ -958,7 +916,7 @@ export default function LearningMomentum({
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <span style={{ fontSize: '11px', fontWeight: 700, background: '#EBF2FE', color: '#2563EB', padding: '3px 8px', borderRadius: '6px' }}>
-                {currentReward.category}
+                {currentReward.wished ? 'On your wishlist' : 'Featured reward'}
               </span>
               <button
                 onClick={() => setIsRewardModalOpen(false)}
@@ -976,12 +934,9 @@ export default function LearningMomentum({
               <img src={currentReward.image} alt={currentReward.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#101828', marginBottom: '6px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#101828', marginBottom: '16px' }}>
               {currentReward.title}
             </h3>
-            <p style={{ fontSize: '13px', color: '#64748B', lineHeight: '1.45', marginBottom: '16px' }}>
-              {currentReward.desc}
-            </p>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#F8FAFC', borderRadius: '10px', marginBottom: '18px' }}>
               <div>
@@ -997,252 +952,31 @@ export default function LearningMomentum({
             </div>
 
             <button
-              onClick={handleRedeemReward}
-              disabled={pointsBalance < currentReward.points}
+              onClick={() => go('rewards', currentReward.id)}
               style={{
                 width: '100%',
                 height: '42px',
                 borderRadius: '999px',
                 border: 'none',
-                background: pointsBalance >= currentReward.points ? '#FEE047' : '#E2E8F0',
-                color: pointsBalance >= currentReward.points ? '#101828' : '#94A3B8',
+                background: '#FEE047',
+                color: '#101828',
                 fontWeight: 700,
                 fontSize: '14px',
-                cursor: pointsBalance >= currentReward.points ? 'pointer' : 'not-allowed',
-                boxShadow: pointsBalance >= currentReward.points ? '0 4px 12px rgba(254, 224, 71, 0.4)' : 'none'
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(254, 224, 71, 0.4)',
+                transition: 'all 0.15s ease'
               }}
             >
-              {pointsBalance >= currentReward.points ? `Claim for ${currentReward.points} PTS` : 'Insufficient Points'}
+              {pointsBalance >= currentReward.points
+                ? 'Redeem in the rewards store'
+                : `${(currentReward.points - pointsBalance).toLocaleString()} more points to unlock · View`}
             </button>
           </div>
         </ModalPortal>
       )}
 
-      {/* CHALLENGE QUIZ MODAL */}
-      {activeChallengeModal && (
-        <ModalPortal isOpen={true} onClose={() => setActiveChallengeModal(null)}>
-        <div
-          style={{
-            width: '420px',
-            maxWidth: '92vw',
-            background: '#FFFFFF',
-            borderRadius: '20px',
-            padding: '24px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-            animation: 'modalContentPop 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, background: '#FEF3C7', color: '#D97706', padding: '3px 8px', borderRadius: '6px' }}>
-                Quick Challenge · Win +25 PTS
-              </span>
-              <button
-                onClick={() => setActiveChallengeModal(null)}
-                style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
-                aria-label="Close"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-
-            <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#101828', marginBottom: '8px' }}>
-              {activeChallengeModal === 'algebra' ? 'Algebra Sprint Challenge' : 'Word Quest Engineering Terminology'}
-            </h3>
-
-            <p style={{ fontSize: '13px', color: '#475569', marginBottom: '16px', lineHeight: '1.4' }}>
-              {activeChallengeModal === 'algebra'
-                ? 'Question: If 3x + 12 = 45, what is the value of x?'
-                : 'Question: What does the term "Specific Fuel Consumption (SFC)" measure in Marine Engines?'}
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '18px' }}>
-              {(activeChallengeModal === 'algebra'
-                ? ['x = 9', 'x = 11', 'x = 13', 'x = 15']
-                : [
-                    'Fuel mass consumed per unit power output',
-                    'Maximum engine RPM at full throttle',
-                    'Thermal expansion of cylinder liners',
-                    'Volume of lubricant oil in sump'
-                  ]
-              ).map((opt, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedAnswer(i)}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    border: selectedAnswer === i ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                    background: selectedAnswer === i ? '#EFF6FF' : '#F8FAFC',
-                    textAlign: 'left',
-                    fontSize: '13px',
-                    fontWeight: selectedAnswer === i ? 600 : 400,
-                    color: '#1E293B',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {String.fromCharCode(65 + i)}. {opt}
-                </button>
-              ))}
-            </div>
-
-            {challengeResult === 'correct' && (
-              <div style={{ padding: '10px', borderRadius: '8px', background: '#ECFDF5', color: '#047857', fontSize: '13px', fontWeight: 600, marginBottom: '14px', textAlign: 'center' }}>
-                Correct! +25 Points added to your account!
-              </div>
-            )}
-
-            {challengeResult === 'wrong' && (
-              <div style={{ padding: '10px', borderRadius: '8px', background: '#FEF2F2', color: '#B91C1C', fontSize: '13px', fontWeight: 600, marginBottom: '14px', textAlign: 'center' }}>
-                Not quite right. Review the equation and try again!
-              </div>
-            )}
-
-            <button
-              onClick={() => handleChallengeSubmit(activeChallengeModal === 'algebra' ? 1 : 0)}
-              disabled={selectedAnswer === null || challengeResult === 'correct'}
-              style={{
-                width: '100%',
-                height: '40px',
-                borderRadius: '999px',
-                border: 'none',
-                background: selectedAnswer !== null ? '#283D82' : '#CBD5E1',
-                color: '#FFFFFF',
-                fontWeight: 700,
-                fontSize: '13px',
-                cursor: selectedAnswer !== null ? 'pointer' : 'not-allowed'
-              }}
-            >
-              {challengeResult === 'correct' ? 'Completed' : 'Submit Answer'}
-            </button>
-          </div>
-        </ModalPortal>
-      )}
-
-      {/* PROJECT WORKSPACE MODAL */}
-      {isProjectModalOpen && (
-        <ModalPortal isOpen={true} onClose={() => setIsProjectModalOpen(false)}>
-        <div
-          style={{
-            width: '460px',
-            maxWidth: '92vw',
-            background: '#FFFFFF',
-            borderRadius: '20px',
-            padding: '24px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-            animation: 'modalContentPop 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, background: '#F1F5F9', color: '#475569', padding: '3px 8px', borderRadius: '6px' }}>
-                Active Project · Postgraduate
-              </span>
-              <button
-                onClick={() => setIsProjectModalOpen(false)}
-                style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
-                aria-label="Close"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-
-            <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#101828', marginBottom: '4px' }}>
-              Kerala Building Rules 2025 Amendment
-            </h3>
-            <p style={{ fontSize: '12px', color: '#64748B', marginBottom: '16px' }}>
-              Workspace progress checklist. Check off milestones as you review.
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '18px' }}>
-              {projectTasks.map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => toggleTask(t.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    background: t.completed ? '#F8FAFC' : '#FFFFFF',
-                    border: '1px solid #E2E8F0',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={t.completed}
-                    onChange={() => {}}
-                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                  />
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      color: t.completed ? '#64748B' : '#0F1219',
-                      textDecoration: t.completed ? 'line-through' : 'none'
-                    }}
-                  >
-                    {t.title}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={() => {
-                setIsProjectModalOpen(false);
-                showToast('Changes saved to Kerala Building Rules project');
-              }}
-              style={{
-                width: '100%',
-                height: '40px',
-                borderRadius: '999px',
-                border: 'none',
-                background: '#FEE047',
-                color: '#101D3B',
-                fontWeight: 700,
-                fontSize: '13px',
-                cursor: 'pointer'
-              }}
-            >
-              Save & Return to Dashboard
-            </button>
-          </div>
-        </ModalPortal>
-      )}
-
-      {/* FLOATING TOAST NOTIFICATION */}
-      {toastMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            background: '#1F2937',
-            color: '#FFFFFF',
-            padding: '10px 18px',
-            borderRadius: '12px',
-            fontSize: '13px',
-            fontWeight: 600,
-            boxShadow: '0 10px 25px rgba(0,0,0,0.25)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            animation: 'toastSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
-          }}
-        >
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      {dailyModal === 'question' && <DailyQuestionModal onClose={() => setDailyModal(null)} />}
+      {dailyModal === 'quest' && <WordQuestModal onClose={() => setDailyModal(null)} />}
     </div>
   );
 }

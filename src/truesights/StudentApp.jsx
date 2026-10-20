@@ -18,6 +18,7 @@ import NotificationModule from './components/NotificationModule';
 import UserAvatar from './components/UserAvatar';
 import Icon from './design-system/icons';
 import { BASE, TSContext, pathFor, screenFromPath, useTS } from './session';
+import { NotificationProvider, useNotifications } from './notifications';
 import './truesights.css';
 
 // Large screens load on first visit.
@@ -138,24 +139,11 @@ const readCollapsed = () => {
  * data comes from /api/v2 through the shared cache in src/revamp/lib.
  */
 export default function StudentApp() {
-  const location = useLocation();
   const navigate = useNavigate();
   const { logout: authLogout } = useAuth();
-  const currentScreen = screenFromPath(location.pathname);
-  const setCurrentScreen = useCallback((screen, arg) => navigate(pathFor(screen, arg)), [navigate]);
-
+  const go = useCallback((screen, arg) => navigate(pathFor(screen, arg)), [navigate]);
   const boot = useQuery(keys.bootstrap(), api.bootstrap, { staleMs: 20_000 });
-  const profile = boot.data?.profile;
-  const badges = boot.data?.badges || {};
-  const pointsWallet = profile?.points ?? 0;
-
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(readCollapsed);
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== 'undefined' ? window.innerWidth : 1511
-  );
 
   // The fixed, non-scrolling canvas applies only while this app is mounted.
   useEffect(() => {
@@ -165,11 +153,58 @@ export default function StudentApp() {
 
   // The student app is for Level-2 accounts; send faculty/admins to their own
   // dashboards if a shared link or old bookmark lands them here.
-  const role = profile?.role;
+  const role = boot.data?.profile?.role;
   useEffect(() => {
     const home = { 'Level-1': '/l1dashboard', 'Institute Admin': '/institutedashboard' }[role];
     if (home) navigate(home, { replace: true });
   }, [role, navigate]);
+
+  const logout = useCallback(async () => {
+    clearQueryCache();
+    try {
+      await authLogout();
+    } finally {
+      navigate('/login');
+    }
+  }, [authLogout, navigate]);
+
+  const session = useMemo(
+    () => ({
+      profile: boot.data?.profile,
+      badges: boot.data?.badges || {},
+      points: boot.data?.profile?.points ?? 0,
+      refreshSession: boot.refetch,
+      logout,
+      go,
+      isNotificationOpen,
+      openNotifications: () => setIsNotificationOpen(true),
+      closeNotifications: () => setIsNotificationOpen(false)
+    }),
+    [boot.data, boot.refetch, logout, go, isNotificationOpen]
+  );
+
+  return (
+    <TSContext.Provider value={session}>
+      <NotificationProvider initialUnread={boot.data?.badges?.notifications}>
+        <Shell />
+      </NotificationProvider>
+    </TSContext.Provider>
+  );
+}
+
+function Shell() {
+  const location = useLocation();
+  const currentScreen = screenFromPath(location.pathname);
+  const { profile, points: pointsWallet, go: setCurrentScreen, isNotificationOpen, openNotifications, closeNotifications } = useTS();
+  const { unread: unreadNotificationsCount } = useNotifications();
+  const setIsNotificationOpen = (open) => (open ? openNotifications() : closeNotifications());
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(readCollapsed);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1511
+  );
 
   useEffect(() => {
     const onOnline = () => setIsOnline(true);
@@ -205,33 +240,9 @@ export default function StudentApp() {
     });
   }, []);
 
-  const logout = useCallback(async () => {
-    clearQueryCache();
-    try {
-      await authLogout();
-    } finally {
-      navigate('/login');
-    }
-  }, [authLogout, navigate]);
-
-  const session = useMemo(
-    () => ({
-      profile,
-      badges,
-      points: pointsWallet,
-      refreshSession: boot.refetch,
-      logout,
-      go: setCurrentScreen,
-      openNotifications: () => setIsNotificationOpen(true),
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [boot.data, boot.refetch, logout, setCurrentScreen]
-  );
-
   const isMobile = windowWidth < 768;
   const isQuizMode = currentScreen === 'quiz';
   const isAskTextbook = currentScreen === 'ask-textbook';
-  const unreadNotificationsCount = badges.notifications || 0;
 
   const screenDisplayNames = {
     'projects': 'Roadmaps',
@@ -249,7 +260,6 @@ export default function StudentApp() {
   };
 
   return (
-    <TSContext.Provider value={session}>
     <div
       style={{
         width: '100%',
@@ -797,7 +807,6 @@ export default function StudentApp() {
       <NotificationModule isOpen={isNotificationOpen} onClose={() => setIsNotificationOpen(false)} />
       <ToastContainer position="top-right" autoClose={3500} newestOnTop />
     </div>
-    </TSContext.Provider>
   );
 }
 
@@ -805,8 +814,8 @@ const LegacyProject = ({ kind }) => <Navigate to={`${BASE}/projects/${kind}/${us
 
 /** The dashboard: the prototype's two-row desktop grid, or a stacked column on mobile. */
 function Dashboard({ isMobile, windowWidth, isSidebarCollapsed }) {
-  const { go: setCurrentScreen, openNotifications, badges } = useTS();
-  const unreadNotificationsCount = badges.notifications || 0;
+  const { go: setCurrentScreen, openNotifications } = useTS();
+  const { unread: unreadNotificationsCount } = useNotifications();
   const setIsNotificationOpen = () => openNotifications();
   const openWorkspace = (proj) => setCurrentScreen('workspace', proj);
 

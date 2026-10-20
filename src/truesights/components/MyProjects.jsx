@@ -1,90 +1,58 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import Icon from '../design-system/icons';
 import ModalPortal from './ModalPortal';
+import { api, invalidate, keys, setQueryData, useDashboard } from '../data';
+import { pathFor } from '../session';
+import { timeAgo } from '../../revamp/lib/format';
 
+const TAB_KIND = { All: null, Private: 'self', Assigned: 'educator' };
+
+/** Dashboard list of the student's latest roadmaps (private + assigned). */
 export default function MyProjects({ onViewAll, onOpenWorkspace }) {
+  const { data } = useDashboard();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('All'); // 'All' | 'Private' | 'Public'
+  const [activeTab, setActiveTab] = useState('All'); // 'All' | 'Private' | 'Assigned'
   const [selectedProject, setSelectedProject] = useState(null);
-  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newLevel, setNewLevel] = useState('Undergraduate');
-  const [newVisibility, setNewVisibility] = useState('Private');
-  const [toast, setToast] = useState(null);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const [projects, setProjects] = useState([
-    {
-      id: 1,
-      name: 'Kerala Building Rules 2025 Amendment',
-      level: 'Postgraduate',
-      visibility: 'Private',
-      owner: 'Test Student',
-      progress: 68,
-      updated: '2 hours ago',
-      desc: 'Comprehensive architectural compliance & municipal zoning analysis under the 2025 amended Kerala building bylaws.'
-    },
-    {
-      id: 2,
-      name: 'Marine Auxiliary Engine',
-      level: 'Undergraduate',
-      visibility: 'Private',
-      owner: 'Test Student',
-      progress: 84,
-      updated: 'Yesterday',
-      desc: 'Operational procedures, starting air distributors, and indicator diagram diagnostics for 2-stroke low speed engines.'
-    },
-    {
-      id: 3,
-      name: 'MEO Class 4',
-      level: 'Undergraduate',
-      visibility: 'Private',
-      owner: 'Test Student',
-      progress: 42,
-      updated: '3 days ago',
-      desc: 'Standard preparation curriculum for marine engineer officer certification examinations.'
-    },
-    {
-      id: 4,
-      name: 'Advanced Structural Dynamics',
-      level: 'Postgraduate',
-      visibility: 'Public',
-      owner: 'Research Scholar',
-      progress: 95,
-      updated: '5 days ago',
-      desc: 'Finite element modeling of seismic vibrations and damping frequencies in offshore structures.'
-    }
-  ]);
+  const projects = (data?.projects || []).map((p) => ({
+    id: p.id,
+    kind: p.kind,
+    name: p.title,
+    level: p.levelOfLearning || 'Self-paced',
+    visibility: p.kind === 'self' ? 'Private' : 'Assigned',
+    owner: p.kind === 'self' ? timeAgo(p.updatedAt) : p.ownerName || p.instituteName || 'Educator',
+    progress: p.progress,
+    desc: p.introduction || `${p.modules} modules · ${p.subtopics} subtopics`
+  }));
 
   const filteredProjects = projects.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab = activeTab === 'All' || p.visibility === activeTab;
+    const matchesTab = !TAB_KIND[activeTab] || p.kind === TAB_KIND[activeTab];
     return matchesSearch && matchesTab;
   });
 
-  const handleCreateProject = (e) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
+  const trash = async (proj) => {
+    setSelectedProject(null);
+    setQueryData(keys.dashboard(), (d) => d && { ...d, projects: d.projects.filter((x) => x.id !== proj.id) });
+    try {
+      await api.trashProject(proj.id);
+      toast.success(`Moved "${proj.name}" to Trash`);
+      invalidate(keys.projects(), keys.trash(), keys.dashboard());
+    } catch (err) {
+      toast.error(err.message);
+      invalidate(keys.dashboard());
+    }
+  };
 
-    const newProj = {
-      id: Date.now(),
-      name: newTitle.trim(),
-      level: newLevel,
-      visibility: newVisibility,
-      owner: 'Test Student',
-      progress: 0,
-      updated: 'Just now',
-      desc: 'Newly created project ready for syllabus mind map ingestion.'
-    };
-
-    setProjects([newProj, ...projects]);
-    setNewTitle('');
-    setIsNewProjectModalOpen(false);
-    showToast(`Created project "${newProj.name}"`);
+  const share = async (proj) => {
+    const url = `${window.location.origin}${pathFor('workspace', { kind: proj.kind, id: proj.id })}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Project link copied to clipboard');
+    } catch {
+      toast.error("Couldn't copy the link.");
+    }
   };
 
   return (
@@ -186,7 +154,7 @@ export default function MyProjects({ onViewAll, onOpenWorkspace }) {
 
         {/* Filter Tabs */}
         <div style={{ display: 'flex', gap: '4px', background: '#F1F5F9', padding: '3px', borderRadius: '8px' }}>
-          {['All', 'Private', 'Public'].map((tab) => (
+          {['All', 'Private', 'Assigned'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -221,11 +189,11 @@ export default function MyProjects({ onViewAll, onOpenWorkspace }) {
       >
         {filteredProjects.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '30px 0', color: '#94A3B8', fontSize: '12px' }}>
-            No projects found matching "{searchTerm}"
+            {!data ? 'Loading your projects…' : searchTerm ? `No projects found matching "${searchTerm}"` : 'No projects yet - create a roadmap to get started.'}
           </div>
         ) : (
           filteredProjects.map((p) => {
-            const isPublic = p.visibility === 'Public';
+            const isPublic = p.kind === 'educator';
 
             return (
               <div
@@ -367,66 +335,7 @@ export default function MyProjects({ onViewAll, onOpenWorkspace }) {
                 <div style={{ width: `${selectedProject.progress}%`, height: '100%', background: '#283D82', borderRadius: '999px', transition: 'width 0.2s ease' }} />
               </div>
 
-              {/* Progress adjustment buttons */}
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => {
-                    const newProg = Math.max(0, selectedProject.progress - 10);
-                    setSelectedProject({ ...selectedProject, progress: newProg });
-                    setProjects(projects.map((p) => (p.id === selectedProject.id ? { ...p, progress: newProg } : p)));
-                  }}
-                  style={{
-                    background: '#F1F5F9',
-                    border: '1px solid #E2E8F0',
-                    borderRadius: '6px',
-                    padding: '2px 8px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  -10%
-                </button>
-                <button
-                  onClick={() => {
-                    const newProg = Math.min(100, selectedProject.progress + 10);
-                    setSelectedProject({ ...selectedProject, progress: newProg });
-                    setProjects(projects.map((p) => (p.id === selectedProject.id ? { ...p, progress: newProg } : p)));
-                    if (newProg === 100) showToast('Project marked 100% completed');
-                  }}
-                  style={{
-                    background: '#F1F5F9',
-                    border: '1px solid #E2E8F0',
-                    borderRadius: '6px',
-                    padding: '2px 8px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  +10%
-                </button>
-                <button
-                  onClick={() => {
-                    const newVis = selectedProject.visibility === 'Private' ? 'Public' : 'Private';
-                    setSelectedProject({ ...selectedProject, visibility: newVis });
-                    setProjects(projects.map((p) => (p.id === selectedProject.id ? { ...p, visibility: newVis } : p)));
-                    showToast(`Visibility updated to ${newVis}`);
-                  }}
-                  style={{
-                    background: '#EFF6FF',
-                    border: '1px solid #BFDBFE',
-                    borderRadius: '6px',
-                    padding: '2px 8px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: '#2563EB',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Toggle {selectedProject.visibility === 'Private' ? 'Public' : 'Private'}
-                </button>
-              </div>
+              <div style={{ fontSize: '11px', color: '#94A3B8' }}>Progress counts subtopics you've taken a quiz on.</div>
             </div>
 
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -434,20 +343,7 @@ export default function MyProjects({ onViewAll, onOpenWorkspace }) {
                 onClick={() => {
                   const p = selectedProject;
                   setSelectedProject(null);
-                  if (onOpenWorkspace) {
-                    onOpenWorkspace({
-                      id: `myproj-${p.id}`,
-                      title: p.name,
-                      level: p.level,
-                      description: p.desc,
-                      isPrivate: p.visibility === 'Private',
-                      repositoryType: p.visibility === 'Private' ? 'PRIVATE REPOSITORY' : 'PUBLIC REPOSITORY',
-                      totalModules: 5,
-                      initialProgress: p.progress
-                    });
-                  } else {
-                    showToast(`Opening "${p.name}" workspace...`);
-                  }
+                  onOpenWorkspace?.({ kind: p.kind, id: p.id });
                 }}
                 style={{
                   flex: 1,
@@ -464,10 +360,7 @@ export default function MyProjects({ onViewAll, onOpenWorkspace }) {
                 Open in Workspace
               </button>
               <button
-                onClick={() => {
-                  setSelectedProject(null);
-                  showToast('Project link copied to clipboard');
-                }}
+                onClick={() => share(selectedProject)}
                 style={{
                   padding: '0 16px',
                   height: '40px',
@@ -482,12 +375,9 @@ export default function MyProjects({ onViewAll, onOpenWorkspace }) {
               >
                 Share
               </button>
+              {selectedProject.kind === 'self' && (
               <button
-                onClick={() => {
-                  setProjects(projects.filter((p) => p.id !== selectedProject.id));
-                  setSelectedProject(null);
-                  showToast(`Moved "${selectedProject.name}" to Trash`);
-                }}
+                onClick={() => trash(selectedProject)}
                 style={{
                   padding: '0 12px',
                   height: '40px',
@@ -503,139 +393,12 @@ export default function MyProjects({ onViewAll, onOpenWorkspace }) {
               >
                 Delete
               </button>
+              )}
             </div>
           </div>
         </ModalPortal>
       )}
 
-      {/* CREATE NEW PROJECT MODAL */}
-      {isNewProjectModalOpen && (
-        <ModalPortal isOpen={true} onClose={() => setIsNewProjectModalOpen(false)}>
-        <div
-          style={{
-            width: '420px',
-            maxWidth: '92vw',
-            background: '#FFFFFF',
-            borderRadius: '20px',
-            padding: '24px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-            animation: 'modalContentPop 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#101828', margin: 0 }}>
-                Create New Project
-              </h3>
-              <button
-                onClick={() => setIsNewProjectModalOpen(false)}
-                style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
-                aria-label="Close"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateProject}>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                  Project Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Marine Auxiliary Systems"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '38px',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    padding: '0 12px',
-                    fontSize: '13px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Level
-                  </label>
-                  <select
-                    value={newLevel}
-                    onChange={(e) => setNewLevel(e.target.value)}
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 8px', fontSize: '12px' }}
-                  >
-                    <option value="Undergraduate">Undergraduate</option>
-                    <option value="Postgraduate">Postgraduate</option>
-                  </select>
-                </div>
-
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                    Visibility
-                  </label>
-                  <select
-                    value={newVisibility}
-                    onChange={(e) => setNewVisibility(e.target.value)}
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 8px', fontSize: '12px' }}
-                  >
-                    <option value="Private">Private</option>
-                    <option value="Public">Public</option>
-                  </select>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                style={{
-                  width: '100%',
-                  height: '40px',
-                  borderRadius: '999px',
-                  border: 'none',
-                  background: '#283D82',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '13px',
-                  cursor: 'pointer'
-                }}
-              >
-                Create Project
-              </button>
-            </form>
-          </div>
-        </ModalPortal>
-      )}
-
-      {/* Floating Toast */}
-      {toast && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '12px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: '#1E293B',
-            color: '#FFFFFF',
-            padding: '6px 14px',
-            borderRadius: '999px',
-            fontSize: '11px',
-            fontWeight: 600,
-            zIndex: 100,
-            whiteSpace: 'nowrap',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-          }}
-        >
-          {toast}
-        </div>
-      )}
     </div>
   );
 }

@@ -1,56 +1,32 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import Icon from '../design-system/icons';
+import { api, keys, useQuery } from '../data';
+import { pathFor } from '../session';
+import { timeAgo } from '../../revamp/lib/format';
 
+/**
+ * Dashboard entry to Ask a Textbook. A question (or an attached PDF) is
+ * handed to the Ask a Textbook screen, which answers from the student's own
+ * uploaded books; the history button lists their saved conversations.
+ */
 export default function AskTestBook({ onOpenStudio }) {
+  const navigate = useNavigate();
+  const chats = useQuery(keys.chats(), () => api.chats(), { staleMs: 30_000 });
   const [prompt, setPrompt] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [conversation, setConversation] = useState(null);
-  const [isThinking, setIsThinking] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [attachedFile, setAttachedFile] = useState(null);
   const fileInputRef = useRef(null);
 
-  const queryHistory = [
-    { q: 'Explain Carnot Cycle efficiency limits', time: 'Yesterday' },
-    { q: 'Kerala building rules floor area ratio', time: '2 days ago' },
-    { q: 'Marine diesel fuel injection pump timing', time: '3 days ago' }
-  ];
-
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
+  const queryHistory = (chats.data || []).slice(0, 5);
+  const showToast = (msg) => toast.info(msg);
 
   const handleSend = (textToSend) => {
     const query = typeof textToSend === 'string' ? textToSend : prompt;
     if (!query.trim()) return;
-
-    setIsThinking(true);
-    setPrompt('');
-
-    setTimeout(() => {
-      let answer = '';
-      let pageRef = 'Page 42 · Chapter 3';
-
-      if (query.toLowerCase().includes('bernoulli')) {
-        answer = 'Bernoulli’s principle states that an increase in the speed of a fluid occurs simultaneously with a decrease in static pressure: P + 0.5ρv² + ρgh = constant.';
-        pageRef = 'Page 88 · Fluid Mechanics Section 4.2';
-      } else if (query.toLowerCase().includes('chapter 3') || query.toLowerCase().includes('summary')) {
-        answer = 'Chapter 3 covers internal combustion cycles, thermal efficiency calculations, indicator diagrams, and thermodynamic losses in medium-speed marine diesels.';
-        pageRef = 'Page 42 · Marine Auxiliary Engine Handbook';
-      } else if (query.toLowerCase().includes('formula')) {
-        answer = 'Key formulas: 1) Indicated Power: IP = (P_m · L · A · N · n) / 60. 2) Brake Thermal Efficiency: η_bt = BP / (m_f · CV). 3) Mechanical Efficiency: η_m = BP / IP.';
-        pageRef = 'Page 114 · Applied Thermodynamics Index';
-      } else {
-        answer = `Based on your uploaded course textbook: "${query}" is thoroughly detailed in the syllabus guidelines. Core principles involve strict adherence to statutory engineering clearances and thermodynamic equilibrium limits.`;
-        pageRef = 'Page 65 · Core Syllabus Topics';
-      }
-
-      setConversation({ query, answer, pageRef });
-      setIsThinking(false);
-    }, 600);
+    navigate(pathFor('ask-textbook'), { state: { prompt: query.trim() } });
   };
 
   const toggleMic = () => {
@@ -89,37 +65,20 @@ export default function AskTestBook({ onOpenStudio }) {
 
         recognition.start();
       } catch (err) {
-        setIsListening(true);
-        showToast('Microphone active... Speak your question');
-        setTimeout(() => {
-          setPrompt((prev) => (prev && prev.trim() ? `${prev.trim()} Explain Bernoulli's Principle` : "Explain Bernoulli's Principle"));
-          setIsListening(false);
-        }, 2200);
+        setIsListening(false);
+        showToast("Couldn't start the microphone.");
       }
     } else {
-      setIsListening(true);
-      showToast('Microphone active... Speak your question');
-      setTimeout(() => {
-        setPrompt((prev) => (prev && prev.trim() ? `${prev.trim()} Explain Bernoulli's Principle` : "Explain Bernoulli's Principle"));
-        setIsListening(false);
-      }, 2200);
-    }
-  };
-
-  const handleCopyExport = () => {
-    if (conversation) {
-      navigator.clipboard?.writeText(`Q: ${conversation.query}\nA: ${conversation.answer}\nSource: ${conversation.pageRef}`);
-      showToast('Q&A copied to clipboard');
-    } else {
-      showToast('Ask Textbook summary copied');
+      showToast("Voice input isn't supported in this browser.");
     }
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setAttachedFile(e.target.files[0].name);
-      showToast(`Attached "${e.target.files[0].name}"`);
-    }
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.type !== 'application/pdf') return showToast('Please choose a PDF.');
+    navigate(pathFor('ask-textbook'), { state: { uploadFile: file } });
   };
 
   return (
@@ -146,7 +105,7 @@ export default function AskTestBook({ onOpenStudio }) {
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept=".pdf,.epub,.txt"
+        accept="application/pdf"
         style={{ display: 'none' }}
       />
 
@@ -220,15 +179,9 @@ export default function AskTestBook({ onOpenStudio }) {
           </button>
         </div>
 
-        {attachedFile && (
-          <div style={{ fontSize: '10px', color: '#2563EB', background: '#EFF6FF', padding: '2px 8px', borderRadius: '4px', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            Attached: {attachedFile}
-          </div>
-        )}
-
         <button
           type="button"
-          onClick={onOpenStudio || handleCopyExport}
+          onClick={onOpenStudio || (() => navigate(pathFor('ask-textbook')))}
           aria-label="Full screen mode"
           title="Full screen mode"
           style={{
@@ -251,148 +204,8 @@ export default function AskTestBook({ onOpenStudio }) {
         </button>
       </div>
 
-      {/* Center Section: Toggles between Overview & Active Conversation */}
-      {conversation ? (
-        /* ACTIVE CONVERSATION RESULT VIEW */
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            flex: 1,
-            zIndex: 2,
-            padding: '4px 6px',
-            overflowY: 'auto'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#2563EB', background: '#EFF6FF', padding: '2px 8px', borderRadius: '4px' }}>
-              {conversation.pageRef}
-            </div>
-            <button
-              onClick={() => setConversation(null)}
-              style={{ background: 'transparent', border: 'none', fontSize: '11px', color: '#64748B', cursor: 'pointer', textDecoration: 'underline' }}
-            >
-              ← Back to Overview
-            </button>
-          </div>
-
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#0F1219', marginBottom: '4px' }}>
-              Q: {conversation.query}
-            </div>
-            <div style={{ fontSize: '12px', color: '#334155', lineHeight: '1.45' }}>
-              {conversation.answer}
-            </div>
-          </div>
-
-          {/* Quick Actions on Answer */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-            <button
-              onClick={() => {
-                if ('speechSynthesis' in window) {
-                  window.speechSynthesis.cancel();
-                  const utterance = new SpeechSynthesisUtterance(conversation.answer);
-                  utterance.rate = 1.0;
-                  window.speechSynthesis.speak(utterance);
-                  showToast('Reading explanation aloud...');
-                } else {
-                  showToast('Audio explanation played');
-                }
-              }}
-              style={{
-                background: '#F1F5F9',
-                border: '1px solid #E2E8F0',
-                borderRadius: '6px',
-                padding: '4px 10px',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: '#334155',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              Read Aloud
-            </button>
-
-            <button
-              onClick={() => {
-                navigator.clipboard?.writeText(conversation.answer);
-                showToast('Copied answer to clipboard');
-              }}
-              style={{
-                background: '#F1F5F9',
-                border: '1px solid #E2E8F0',
-                borderRadius: '6px',
-                padding: '4px 10px',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: '#334155',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              Copy
-            </button>
-
-            <button
-              onClick={() => showToast('Saved insight to Study Notes')}
-              style={{
-                background: '#F1F5F9',
-                border: '1px solid #E2E8F0',
-                borderRadius: '6px',
-                padding: '4px 10px',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: '#334155',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              Save Note
-            </button>
-
-            {onOpenStudio && (
-              <button
-                onClick={onOpenStudio}
-                style={{
-                  background: '#20346B',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '4px 10px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: '#FFFFFF',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  marginLeft: 'auto'
-                }}
-              >
-                <span>Open in Studio</span>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
-            )}
-          </div>
-        </div>
-      ) : isThinking ? (
-        /* THINKING INDICATOR */
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, zIndex: 2 }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: '3px solid #E2E8F0', borderTopColor: '#283D82', animation: 'voiceGlow 1s linear infinite' }} />
-          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '10px', fontWeight: 600 }}>
-            Searching textbook index & grounding answer...
-          </div>
-        </div>
-      ) : (
+      {/* Center Section */}
+      {(
         /* CENTERED DEFAULT VIEW */
         <div
           style={{
@@ -470,15 +283,20 @@ export default function AskTestBook({ onOpenStudio }) {
           }}
         >
           <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', marginBottom: '8px' }}>
-            Recent Textbook Queries
+            Recent Textbook Chats
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {queryHistory.map((item, i) => (
+            {!queryHistory.length && (
+              <div style={{ fontSize: '11px', color: '#94A3B8', padding: '4px 2px' }}>
+                {chats.isLoading ? 'Loading…' : 'No conversations yet - ask your first question below.'}
+              </div>
+            )}
+            {queryHistory.map((item) => (
               <div
-                key={i}
+                key={item.id}
                 onClick={() => {
                   setHistoryOpen(false);
-                  handleSend(item.q);
+                  navigate(`${pathFor('ask-textbook', item.bookId)}/${item.id}`);
                 }}
                 style={{
                   padding: '6px 8px',
@@ -493,9 +311,9 @@ export default function AskTestBook({ onOpenStudio }) {
                 }}
               >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
-                  {item.q}
+                  {item.title}
                 </span>
-                <span style={{ fontSize: '9px', color: '#94A3B8' }}>{item.time}</span>
+                <span style={{ fontSize: '9px', color: '#94A3B8' }}>{timeAgo(item.updatedAt)}</span>
               </div>
             ))}
           </div>
@@ -505,7 +323,8 @@ export default function AskTestBook({ onOpenStudio }) {
       {/* Bottom Pill Input Form: 475px width, 38px height, rounded pill */}
       <div
         style={{
-          width: '475px',
+          width: '100%',
+          maxWidth: '475px',
           height: '38px',
           margin: '0 auto',
           zIndex: 3,
@@ -561,7 +380,7 @@ export default function AskTestBook({ onOpenStudio }) {
             onChange={(e) => setPrompt(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            placeholder={isListening ? 'Listening... speak now' : 'Upload your syllabus and Ask AI'}
+            placeholder={isListening ? 'Listening... speak now' : 'Ask your textbook anything, or attach a PDF'}
             style={{
               flex: 1,
               border: 'none',
@@ -634,28 +453,6 @@ export default function AskTestBook({ onOpenStudio }) {
         </form>
       </div>
 
-      {/* Floating Toast */}
-      {toast && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '68px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: '#1E293B',
-            color: '#FFFFFF',
-            padding: '6px 14px',
-            borderRadius: '999px',
-            fontSize: '11px',
-            fontWeight: 600,
-            zIndex: 100,
-            whiteSpace: 'nowrap',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-          }}
-        >
-          {toast}
-        </div>
-      )}
     </div>
   );
 }

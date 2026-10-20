@@ -1,20 +1,30 @@
 import React, { useState, useRef } from 'react';
+import { toast } from 'react-toastify';
 import Icon from '../design-system/icons';
 import ModalPortal from './ModalPortal';
+import CreateRoadmapModal from './CreateRoadmapModal';
+import { api, invalidate, keys, setQueryData, useDashboard, useQuery } from '../data';
 
+const topicName = (t) => t?.name || t?.title || t?.topic || '';
+const subtopicName = (st) => (typeof st === 'string' ? st : st?.name || st?.title || '');
+
+/**
+ * Syllabus mind map: upload a syllabus PDF, the backend extracts its topics,
+ * and any topic can become a roadmap (same create flow as Projects).
+ */
 export default function SyllabusCard() {
+  const { data: dashboard } = useDashboard();
+  const summary = dashboard?.syllabus;
+  const syllabus = useQuery(summary ? keys.syllabus() : null, api.syllabus);
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationStep, setGenerationStep] = useState(0);
   const [isMindMapModalOpen, setIsMindMapModalOpen] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [creatingTopic, setCreatingTopic] = useState(null);
   const fileInputRef = useRef(null);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
+  const topics = syllabus.data?.mindmap?.topics || [];
+  const syllabusTitle = syllabus.data?.mindmap?.syllabusTitle || '';
+  const uploadedFile = summary ? { name: summary.filename || syllabus.data?.filename || 'Your syllabus' } : null;
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -25,17 +35,22 @@ export default function SyllabusCard() {
     setIsDragging(false);
   };
 
-  const processUploadedFile = (file) => {
-    setUploadedFile(file);
+  const processUploadedFile = async (file) => {
+    if (!file) return;
+    if (file.type !== 'application/pdf') return toast.error('Please choose a PDF file.');
+    if (file.size > 100 * 1024 * 1024) return toast.error('That PDF is over 100 MB.');
     setIsGenerating(true);
-    setGenerationStep(1);
-
-    setTimeout(() => setGenerationStep(2), 500);
-    setTimeout(() => {
-      setGenerationStep(3);
+    try {
+      const result = await api.uploadSyllabus(file);
+      setQueryData(keys.syllabus(), result);
+      invalidate(keys.dashboard());
+      toast.success('Syllabus mapped - pick a topic to start a project.');
+      setIsMindMapModalOpen(true);
+    } catch (e) {
+      toast.error(e.message || "Couldn't read that syllabus.");
+    } finally {
       setIsGenerating(false);
-      showToast('AI Mind Map generated successfully! Click to explore.');
-    }, 1100);
+    }
   };
 
   const handleDrop = (e) => {
@@ -50,12 +65,20 @@ export default function SyllabusCard() {
     if (e.target.files && e.target.files[0]) {
       processUploadedFile(e.target.files[0]);
     }
+    e.target.value = '';
   };
 
-  const handleReset = (e) => {
+  // "Change file": forget the current syllabus, then pick a new one.
+  const handleReset = async (e) => {
     e?.stopPropagation();
-    setUploadedFile(null);
-    setGenerationStep(0);
+    try {
+      await api.deleteSyllabus();
+      setQueryData(keys.syllabus(), null);
+      invalidate(keys.dashboard());
+      fileInputRef.current?.click();
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
 
   return (
@@ -113,7 +136,7 @@ export default function SyllabusCard() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => {
-          if (!uploadedFile) fileInputRef.current?.click();
+          if (!uploadedFile && !isGenerating) fileInputRef.current?.click();
         }}
         tabIndex={0}
         role="button"
@@ -138,7 +161,7 @@ export default function SyllabusCard() {
           type="file"
           ref={fileInputRef}
           onChange={handleFileSelect}
-          accept=".pdf,.docx,.txt"
+          accept="application/pdf"
           style={{ display: 'none' }}
         />
 
@@ -223,9 +246,9 @@ export default function SyllabusCard() {
               {uploadedFile.name}
             </div>
 
-            {isGenerating ? (
+            {syllabus.isLoading ? (
               <div style={{ fontSize: '11px', color: '#2563EB', fontWeight: 600 }}>
-                {generationStep === 1 ? 'Parsing syllabus chapters...' : 'Structuring mind map topics...'}
+                Loading your mind map…
               </div>
             ) : (
               <button
@@ -249,7 +272,7 @@ export default function SyllabusCard() {
                 onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.04)')}
                 onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
               >
-                Explore Mind Map (4 Modules)
+                Explore Mind Map ({topics.length} Topics)
               </button>
             )}
           </div>
@@ -278,7 +301,7 @@ export default function SyllabusCard() {
                 color: 'var(--primary-text)'
               }}
             >
-              Drop your syllabus PDF here
+              {isGenerating ? 'Reading your syllabus…' : 'Drop your syllabus PDF here'}
             </div>
 
             <div
@@ -290,7 +313,7 @@ export default function SyllabusCard() {
                 color: 'var(--muted-text)'
               }}
             >
-              or click to browse local files
+              {isGenerating ? 'This takes up to a minute' : 'or click to browse local files'}
             </div>
           </div>
         )}
@@ -313,7 +336,7 @@ export default function SyllabusCard() {
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <span style={{ fontSize: '11px', fontWeight: 700, background: '#EFF6FF', color: '#2563EB', padding: '3px 8px', borderRadius: '6px' }}>
-                AI Topic Extraction · 4 Modules Discovered
+                AI Topic Extraction · {topics.length} Topics Discovered
               </span>
               <button
                 onClick={() => setIsMindMapModalOpen(false)}
@@ -328,10 +351,10 @@ export default function SyllabusCard() {
             </div>
 
             <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#101828', marginBottom: '4px' }}>
-              Marine Auxiliary Systems Mind Map
+              {syllabusTitle || 'Syllabus Mind Map'}
             </h3>
             <p style={{ fontSize: '12px', color: '#64748B', marginBottom: '18px' }}>
-              Topics clustered automatically from {uploadedFile?.name}. Select topics to create an active learning project.
+              Topics extracted from {uploadedFile?.name}. Pick a topic to create a learning roadmap from it.
             </p>
 
             {/* Mind Map Interactive Graph Nodes */}
@@ -344,34 +367,35 @@ export default function SyllabusCard() {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
                 gap: '12px',
-                marginBottom: '20px'
+                marginBottom: '20px',
+                maxHeight: '52vh',
+                overflowY: 'auto'
               }}
             >
-              {[
-                { module: 'Module 1: Internal Combustion', topics: ['Piston Kinematics', 'Fuel Injection Systems', 'Scavenging Air Pumps'] },
-                { module: 'Module 2: Auxiliary Boilers', topics: ['Feed Water Treatment', 'Steam Drum Dynamics', 'Safety Valves'] },
-                { module: 'Module 3: Centrifugal Pumps', topics: ['Cavitation Analysis', 'Bilge & Ballast Manifolds', 'Shaft Seals'] },
-                { module: 'Module 4: HVAC & Chilling', topics: ['Refrigerant Cycles', 'Compressor Lubrication', 'Cargo Hold Ventilation'] }
-              ].map((m, idx) => (
-                <div key={idx} style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              {topics.map((t, idx) => (
+                <div key={idx} style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ fontSize: '12px', fontWeight: 700, color: '#20346B', marginBottom: '6px' }}>
-                    {m.module}
+                    {topicName(t)}
                   </div>
-                  <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: '#64748B', lineHeight: '1.4' }}>
-                    {m.topics.map((t, i) => (
-                      <li key={i}>{t}</li>
+                  <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: '#64748B', lineHeight: '1.4', flex: 1 }}>
+                    {(t.subtopics || t.children || []).slice(0, 4).map((st, i) => (
+                      <li key={i}>{subtopicName(st)}</li>
                     ))}
                   </ul>
+                  <button
+                    type="button"
+                    onClick={() => setCreatingTopic(topicName(t))}
+                    style={{ alignSelf: 'flex-start', marginTop: '8px', background: 'none', border: 'none', padding: 0, color: '#2563EB', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Create project →
+                  </button>
                 </div>
               ))}
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
-                onClick={() => {
-                  setIsMindMapModalOpen(false);
-                  showToast('Created new project "Marine Auxiliary Systems" from Mind Map');
-                }}
+                onClick={() => setCreatingTopic(syllabusTitle || topicName(topics[0]))}
                 style={{
                   flex: 1,
                   height: '40px',
@@ -384,7 +408,7 @@ export default function SyllabusCard() {
                   cursor: 'pointer'
                 }}
               >
-                + Create Project From This Mind Map
+                + Create Project From This Syllabus
               </button>
               <button
                 onClick={() => setIsMindMapModalOpen(false)}
@@ -407,27 +431,15 @@ export default function SyllabusCard() {
         </ModalPortal>
       )}
 
-      {/* Floating Toast */}
-      {toast && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '12px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: '#1E293B',
-            color: '#FFFFFF',
-            padding: '6px 14px',
-            borderRadius: '999px',
-            fontSize: '11px',
-            fontWeight: 600,
-            zIndex: 100,
-            whiteSpace: 'nowrap',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+      {creatingTopic !== null && (
+        <CreateRoadmapModal
+          source="syllabus"
+          initialTopic={[creatingTopic, creatingTopic === syllabusTitle ? '' : syllabusTitle].filter(Boolean).join(' - ').slice(0, 200)}
+          onClose={() => {
+            setCreatingTopic(null);
+            setIsMindMapModalOpen(false);
           }}
-        >
-          {toast}
-        </div>
+        />
       )}
     </div>
   );

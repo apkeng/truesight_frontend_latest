@@ -1,71 +1,16 @@
 import React, { useState } from 'react';
 import Icon from '../design-system/icons';
 import ModalPortal from './ModalPortal';
+import { useDashboard } from '../data';
+import { downloadCalendar, toEventView } from '../eventView';
+import { pathFor, useTS } from '../session';
 
+/** The next three events (from /api/v2/dashboard); registration links out. */
 export default function UpcomingEvents() {
+  const { go } = useTS();
+  const { data } = useDashboard();
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [registeredEvents, setRegisteredEvents] = useState({});
-  const [toast, setToast] = useState(null);
-
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const events = [
-    {
-      id: 1,
-      title: 'Automation Expo (Regional Edition)',
-      category: 'Manufacturing / Hardware',
-      date: 'Oct 1 · 02:30 PM',
-      location: 'In-person',
-      venue: 'Bengaluru Tech Exhibition Hall 4',
-      image: '/assets/event-1.jpg',
-      speakers: 'Dr. R. Menon (ABB Robotics), Priya Nair (Siemens Digital)',
-      desc: 'Annual symposium bringing together automation leads, robotics researchers, and industrial machinery architects to showcase next-generation PLC and SCADA telemetry.'
-    },
-    {
-      id: 2,
-      title: 'AI in Robotics & Mechatronics Summit',
-      category: 'AI & Robotics',
-      date: 'Oct 5 · 10:00 AM',
-      location: 'Online / Live',
-      venue: 'TrueSights Virtual Stage 1',
-      image: '/assets/event-2.jpg',
-      speakers: 'Arjun Das (IIT Madras), Elena Rostova (ETH Zurich)',
-      desc: 'Explore deep reinforcement learning for multi-degree-of-freedom robotic arms and computer vision-guided autonomous mobile manipulators.'
-    },
-    {
-      id: 3,
-      title: 'Cyber-Physical Systems Symposium',
-      category: 'Systems Engineering',
-      date: 'Oct 12 · 04:00 PM',
-      location: 'In-person',
-      venue: 'Main Campus Auditorium B',
-      image: '/assets/event-3.jpg',
-      speakers: 'Vikram Joshi (National Cyber Hub), Ananya Rao (Infosys Lab)',
-      desc: 'Defensive architecture and real-time safety protocols for critical embedded IoT hardware and naval propulsion control interfaces.'
-    }
-  ];
-
-  const handleToggleRSVP = (id) => {
-    const isReg = !registeredEvents[id];
-    setRegisteredEvents({ ...registeredEvents, [id]: isReg });
-    showToast(isReg ? 'RSVP Confirmed! Your student ticket is ready.' : 'RSVP Cancelled.');
-  };
-
-  const handleDownloadCalendar = (ev) => {
-    const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:${ev.title}\nDESCRIPTION:${ev.desc}\nLOCATION:${ev.venue}\nEND:VEVENT\nEND:VCALENDAR`;
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${ev.title.replace(/\s+/g, '_')}.ics`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Added to Calendar (.ics downloaded)');
-  };
+  const events = (data?.events || []).map(toEventView);
 
   return (
     <div
@@ -108,7 +53,11 @@ export default function UpcomingEvents() {
         </div>
 
         <a
-          href="#events"
+          href={pathFor('events')}
+          onClick={(e) => {
+            e.preventDefault();
+            go('events');
+          }}
           style={{
             fontFamily: 'var(--font-primary)',
             fontSize: '14px',
@@ -131,6 +80,11 @@ export default function UpcomingEvents() {
           flex: 1
         }}
       >
+        {!events.length && (
+          <div style={{ textAlign: 'center', padding: '40px 8px', color: '#94A3B8', fontSize: '12px' }}>
+            {data ? 'No upcoming events right now - check back soon.' : 'Loading events…'}
+          </div>
+        )}
         {events.map((event) => (
           <div
             key={event.id}
@@ -243,8 +197,8 @@ export default function UpcomingEvents() {
                   height: '22px',
                   borderRadius: '999px',
                   border: 'none',
-                  background: registeredEvents[event.id] ? '#ECFDF5' : '#FEE047',
-                  color: registeredEvents[event.id] ? '#047857' : '#101D3B',
+                  background: '#FEE047',
+                  color: '#101D3B',
                   fontFamily: 'var(--font-urbanist)',
                   fontSize: '11px',
                   lineHeight: '16px',
@@ -257,7 +211,7 @@ export default function UpcomingEvents() {
                   transition: 'all 0.15s ease'
                 }}
               >
-                {registeredEvents[event.id] ? 'Registered' : 'View details'}
+                View details
               </button>
             </div>
           </div>
@@ -312,29 +266,57 @@ export default function UpcomingEvents() {
             </p>
 
             <div style={{ fontSize: '11px', color: '#64748B', background: '#F8FAFC', padding: '8px 12px', borderRadius: '8px', marginBottom: '16px' }}>
-              <strong>Featured Speakers:</strong> {selectedEvent.speakers}
+              <strong>Featured Speakers:</strong> {selectedEvent.speakers || 'To be announced'}
             </div>
 
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => handleToggleRSVP(selectedEvent.id)}
-                style={{
-                  flex: 1,
-                  height: '40px',
-                  borderRadius: '999px',
-                  border: 'none',
-                  background: registeredEvents[selectedEvent.id] ? '#10B981' : '#FEE047',
-                  color: registeredEvents[selectedEvent.id] ? '#FFFFFF' : '#101D3B',
-                  fontWeight: 700,
-                  fontSize: '13px',
-                  cursor: 'pointer'
-                }}
-              >
-                {registeredEvents[selectedEvent.id] ? 'Registered (Click to cancel)' : 'Register for Event'}
-              </button>
+              {selectedEvent.registerUrl ? (
+                <a
+                  href={selectedEvent.registerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    flex: 1,
+                    height: '40px',
+                    borderRadius: '999px',
+                    border: 'none',
+                    background: '#FEE047',
+                    color: '#101D3B',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textDecoration: 'none'
+                  }}
+                >
+                  Register on official site ↗
+                </a>
+              ) : (
+                <button
+                  onClick={() => {
+                    setSelectedEvent(null);
+                    go('events', selectedEvent.id);
+                  }}
+                  style={{
+                    flex: 1,
+                    height: '40px',
+                    borderRadius: '999px',
+                    border: 'none',
+                    background: '#FEE047',
+                    color: '#101D3B',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  View full details
+                </button>
+              )}
 
               <button
-                onClick={() => handleDownloadCalendar(selectedEvent)}
+                onClick={() => downloadCalendar(selectedEvent)}
                 style={{
                   padding: '0 16px',
                   height: '40px',
@@ -354,28 +336,6 @@ export default function UpcomingEvents() {
         </ModalPortal>
       )}
 
-      {/* Floating Toast */}
-      {toast && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '12px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: '#1E293B',
-            color: '#FFFFFF',
-            padding: '6px 14px',
-            borderRadius: '999px',
-            fontSize: '11px',
-            fontWeight: 600,
-            zIndex: 100,
-            whiteSpace: 'nowrap',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-          }}
-        >
-          {toast}
-        </div>
-      )}
     </div>
   );
 }

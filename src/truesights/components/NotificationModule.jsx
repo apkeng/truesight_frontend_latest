@@ -1,6 +1,11 @@
 import React, { useState, useMemo } from 'react';
+import { toast } from 'react-toastify';
 import Icon from '../design-system/icons';
 import ModalPortal from './ModalPortal';
+import { api, invalidate, keys } from '../data';
+import { useNotifications } from '../notifications';
+import { timeAgo } from '../../revamp/lib/format';
+import { actionFor, linkFor } from '../../revamp/lib/notifications';
 
 /**
  * Play a gentle, modern synthetic notification chime via Web Audio API.
@@ -41,160 +46,48 @@ function playNotificationChime() {
   }
 }
 
-export const DEFAULT_NOTIFICATIONS = [
-  // 1. Challenge Request
-  {
-    id: 'notif-ch-1',
-    title: 'New 1v1 Challenge Request',
-    desc: 'Rohit K. (Rank #4) challenged you on "Thermodynamic Heat Cycles". 5-minute sprint with +50 PTS wager.',
-    category: 'challenges',
-    timestamp: '12 mins ago',
-    dateGroup: 'Today',
-    unread: true,
-    priority: 'high',
-    tag: '+50 PTS Wager',
-    actionText: 'Accept Challenge',
-    actionType: 'challenge',
-    payload: {
-      subtopic: {
-        id: 'thermo-cycles',
-        title: 'Thermodynamic Heat Cycles Live Sprint',
-        duration: '5 mins',
-        points: 50
-      }
-    }
-  },
-  // 2. Project Created Status
-  {
-    id: 'notif-pr-1',
-    title: 'Project Created: Kerala Building Rules 2025',
-    desc: 'AI Textbook compilation complete. 5 interactive syllabus modules and mock test papers are now ready in your workspace.',
-    category: 'projects',
-    timestamp: '45 mins ago',
-    dateGroup: 'Today',
-    unread: true,
-    priority: 'normal',
-    tag: '5 Modules Ready',
-    actionText: 'Open Workspace',
-    actionType: 'project',
-    payload: {
-      project: {
-        id: 'kbr-2025',
-        title: 'Kerala Building Rules 2025',
-        level: 'Undergraduate',
-        description: 'Comprehensive municipal regulations, setback zoning, structural safety bylaws, and energy conservation standards.',
-        modulesCount: 5,
-        coverImage: '/assets/Rectangle 4.png',
-        type: 'private'
-      }
-    }
-  },
-  // 3. Event Update
-  {
-    id: 'notif-ev-1',
-    title: 'Event Update: Seat & Pass Confirmed',
-    desc: 'Your registration for "National Robotics & Autonomous Systems Expo 2026" is approved. Desk #14 in Hall B reserved.',
-    category: 'events',
-    timestamp: '2 hours ago',
-    dateGroup: 'Today',
-    unread: true,
-    priority: 'high',
-    tag: 'Desk #14 · Hall B',
-    actionText: 'View Event Pass',
-    actionType: 'event',
-    payload: { eventId: 'evt-2' }
-  },
-  // 4. Challenge Accepted / Results
-  {
-    id: 'notif-ch-2',
-    title: 'Challenge Duel Completed: Aarav S.',
-    desc: 'Aarav finished the 5-min Quantum Wells sprint with 4/5 correct in 3m 42s. Compare your scores to see the outcome.',
-    category: 'challenges',
-    timestamp: '3 hours ago',
-    dateGroup: 'Today',
-    unread: false,
-    priority: 'normal',
-    tag: 'Duel Finished',
-    actionText: 'View Duel Results',
-    actionType: 'results'
-  },
-  // 5. Project Created Status
-  {
-    id: 'notif-pr-2',
-    title: 'Project Created: Semiconductor Device Physics',
-    desc: 'Flashcards, formula sheets, and MOSFET characteristic curve diagrams compiled into your private roadmap.',
-    category: 'projects',
-    timestamp: '5 hours ago',
-    dateGroup: 'Today',
-    unread: false,
-    priority: 'normal',
-    tag: 'Roadmap Ready',
-    actionText: 'Open Workspace',
-    actionType: 'project',
-    payload: {
-      project: {
-        id: 'semi-dev-phys',
-        title: 'Semiconductor Device Physics',
-        level: 'Postgraduate',
-        description: 'Carrier transport, PN junction electrostatics, MOSFET gate dielectrics, and subthreshold slope analysis.',
-        modulesCount: 6,
-        coverImage: '/assets/MOSFET.png',
-        type: 'private'
-      }
-    }
-  },
-  // 6. Event Reminder
-  {
-    id: 'notif-ev-2',
-    title: 'Upcoming Keynote: Dr. Sarah Vance',
-    desc: '“Next-Gen Neuromorphic Architectures” live webinar begins tomorrow at 10:00 AM. Handout available.',
-    category: 'events',
-    timestamp: 'Yesterday',
-    dateGroup: 'Yesterday',
-    unread: false,
-    priority: 'normal',
-    tag: 'Webinar Alert',
-    actionText: 'Event Details',
-    actionType: 'event',
-    payload: { eventId: 'evt-1' }
-  },
-  // 7. Rewards & Streak
-  {
-    id: 'notif-rw-1',
-    title: 'Study Streak Milestone: +100 PTS Credited',
-    desc: 'You completed your 7-day learning momentum streak. Points have been credited to your rewards wallet.',
-    category: 'rewards',
-    timestamp: 'Yesterday',
-    dateGroup: 'Yesterday',
-    unread: false,
-    priority: 'normal',
-    tag: '+100 PTS Bonus',
-    actionText: 'Open Rewards Store',
-    actionType: 'rewards'
-  }
-];
-
 export { playNotificationChime };
 
-export default function NotificationModule({
-  isOpen,
-  onClose,
-  notifications = DEFAULT_NOTIFICATIONS,
-  onUpdateNotifications,
-  onNavigate,
-  onOpenWorkspace,
-  onStartLiveChallenge,
-  onOpenEvent
-}) {
+/** Which filter tab a notification belongs to, from the record it is about. */
+const categoryOf = (n) => {
+  switch (n.ref?.kind) {
+    case 'project':
+    case 'project_failed':
+      return 'projects';
+    case 'challenge':
+      return 'challenges';
+    case 'order':
+      return 'rewards';
+    case 'event':
+      return 'events';
+    default:
+      return 'system';
+  }
+};
+
+/** The notification panel, fed by the NotificationProvider (/api/v2/notifications). */
+export default function NotificationModule({ isOpen, onClose }) {
+  const ctx = useNotifications();
   const [activeCategory, setActiveCategory] = useState('all');
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [toastMessage, setToastMessage] = useState(null);
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2800);
-  };
+  const byId = useMemo(() => new Map(ctx.notifications.map((n) => [n.id, n])), [ctx.notifications]);
+  const notifications = useMemo(
+    () =>
+      ctx.notifications.map((n) => ({
+        id: n.id,
+        title: n.title,
+        desc: n.body || '',
+        category: categoryOf(n),
+        timestamp: timeAgo(n.createdAt),
+        unread: !n.read,
+        tag: null,
+        actionText: linkFor(n.ref) ? actionFor(n) : null,
+        actionType: n.type === 'challenge_received' ? 'challenge' : n.ref?.kind
+      })),
+    [ctx.notifications]
+  );
 
   // Category counts
   const categoryCounts = useMemo(() => {
@@ -223,168 +116,44 @@ export default function NotificationModule({
     });
   }, [notifications, activeCategory, onlyUnread, searchQuery]);
 
-  // Mark single as read
-  const handleMarkAsRead = (id) => {
-    if (!onUpdateNotifications) return;
-    onUpdateNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
-    );
-  };
+  const handleMarkAsRead = (id) => ctx.markRead(byId.get(id));
 
-  // Toggle single read/unread
   const handleToggleRead = (id, e) => {
     e.stopPropagation();
-    if (!onUpdateNotifications) return;
-    onUpdateNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: !n.unread } : n))
-    );
+    const n = byId.get(id);
+    ctx.markRead(n, !n.read);
   };
 
-  // Dismiss / delete single
   const handleDismiss = (id, e) => {
     e.stopPropagation();
-    if (!onUpdateNotifications) return;
-    onUpdateNotifications((prev) => prev.filter((n) => n.id !== id));
-    showToast('Notification dismissed');
+    ctx.remove(byId.get(id));
   };
 
-  // Mark all as read
-  const handleMarkAllAsRead = () => {
-    if (!onUpdateNotifications) return;
-    onUpdateNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
-    showToast('All marked as read');
-  };
+  const handleMarkAllAsRead = () => ctx.markAllRead();
 
-  // Clear all
   const handleClearAll = () => {
-    if (!onUpdateNotifications) return;
-    onUpdateNotifications([]);
-    showToast('All notifications cleared');
+    ctx.notifications.forEach((n) => ctx.remove(n));
+    toast.success('Notifications cleared');
   };
 
-  // Trigger Simulation with clean minimal data
-  const handleSimulate = (type) => {
-    playNotificationChime();
-    const id = 'sim-' + Date.now();
-    let newNotif = null;
-
-    if (type === 'challenge') {
-      newNotif = {
-        id,
-        title: 'New 1v1 Challenge Request',
-        desc: 'Rohit K. challenged you on "Thermodynamic Heat Cycles". +50 PTS at stake.',
-        category: 'challenges',
-        timestamp: 'Just now',
-        dateGroup: 'Today',
-        unread: true,
-        priority: 'high',
-        tag: '+50 PTS Wager',
-        actionText: 'Accept Challenge',
-        actionType: 'challenge',
-        payload: {
-          subtopic: {
-            id: 'thermo-cycles',
-            title: 'Thermodynamic Heat Cycles Live Sprint',
-            duration: '5 mins',
-            points: 50
-          }
-        }
-      };
-      showToast('New Challenge Request received');
-    } else if (type === 'event') {
-      newNotif = {
-        id,
-        title: 'Event Update: Seat Allocated',
-        desc: 'Your reserved seat for "AI & Robotics Summit" is confirmed in Hall 2.',
-        category: 'events',
-        timestamp: 'Just now',
-        dateGroup: 'Today',
-        unread: true,
-        priority: 'normal',
-        tag: 'Seat #B-14 Confirmed',
-        actionText: 'View Event Pass',
-        actionType: 'event',
-        payload: { eventId: 'evt-2' }
-      };
-      showToast('Event update received');
-    } else if (type === 'project') {
-      newNotif = {
-        id,
-        title: 'Project Created: Turbine Fluid Mechanics',
-        desc: 'Syllabus roadmap compiled with 6 practice modules and formulas.',
-        category: 'projects',
-        timestamp: 'Just now',
-        dateGroup: 'Today',
-        unread: true,
-        priority: 'normal',
-        tag: '6 Modules Ready',
-        actionText: 'Open Workspace',
-        actionType: 'project',
-        payload: {
-          project: {
-            id: 'proj-' + Date.now(),
-            title: 'Turbine Fluid Mechanics',
-            level: 'Undergraduate',
-            description: 'Advanced turbine principles, boundary layer flow, and performance analysis.',
-            modulesCount: 6,
-            coverImage: '/assets/MOSFET.png',
-            type: 'private'
-          }
-        }
-      };
-      showToast('Project created status updated');
-    }
-
-    if (newNotif && onUpdateNotifications) {
-      onUpdateNotifications((prev) => [newNotif, ...prev]);
+  // A challenge invite can be declined right from the panel.
+  const handleDecline = async (id, e) => {
+    e.stopPropagation();
+    const n = byId.get(id);
+    try {
+      await api.declineChallenge(n.ref.id);
+      ctx.remove(n);
+      invalidate(keys.challenges(), keys.dashboard(), keys.bootstrap());
+      toast.success('Challenge declined');
+    } catch (err) {
+      toast.error(err.message);
     }
   };
 
-  // Perform notification card primary action
   const handleActionClick = (notif, e) => {
     e.stopPropagation();
-    handleMarkAsRead(notif.id);
+    ctx.open(byId.get(notif.id));
     onClose();
-
-    if (notif.actionType === 'challenge') {
-      if (onStartLiveChallenge) {
-        onStartLiveChallenge(
-          notif.payload?.subtopic || {
-            id: 'live-challenge-quick',
-            title: notif.title,
-            duration: '5 mins',
-            points: 50
-          }
-        );
-      } else if (onNavigate) {
-        onNavigate('challenges');
-      }
-    } else if (notif.actionType === 'event') {
-      if (onOpenEvent && notif.payload?.eventId) {
-        onOpenEvent(notif.payload.eventId);
-      } else if (onNavigate) {
-        onNavigate('events');
-      }
-    } else if (notif.actionType === 'project') {
-      if (onOpenWorkspace) {
-        onOpenWorkspace(
-          notif.payload?.project || {
-            id: notif.payload?.projectId || 'sample-project',
-            title: notif.payload?.title || 'Kerala Building Rules 2025',
-            level: 'Undergraduate',
-            description: 'Syllabus project workspace',
-            modulesCount: 5,
-            coverImage: '/assets/Rectangle 4.png'
-          }
-        );
-      } else if (onNavigate) {
-        onNavigate('projects');
-      }
-    } else if (notif.actionType === 'rewards') {
-      if (onNavigate) onNavigate('rewards');
-    } else if (notif.actionType === 'results') {
-      if (onNavigate) onNavigate('results');
-    }
   };
 
   // Unified minimal category metadata with TrueSights icons
@@ -890,7 +659,7 @@ export default function NotificationModule({
                             {notif.actionType === 'challenge' && (
                               <button
                                 type="button"
-                                onClick={(e) => handleDismiss(notif.id, e)}
+                                onClick={(e) => handleDecline(notif.id, e)}
                                 style={{
                                   backgroundColor: '#F8FAFC',
                                   color: '#64748B',
@@ -945,75 +714,7 @@ export default function NotificationModule({
                 flexShrink: 0
               }}
             >
-              {/* Subtle Simulation Quick Triggers using TrueSights Icons */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 500 }}>
-                  Test:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleSimulate('challenge')}
-                  title="Simulate Challenge Request"
-                  style={{
-                    backgroundColor: '#F8FAFC',
-                    border: '1px solid #E2E8F0',
-                    color: '#475569',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                >
-                  <Icon name="challenges" size={11} color="#475569" />
-                  <span>Challenge</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSimulate('event')}
-                  title="Simulate Event Update"
-                  style={{
-                    backgroundColor: '#F8FAFC',
-                    border: '1px solid #E2E8F0',
-                    color: '#475569',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                >
-                  <Icon name="events" size={11} color="#475569" />
-                  <span>Event</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSimulate('project')}
-                  title="Simulate Project Status"
-                  style={{
-                    backgroundColor: '#F8FAFC',
-                    border: '1px solid #E2E8F0',
-                    color: '#475569',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                >
-                  <Icon name="allProjects" size={11} color="#475569" />
-                  <span>Project</span>
-                </button>
-              </div>
+              <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 500 }}>Latest 30 updates</span>
 
               {/* Clear All */}
               {notifications.length > 0 && (
@@ -1044,30 +745,6 @@ export default function NotificationModule({
         </ModalPortal>
       )}
 
-      {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            backgroundColor: '#1E2538',
-            color: '#FFFFFF',
-            padding: '9px 15px',
-            borderRadius: '8px',
-            fontSize: '12.5px',
-            fontWeight: 600,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-            zIndex: 10000000,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            animation: 'toastSlideUp 0.18s ease'
-          }}
-        >
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </>
   );
 }
