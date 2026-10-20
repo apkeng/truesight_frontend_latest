@@ -193,7 +193,7 @@ export default function EventsPage() {
               lineHeight: isMobile ? '18px' : '20px'
             }}
           >
-            Explore engineering symposiums, robotics hackathons, and industrial masterclasses. Register to secure student passes, earn skill points, and sync directly with your calendar.
+            Explore upcoming industry events, expos and masterclasses. Register on the organiser's official site and add events to your calendar.
           </p>
         </div>
       </div>
@@ -677,6 +677,7 @@ export default function EventsPage() {
                   </div>
 
                   {/* Speakers Pod */}
+                  {event.speakers.length > 0 && (
                   <div
                     style={{
                       background: '#FAF9F6',
@@ -710,10 +711,11 @@ export default function EventsPage() {
                         {event.speakers.map((s) => s.name).join(', ')}
                       </div>
                       <div style={{ fontSize: '11px', color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {event.speakers.map((s) => s.org).join(' · ')}
+                        {event.speakers.map((s) => s.org).filter(Boolean).join(' · ')}
                       </div>
                     </div>
                   </div>
+                  )}
 
                   {/* Short Description */}
                   <p

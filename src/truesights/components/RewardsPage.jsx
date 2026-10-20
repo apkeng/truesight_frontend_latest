@@ -894,7 +894,7 @@ export default function RewardsPage() {
           </p>
         </div>
 
-        {/* Right: Wishlist Cart + Track My Orders + 128 AVAILABLE Card */}
+        {/* Right: Wishlist Cart + Track My Orders + catalog size card */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px', flexWrap: 'wrap', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
           {/* Wishlist Cart Header Button */}
           <button
@@ -1009,7 +1009,7 @@ export default function RewardsPage() {
                 lineHeight: '26px'
               }}
             >
-              128
+              {REWARDS_CATALOG.length}
             </span>
             <span
               style={{
@@ -1020,7 +1020,7 @@ export default function RewardsPage() {
                 textTransform: 'uppercase'
               }}
             >
-              AVAILABLE
+              REWARDS
             </span>
           </div>
         </div>

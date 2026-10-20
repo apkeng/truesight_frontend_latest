@@ -1,5 +1,83 @@
 import React, { useState } from 'react';
 
+const STAGE_NAMES = {
+  placed: 'Placed',
+  confirmed: 'Confirmed',
+  packed: 'Packed',
+  shipped: 'Shipped',
+  out_for_delivery: 'Out for delivery',
+  delivered: 'Delivered',
+  ready_for_pickup: 'Ready for pickup',
+  collected: 'Collected'
+};
+
+/** The order's real fulfilment stages: done in green, current in blue, upcoming in grey. */
+function StageTrack({ ord, compact }) {
+  const stages = ord.raw.stages || [];
+  const status = ord.raw.status;
+  const current = stages.indexOf(status);
+  const cancelled = status === 'cancelled';
+  const size = compact ? 20 : 24;
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', position: 'relative' }}>
+      {stages.map((stage, i) => {
+        const done = !cancelled && i <= current;
+        const isCurrent = !cancelled && i === current && i < stages.length - 1;
+        return (
+          <div key={stage} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', position: 'relative' }}>
+            {i > 0 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: `${size / 2 - 1}px`,
+                  right: '50%',
+                  width: '100%',
+                  height: compact ? '2px' : '3px',
+                  background: !cancelled && i <= current ? '#10B981' : '#CBD5E1'
+                }}
+              />
+            )}
+            <div
+              style={{
+                width: `${size}px`,
+                height: `${size}px`,
+                borderRadius: '50%',
+                background: isCurrent ? '#2563EB' : done ? '#10B981' : '#FFFFFF',
+                border: done || isCurrent ? 'none' : '2px dashed #94A3B8',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 2,
+                boxSizing: 'border-box'
+              }}
+            >
+              {isCurrent ? (
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#FFFFFF' }} />
+              ) : done ? (
+                <svg width={compact ? 10 : 12} height={compact ? 10 : 12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : null}
+            </div>
+            <span
+              style={{
+                fontSize: compact ? '9px' : '11px',
+                fontWeight: isCurrent ? 800 : done ? 700 : 500,
+                color: isCurrent ? '#2563EB' : done ? '#101D3B' : '#94A3B8',
+                textAlign: 'center',
+                lineHeight: 1.2
+              }}
+            >
+              {STAGE_NAMES[stage] || stage}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const CancelButton = ({ ord, onCancelOrder, cancellingId }) =>
   ord.cancellable && onCancelOrder ? (
     <button
@@ -300,83 +378,14 @@ export default function OrdersTrackerPage({
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
                     <span style={{ fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
-                      CAMPUS DISPATCH
+                      ORDER PROGRESS
                     </span>
                     <span style={{ fontWeight: 700, color: isInProgress ? '#2563EB' : '#10B981' }}>
                       {isInProgress ? ord.eta : isCancelled ? 'Points refunded' : 'Delivered'}
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-                    {/* Background Progress Bar */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '10px',
-                        left: '20px',
-                        right: '20px',
-                        height: '2px',
-                        background: '#CBD5E1',
-                        zIndex: 1
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: '100%',
-                          background: isInProgress ? '#2563EB' : '#10B981',
-                          width: `${ord.progressPct}%`
-                        }}
-                      />
-                    </div>
-
-                    {/* Step 1: Confirmed */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', zIndex: 2 }}>
-                      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#10B981', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                      <span style={{ fontSize: '9px', fontWeight: 700, color: '#101D3B' }}>Confirmed</span>
-                    </div>
-
-                    {/* Step 2: Packaged */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', zIndex: 2 }}>
-                      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#10B981', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                      <span style={{ fontSize: '9px', fontWeight: 700, color: '#101D3B' }}>Packaged</span>
-                    </div>
-
-                    {/* Step 3: In Transit */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', zIndex: 2 }}>
-                      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: isInProgress ? '#2563EB' : '#10B981', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {isInProgress ? (
-                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FFFFFF' }}></span>
-                        ) : (
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </div>
-                      <span style={{ fontSize: '9px', fontWeight: 700, color: isInProgress ? '#2563EB' : '#101D3B' }}>Transit</span>
-                    </div>
-
-                    {/* Step 4: Delivered */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', zIndex: 2 }}>
-                      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: isDelivered ? '#10B981' : '#E2E8F0', color: isDelivered ? '#FFFFFF' : '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {isDelivered ? (
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        ) : (
-                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#CBD5E1' }}></span>
-                        )}
-                      </div>
-                      <span style={{ fontSize: '9px', fontWeight: 700, color: isDelivered ? '#101D3B' : '#94A3B8' }}>Delivered</span>
-                    </div>
-                  </div>
+                  <StageTrack ord={ord} compact={true} />
                 </div>
 
                 {/* Recipient info & Tracking ID footer */}
@@ -465,7 +474,7 @@ export default function OrdersTrackerPage({
               Track My Reward Orders
             </h1>
             <span style={{ fontSize: '12px', color: '#D6E1F9' }}>
-              Live campus courier tracking &amp; verified dispatch timelines
+              Track every reward you have redeemed
             </span>
           </div>
         </div>
@@ -742,110 +751,14 @@ export default function OrdersTrackerPage({
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.06em' }}>
-                      CAMPUS DISPATCH TIMELINE
+                      ORDER PROGRESS
                     </span>
                     <span style={{ fontSize: '11px', fontWeight: 700, color: isInProgress ? '#2563EB' : '#10B981' }}>
                       {isInProgress ? `${ord.stageLabel} · ${ord.eta}` : isCancelled ? 'Cancelled - points refunded' : 'Delivered'}
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-                    {/* Background Progress Bar */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '12px',
-                        left: '30px',
-                        right: '30px',
-                        height: '3px',
-                        background: '#CBD5E1',
-                        zIndex: 1
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: '100%',
-                          background: isInProgress ? 'linear-gradient(90deg, #10B981 0%, #2563EB 100%)' : '#10B981',
-                          width: `${ord.progressPct}%`,
-                          transition: 'width 0.4s ease'
-                        }}
-                      />
-                    </div>
-
-                    {/* Step 1: Confirmed */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', zIndex: 2 }}>
-                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#10B981', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#101D3B' }}>Confirmed</span>
-                    </div>
-
-                    {/* Step 2: Box Packaged */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', zIndex: 2 }}>
-                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#10B981', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#101D3B' }}>Box Packaged</span>
-                    </div>
-
-                    {/* Step 3: Courier In Transit */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', zIndex: 2 }}>
-                      <div
-                        style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          background: isInProgress ? '#2563EB' : '#10B981',
-                          color: '#FFFFFF',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxShadow: isInProgress ? '0 0 10px rgba(37, 99, 235, 0.4)' : 'none'
-                        }}
-                      >
-                        {isInProgress ? (
-                          <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#FFFFFF' }} />
-                        ) : (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </div>
-                      <span style={{ fontSize: '11px', fontWeight: isInProgress ? 900 : 700, color: isInProgress ? '#2563EB' : '#101D3B' }}>
-                        {isInProgress ? ord.stageLabel : isCancelled ? 'Cancelled' : 'Dispatched'}
-                      </span>
-                    </div>
-
-                    {/* Step 4: Delivered to Hostel */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', zIndex: 2 }}>
-                      <div
-                        style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          background: isDelivered ? '#10B981' : '#FFFFFF',
-                          border: isDelivered ? 'none' : '2px dashed #94A3B8',
-                          color: '#FFFFFF',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        {isDelivered && (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </div>
-                      <span style={{ fontSize: '11px', fontWeight: isDelivered ? 800 : 500, color: isDelivered ? '#101D3B' : '#94A3B8' }}>
-                        {isDelivered ? 'Delivered' : ord.expectedLabel}
-                      </span>
-                    </div>
-                  </div>
+                  <StageTrack ord={ord} compact={false} />
                 </div>
 
                 {/* Delivery Footnote */}
