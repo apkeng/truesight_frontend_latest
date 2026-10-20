@@ -1,0 +1,436 @@
+:root {
+  /* Global Design Tokens */
+  --bg-page: #EBF0FC;
+  --surface-main: #F1F3F8;
+  --surface-border: #ADC3F3;
+  --surface-radius: 21px;
+  --card-bg: #FFFFFF;
+  --card-border: #E2E6EF;
+  --card-radius: 14px;
+  
+  --primary-navy: #243367;
+  --primary-text: #0F1219;
+  --heading-text: #1F2537;
+  --secondary-text: #6B7790;
+  --muted-text: #9AA3B8;
+  --input-border: #D6E1F9;
+
+  /* Typography Tokens - Plus Jakarta Sans as the unified font */
+  --font-primary: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-inter: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-urbanist: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Transitions */
+  --sidebar-ease: cubic-bezier(.2, .8, .2, 1);
+  --sidebar-duration: 280ms;
+}
+
+/* Shell rules. Scoped to html.ts-app, which the student app sets while it is
+   mounted, so the landing page and faculty screens keep normal scrolling. */
+html.ts-app *,
+html.ts-app *::before,
+html.ts-app *::after {
+  box-sizing: border-box;
+}
+
+html.ts-app,
+html.ts-app body {
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-page);
+  color: var(--primary-text);
+  font-family: var(--font-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden; /* Strict: Never scroll outer window */
+}
+
+html.ts-app body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+html.ts-app #root {
+  width: 100%;
+  max-width: 1511px;
+  height: 100%;
+  max-height: 857px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  html.ts-app,
+  html.ts-app body {
+    height: 100dvh;
+    min-height: 100dvh;
+    position: fixed;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html.ts-app body {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+  }
+
+  html.ts-app #root {
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+  }
+}
+
+/* Custom Scrollbars */
+html.ts-app ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+html.ts-app ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html.ts-app ::-webkit-scrollbar-thumb {
+  background: rgba(107, 119, 144, 0.25);
+  border-radius: 999px;
+}
+
+html.ts-app ::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 119, 144, 0.45);
+}
+
+/* Ultra-Smooth Subdued Premium Ambient Aura Keyframes */
+@keyframes voiceGlow {
+  0% {
+    transform: translate3d(-6px, 0, 0) scale(0.99, 0.98);
+    opacity: 0.12;
+  }
+  50% {
+    transform: translate3d(6px, -1px, 0) scale(1.01, 1.02);
+    opacity: 0.22;
+  }
+  100% {
+    transform: translate3d(-6px, 0, 0) scale(0.99, 0.98);
+    opacity: 0.12;
+  }
+}
+
+@keyframes cardAuraPulse {
+  0% {
+    transform: translateX(-50%) scale(0.96, 0.94) translate3d(-6px, 0, 0);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05, 1.06) translate3d(8px, -2px, 0);
+    opacity: 0.70;
+  }
+  100% {
+    transform: translateX(-50%) scale(0.96, 0.94) translate3d(-6px, 0, 0);
+    opacity: 0.45;
+  }
+}
+
+@keyframes cardAuraDrift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.98);
+    opacity: 0.40;
+  }
+  50% {
+    transform: translate3d(-10px, 4px, 0) scale(1.06);
+    opacity: 0.62;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.98);
+    opacity: 0.40;
+  }
+}
+
+@keyframes studioAuraBreath {
+  0% {
+    transform: translate(-50%, -50%) scale(0.96, 0.94) rotate(0deg);
+    opacity: 0.48;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05, 1.07) rotate(2deg);
+    opacity: 0.72;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.96, 0.94) rotate(0deg);
+    opacity: 0.48;
+  }
+}
+
+@keyframes studioAuraCounterDrift {
+  0% {
+    transform: translate(-50%, -50%) scale(1.04, 1.02) rotate(-1deg);
+    opacity: 0.40;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(0.96, 0.98) rotate(1.5deg);
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.04, 1.02) rotate(-1deg);
+    opacity: 0.40;
+  }
+}
+
+/* Robot Micro-Animations */
+@keyframes robotBlink {
+  0%, 93%, 100% {
+    transform: scaleY(1);
+  }
+  95%, 97% {
+    transform: scaleY(0.12);
+  }
+}
+
+@keyframes robotMouthWave {
+  0%, 100% {
+    transform: scaleX(0.85) scaleY(0.9);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scaleX(1.2) scaleY(1.4);
+    opacity: 1;
+  }
+}
+
+/* Modal and Interactive Feedback Keyframes */
+@keyframes modalBackdropFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalContentPop {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes notificationSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(36px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes notificationSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-36px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes badgePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.65);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes notificationCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heartPop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  65% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+
+@keyframes soundWave {
+  0%, 100% { height: 8px; }
+  50% { height: 32px; }
+}
+
+@keyframes voiceRipple {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 0.25; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* --- High-End Skeleton Shimmer System --- */
+:root {
+  --skeleton-base: #E8EEF5;
+  --skeleton-highlight: #FFFFFF;
+  --skeleton-border: rgba(226, 230, 240, 0.7);
+  --pulse-dur: 1400ms;
+  --reveal-dur: 350ms;
+  --reveal-blur: 3px;
+  --reveal-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes skeletonShimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes skeletonSoftPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #E8EEF5 0%,
+    #F0F4FA 20%,
+    #FFFFFF 50%,
+    #F0F4FA 80%,
+    #E8EEF5 100%
+  );
+  background-size: 250% 100%;
+  animation: skeletonShimmerWave 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-shimmer-subtle {
+  background: linear-gradient(
+    90deg,
+    #F1F5F9 0%,
+    #F8FAFC 50%,
+    #F1F5F9 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmerWave 2s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.skeleton-card {
+  background: #FFFFFF;
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+}
+
+/* Transitions.dev 14-skeleton-reveal pattern */
+.t-skel-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.t-skel-skeleton {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  transition: opacity var(--reveal-dur) var(--reveal-ease);
+}
+
+.t-skel-content {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  transition: opacity var(--reveal-dur) var(--reveal-ease);
+}
+
+.t-skel-content.entering {
+  opacity: 0;
+}
+
+.t-skel-skeleton.leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Universal Full-Viewport Modal & Popup Overlay Backdrop */
+.modal-overlay-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+  z-index: 999999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  animation: modalBackdropFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Prefers-reduced-motion fallback */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

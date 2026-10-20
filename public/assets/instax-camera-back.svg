@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 280" width="100%" height="100%">
+  <rect width="500" height="280" fill="#F8FAFC"/>
+  <ellipse cx="250" cy="235" rx="130" ry="16" fill="#E2E8F0"/>
+  <g transform="translate(140, 45)">
+    <rect width="220" height="170" rx="24" fill="#20346B" stroke="#101D3B" stroke-width="2.5"/>
+    <!-- Large Film Cartridge Door -->
+    <rect x="30" y="25" width="160" height="125" rx="10" fill="#1B2A56" stroke="#2D437F" stroke-width="2"/>
+    <!-- Viewfinder Optical Eyepiece -->
+    <circle cx="165" cy="55" r="16" fill="#0F172A" stroke="#FEE047" stroke-width="2"/>
+    <circle cx="165" cy="55" r="8" fill="#38BDF8" opacity="0.7"/>
+    <!-- Film Counter Window -->
+    <rect x="150" y="110" width="30" height="22" rx="4" fill="#0F172A" stroke="#475569" stroke-width="1.5"/>
+    <text x="165" y="126" fill="#FEE047" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="900" text-anchor="middle">10</text>
+  </g>
+</svg>

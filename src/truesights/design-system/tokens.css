@@ -1,0 +1,194 @@
+:root {
+  /* ==========================================================================
+     TRUESIGHTS DESIGN SYSTEM TOKENS
+     Extracted from Figma File: Untitled / Design System & Core Screens
+     ========================================================================== */
+
+  /* --------------------------------------------------------------------------
+     1. COLOR PALETTE
+     -------------------------------------------------------------------------- */
+
+  /* Primary Brand Navy & Dark Blues */
+  --color-brand-navy-darkest: #0B1A2B;
+  --color-brand-navy-dark:    #101D3B;
+  --color-brand-navy:         #0B3A6F;
+  --color-brand-navy-light:   #283D82;
+
+  /* Brand Vibrant Blues & Accents */
+  --color-primary-blue:       #2563EB;
+  --color-primary-blue-hover: #1D4ED8;
+  --color-primary-blue-active:#1E40AF;
+  --color-primary-blue-light: #598EF3;
+  --color-primary-blue-sky:   #1890FF;
+  --color-primary-blue-tint:  #EBF2FE;
+
+  /* Accent Purple */
+  --color-accent-purple:      #7B61FF;
+  --color-accent-purple-light:#9A85FF;
+  --color-accent-purple-bg:   #F3F0FF;
+
+  /* Neutral Dark / Text Primary */
+  --color-text-primary:       #2C3131;
+  --color-text-secondary:     #6B7790;
+  --color-text-muted:         #8A97A6;
+  --color-text-disabled:      #A9A9A9;
+  --color-text-inverse:       #FFFFFF;
+
+  /* Backgrounds & Surfacing */
+  --color-bg-app:             #EBEEF8;
+  --color-bg-canvas:          #FBFAF7;
+  --color-bg-card:            #FFFFFF;
+  --color-bg-card-subtle:     #F8F9FC;
+  --color-bg-card-warm:       #EFEBE3;
+  --color-bg-sidebar:         #FFFFFF;
+  --color-bg-sidebar-dark:    #0B1A2B;
+
+  /* Borders & Dividers */
+  --color-border-subtle:      #E6EAEE;
+  --color-border-neutral:     #E2DDD3;
+  --color-border-card:        #E2E6EF;
+  --color-border-strong:      #D9D9D9;
+
+  /* Semantic Feedback Colors */
+  --color-success:            #10B981;
+  --color-success-bg:         #ECFDF5;
+  --color-success-border:     #A7F3D0;
+
+  --color-warning:            #F59E0B;
+  --color-warning-bg:         #FFFBEB;
+  --color-warning-border:     #FDE68A;
+
+  --color-error:              #EF4444;
+  --color-error-bg:           #FEF2F2;
+  --color-error-border:       #FECACA;
+
+  --color-info:               #3B82F6;
+  --color-info-bg:            #EFF6FF;
+  --color-info-border:        #BFDBFE;
+
+  /* Translucent Overlays */
+  --color-white-90:           rgba(255, 255, 255, 0.90);
+  --color-white-75:           rgba(255, 255, 255, 0.75);
+  --color-white-55:           rgba(255, 255, 255, 0.55);
+  --color-white-35:           rgba(255, 255, 255, 0.35);
+  --color-white-25:           rgba(255, 255, 255, 0.25);
+  --color-white-10:           rgba(255, 255, 255, 0.10);
+
+  --color-black-05:           rgba(11, 26, 43, 0.05);
+  --color-black-10:           rgba(11, 26, 43, 0.10);
+  --color-black-15:           rgba(11, 26, 43, 0.15);
+
+  /* --------------------------------------------------------------------------
+     2. TYPOGRAPHY SYSTEM
+     -------------------------------------------------------------------------- */
+
+  --font-family-display:      'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-sans:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-ui:           'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-heading:      'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Font Weights */
+  --font-weight-regular:      400;
+  --font-weight-medium:       500;
+  --font-weight-semibold:     600;
+  --font-weight-bold:         700;
+
+  /* Typographic Scale */
+  --font-size-display-2xl:    96px;
+  --line-height-display-2xl:  104px;
+
+  --font-size-display-xl:     72px;
+  --line-height-display-xl:   80px;
+
+  --font-size-display-lg:     56px;
+  --line-height-display-lg:   64px;
+
+  --font-size-display-md:     48px;
+  --line-height-display-md:   56px;
+
+  --font-size-h1:             36px;
+  --line-height-h1:           44px;
+
+  --font-size-h2:             32px;
+  --line-height-h2:           40px;
+
+  --font-size-h3:             28px;
+  --line-height-h3:           36px;
+
+  --font-size-h4:             24px;
+  --line-height-h4:           32px;
+
+  --font-size-h5:             20px;
+  --line-height-h5:           28px;
+
+  --font-size-h6:             18px;
+  --line-height-h6:           26px;
+
+  --font-size-body-lg:        16px;
+  --line-height-body-lg:      24px;
+
+  --font-size-body-base:      14px;
+  --line-height-body-base:    20px;
+
+  --font-size-body-sm:        12px;
+  --line-height-body-sm:      18px;
+
+  --font-size-caption:        11px;
+  --line-height-caption:      16px;
+
+  --font-size-micro:          10px;
+  --line-height-micro:        14px;
+
+  --font-size-nano:           9px;
+  --line-height-nano:         12px;
+
+  /* Letter Spacing */
+  --letter-spacing-tight:     -0.02em;
+  --letter-spacing-normal:    0em;
+  --letter-spacing-wide:      0.02em;
+  --letter-spacing-wider:     0.05em;
+
+  /* --------------------------------------------------------------------------
+     3. SPACING SCALE
+     -------------------------------------------------------------------------- */
+  --space-2xs:                2px;
+  --space-xs:                 4px;
+  --space-sm:                 8px;
+  --space-md:                 12px;
+  --space-base:               16px;
+  --space-lg:                 20px;
+  --space-xl:                 24px;
+  --space-2xl:                32px;
+  --space-3xl:                40px;
+  --space-4xl:                48px;
+  --space-5xl:                64px;
+
+  /* --------------------------------------------------------------------------
+     4. BORDER RADII
+     -------------------------------------------------------------------------- */
+  --radius-xs:                4px;
+  --radius-sm:                6px;
+  --radius-md:                8px;
+  --radius-lg:                12px;
+  --radius-xl:                16px;
+  --radius-2xl:               20px;
+  --radius-3xl:               24px;
+  --radius-full:              9999px;
+
+  /* --------------------------------------------------------------------------
+     5. ELEVATION & SHADOWS
+     -------------------------------------------------------------------------- */
+  --shadow-xs:                0 1px 2px rgba(11, 26, 43, 0.05);
+  --shadow-sm:                0 2px 4px rgba(11, 26, 43, 0.06), 0 1px 2px rgba(11, 26, 43, 0.04);
+  --shadow-md:                0 4px 8px -2px rgba(11, 26, 43, 0.08), 0 2px 4px -2px rgba(11, 26, 43, 0.04);
+  --shadow-lg:                0 10px 18px -4px rgba(11, 26, 43, 0.08), 0 4px 6px -2px rgba(11, 26, 43, 0.03);
+  --shadow-xl:                0 20px 28px -6px rgba(11, 26, 43, 0.10), 0 8px 10px -4px rgba(11, 26, 43, 0.05);
+  --shadow-blue-glow:         0 8px 24px -4px rgba(37, 99, 235, 0.35);
+
+  /* --------------------------------------------------------------------------
+     6. TRANSITIONS & TIMING
+     -------------------------------------------------------------------------- */
+  --transition-fast:          150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base:          250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth:        350ms cubic-bezier(0.16, 1, 0.3, 1);
+}

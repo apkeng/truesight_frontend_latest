@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 280" width="100%" height="100%">
+  <defs>
+    <linearGradient id="rocketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#1E1B4B"/>
+      <stop offset="60%" stopColor="#312E81"/>
+      <stop offset="100%" stopColor="#1E293B"/>
+    </linearGradient>
+    <filter id="healthShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#1E1B4B" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <rect width="500" height="280" fill="#F8FAFC"/>
+
+  <!-- Pedestal shadow -->
+  <ellipse cx="250" cy="245" rx="175" ry="16" fill="#E2E8F0"/>
+
+  <g filter="url(#healthShadow)" transform="translate(60, 25)">
+    <!-- Main Telehealth Interface Device -->
+    <rect x="0" y="0" width="380" height="205" rx="18" fill="url(#rocketGrad)" stroke="#4338CA" stroke-width="2"/>
+
+    <!-- Device Header Bar -->
+    <rect x="0" y="0" width="380" height="42" rx="18" fill="#1E1B4B"/>
+    <rect x="0" y="24" width="380" height="18" fill="#1E1B4B"/>
+    <line x1="0" y1="42" x2="380" y2="42" stroke="#3730A3" stroke-width="1.5"/>
+
+    <!-- Left: Status Indicator -->
+    <circle cx="28" cy="21" r="6" fill="#10B981"/>
+    <text x="44" y="25" fill="#E0E7FF" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800" letter-spacing="1">ROCKET HEALTH &#8226; 1-ON-1 CLINICAL SESSION</text>
+
+    <!-- Session Type Badge -->
+    <g transform="translate(290, 10)">
+      <rect x="0" y="0" width="75" height="22" rx="11" fill="#FEE047"/>
+      <text x="37" y="15" fill="#101D3B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="900" text-anchor="middle">45 MIN</text>
+    </g>
+
+    <!-- Counselor Profile Card (Left Column) -->
+    <g transform="translate(25, 60)">
+      <!-- Avatar Circle -->
+      <circle cx="36" cy="36" r="32" fill="#4F46E5" stroke="#FEE047" stroke-width="2.5"/>
+      <circle cx="36" cy="28" r="13" fill="#E0E7FF"/>
+      <path d="M16 56 C16 46 25 43 36 43 C47 43 56 46 56 56 Z" fill="#E0E7FF"/>
+
+      <!-- Counselor Name & Title -->
+      <text x="82" y="30" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="800">Licensed Clinical Psychologist</text>
+      <text x="82" y="48" fill="#A5B4FC" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="600">Mental Well-Being &amp; Academic Focus</text>
+
+      <!-- Waveform Audio Track -->
+      <g transform="translate(82, 60)" fill="#6366F1">
+        <rect x="0" y="10" width="3" height="15" rx="1.5"/>
+        <rect x="6" y="4" width="3" height="27" rx="1.5" fill="#FEE047"/>
+        <rect x="12" y="8" width="3" height="19" rx="1.5"/>
+        <rect x="18" y="2" width="3" height="31" rx="1.5" fill="#38BDF8"/>
+        <rect x="24" y="12" width="3" height="11" rx="1.5"/>
+        <rect x="30" y="5" width="3" height="25" rx="1.5" fill="#FEE047"/>
+        <rect x="36" y="9" width="3" height="17" rx="1.5"/>
+        <rect x="42" y="0" width="3" height="35" rx="1.5" fill="#10B981"/>
+        <rect x="48" y="7" width="3" height="21" rx="1.5"/>
+        <rect x="54" y="13" width="3" height="9" rx="1.5"/>
+        <rect x="60" y="4" width="3" height="27" rx="1.5" fill="#38BDF8"/>
+        <rect x="66" y="10" width="3" height="15" rx="1.5"/>
+        <rect x="72" y="2" width="3" height="31" rx="1.5" fill="#FEE047"/>
+        <rect x="78" y="8" width="3" height="19" rx="1.5"/>
+        <rect x="84" y="12" width="3" height="11" rx="1.5"/>
+      </g>
+    </g>
+
+    <!-- Bottom Action Pill -->
+    <g transform="translate(25, 155)">
+      <rect x="0" y="0" width="330" height="34" rx="8" fill="#312E81" stroke="#4338CA" stroke-width="1"/>
+      <circle cx="20" cy="17" r="7" fill="#10B981"/>
+      <path d="M17 17 L19 19 L23 15" stroke="#FFFFFF" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <text x="35" y="22" fill="#E0E7FF" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">100% Confidential &#8226; Private Video or Audio Call &#8226; Instant Booking</text>
+    </g>
+  </g>
+</svg>

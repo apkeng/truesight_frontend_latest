@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 280" width="100%" height="100%">
+  <rect width="500" height="280" fill="#F8FAFC"/>
+  <ellipse cx="250" cy="240" rx="170" ry="18" fill="#E2E8F0"/>
+  <!-- Open Book Spreads -->
+  <g transform="translate(70, 50)">
+    <rect x="10" y="10" width="340" height="165" rx="8" fill="#1E293B"/>
+    <!-- Left Page -->
+    <path d="M20 15 Q180 20 180 165 Q20 160 20 15 Z" fill="#FFFDF7" stroke="#E2E8F0" stroke-width="1"/>
+    <!-- Right Page -->
+    <path d="M180 20 Q340 15 340 160 Q180 165 180 20 Z" fill="#FFFDF7" stroke="#E2E8F0" stroke-width="1"/>
+    <!-- Dotted Grid Pattern on pages -->
+    <circle cx="60" cy="45" r="1" fill="#94A3B8"/>
+    <circle cx="100" cy="45" r="1" fill="#94A3B8"/>
+    <circle cx="140" cy="45" r="1" fill="#94A3B8"/>
+    <circle cx="60" cy="75" r="1" fill="#94A3B8"/>
+    <circle cx="100" cy="75" r="1" fill="#94A3B8"/>
+    <circle cx="140" cy="75" r="1" fill="#94A3B8"/>
+    <circle cx="220" cy="45" r="1" fill="#94A3B8"/>
+    <circle cx="260" cy="45" r="1" fill="#94A3B8"/>
+    <circle cx="300" cy="45" r="1" fill="#94A3B8"/>
+    <!-- Center Gold Ribbon -->
+    <path d="M180 10 L180 185 L186 175 L192 185 L192 10 Z" fill="#FEE047" stroke="#D97706" stroke-width="1"/>
+  </g>
+</svg>
