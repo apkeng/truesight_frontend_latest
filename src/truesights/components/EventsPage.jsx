@@ -1,250 +1,82 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import Icon from '../design-system/icons';
+import { api, keys, useQuery } from '../data';
+import { downloadCalendar, modeLabel, toEventView } from '../eventView';
+import { useTS } from '../session';
 import ModalPortal from './ModalPortal';
 
 // ============================================================================
 // RICH CAMPUS & TECHNICAL EVENTS DATASET
 // ============================================================================
-const INITIAL_EVENTS = [
-  {
-    id: 'ev-1',
-    title: 'Automation Expo & Robotics Telemetry Forum',
-    category: 'Manufacturing / Hardware',
-    type: 'expo',
-    format: 'In-person',
-    date: 'Oct 1, 2026',
-    time: '02:30 PM - 06:00 PM',
-    month: 'OCT',
-    day: '01',
-    venue: 'Bengaluru Tech Exhibition Hall 4, Main Campus Hub',
-    image: '/assets/event-1.jpg',
-    points: 75,
-    speakers: [
-      { name: 'Dr. R. Menon', org: 'ABB Robotics Lab', role: 'Principal Scientist' },
-      { name: 'Priya Nair', org: 'Siemens Digital Industries', role: 'Telemetry Architect' }
-    ],
-    desc: 'Annual industry symposium bringing together automation leads, robotics researchers, and machinery architects to showcase next-generation PLC and real-time SCADA telemetry.',
-    agenda: [
-      { time: '02:30 PM', title: 'Keynote: Distributed Telemetry in Modern Assembly Lines', speaker: 'Dr. R. Menon' },
-      { time: '03:45 PM', title: 'Live Demonstration: High-Frequency SCADA Sensor Mesh', speaker: 'Priya Nair' },
-      { time: '05:00 PM', title: 'Open Q&A & Student Technical Networking', speaker: 'Industry Panel' }
-    ],
-    seatCapacity: 180,
-    seatsRemaining: 42,
-    prerequisites: 'Basic knowledge of control loops and industrial sensors recommended.',
-    isFeatured: true
-  },
-  {
-    id: 'ev-2',
-    title: 'AI in Robotics & Multi-Agent Mechatronics Summit',
-    category: 'AI & Robotics',
-    type: 'summit',
-    format: 'Online / Live',
-    date: 'Oct 5, 2026',
-    time: '10:00 AM - 01:30 PM',
-    month: 'OCT',
-    day: '05',
-    venue: 'TrueSights Virtual Stage 1 (Interactive Livestream)',
-    image: '/assets/event-2.jpg',
-    points: 100,
-    speakers: [
-      { name: 'Arjun Das', org: 'IIT Madras Robotics Center', role: 'Lead AI Researcher' },
-      { name: 'Dr. Elena Rostova', org: 'ETH Zurich Robotics', role: 'Visiting Fellow' }
-    ],
-    desc: 'Deep exploration of reinforcement learning for multi-degree-of-freedom robotic arms, sensor fusion, and computer-vision-guided autonomous mobile manipulators.',
-    agenda: [
-      { time: '10:00 AM', title: 'Reinforcement Learning in Dynamic Manipulator Control', speaker: 'Arjun Das' },
-      { time: '11:15 AM', title: 'Sensor Fusion & Real-Time LiDAR SLAM Algorithms', speaker: 'Dr. Elena Rostova' },
-      { time: '12:30 PM', title: 'Live Code Walkthrough: Gym-Robotics Simulations', speaker: 'Technical Team' }
-    ],
-    seatCapacity: 500,
-    seatsRemaining: 168,
-    prerequisites: 'Python and linear algebra fundamentals.',
-    isFeatured: true
-  },
-  {
-    id: 'ev-3',
-    title: 'Cyber-Physical Systems & Embedded Safety Symposium',
-    category: 'Systems Engineering',
-    type: 'symposium',
-    format: 'In-person',
-    date: 'Oct 12, 2026',
-    time: '04:00 PM - 07:15 PM',
-    month: 'OCT',
-    day: '12',
-    venue: 'Main Campus Auditorium B, Systems Wing',
-    image: '/assets/event-3.jpg',
-    points: 60,
-    speakers: [
-      { name: 'Vikram Joshi', org: 'National Cyber Security Hub', role: 'Security Architect' },
-      { name: 'Ananya Rao', org: 'Infosys Research Labs', role: 'Embedded Systems Lead' }
-    ],
-    desc: 'Architectural defense and formal safety verification protocols for critical embedded IoT microcontrollers and mission-critical propulsion control interfaces.',
-    agenda: [
-      { time: '04:00 PM', title: 'Zero-Trust Architecture for Micro-Controller Firmware', speaker: 'Vikram Joshi' },
-      { time: '05:15 PM', title: 'Memory-Safe Embedded Rust in Industrial Hardware', speaker: 'Ananya Rao' },
-      { time: '06:30 PM', title: 'Hands-on Hardware Glitch Attack Demonstration', speaker: 'Lab Coordinators' }
-    ],
-    seatCapacity: 120,
-    seatsRemaining: 19,
-    prerequisites: 'Microcontrollers (C/Rust) and basic bus protocols (SPI/I2C/CAN).',
-    isFeatured: false
-  },
-  {
-    id: 'ev-4',
-    title: 'National Collegiate Cybersecurity CTF 2026',
-    category: 'Cybersecurity & CTF',
-    type: 'hackathon',
-    format: 'Online / Live',
-    date: 'Oct 16, 2026',
-    time: '09:00 AM - 09:00 PM (12h Hackathon)',
-    month: 'OCT',
-    day: '16',
-    venue: 'TrueSights Arena Cyber Lab (Virtual Range)',
-    image: '/assets/event-2.jpg',
-    points: 150,
-    speakers: [
-      { name: 'Karthik R', org: 'Campus CTF League', role: 'Tournament Director' },
-      { name: 'Meera Sen', org: 'CERT-In Threat Research', role: 'Guest Evaluator' }
-    ],
-    desc: 'High-stakes 12-hour capture-the-flag tournament testing binary exploitation, reverse engineering, cryptographic ciphers, and smart contract audit puzzles.',
-    agenda: [
-      { time: '09:00 AM', title: 'CTF Kickoff & Challenge Server Unlocking', speaker: 'Tournament Director' },
-      { time: '02:00 PM', title: 'Mid-Game Scoreboard Freeze & Bonus Challenge', speaker: 'Arena Ops' },
-      { time: '08:30 PM', title: 'Writeup Verification & Award Ceremony', speaker: 'Meera Sen' }
-    ],
-    seatCapacity: 350,
-    seatsRemaining: 84,
-    prerequisites: 'Linux terminal literacy, basic Wireshark and Ghidra tooling.',
-    isFeatured: true
-  },
-  {
-    id: 'ev-5',
-    title: 'Nuclear Reactor Dynamics & Delayed Neutrons Masterclass',
-    category: 'Physics & Energy',
-    type: 'workshop',
-    format: 'In-person',
-    date: 'Oct 22, 2026',
-    time: '03:00 PM - 05:45 PM',
-    month: 'OCT',
-    day: '22',
-    venue: 'Dr. H.J. Bhabha Seminar Hall, Energy Sciences Wing',
-    image: '/assets/event-1.jpg',
-    points: 80,
-    speakers: [
-      { name: 'Prof. K. Venkatesh', org: 'Nuclear Engineering Dept', role: 'Department Chair' },
-      { name: 'Dr. S. Mukherjee', org: 'BARC Advanced Studies', role: 'Reactor Physics Specialist' }
-    ],
-    desc: 'Rigorous derivation of prompt criticality thresholds, 6-group delayed neutron equations, and thermal-hydraulic negative temperature feedback mechanisms.',
-    agenda: [
-      { time: '03:00 PM', title: 'Fission Energetics: 200 MeV Partitioning Breakdown', speaker: 'Prof. K. Venkatesh' },
-      { time: '04:10 PM', title: 'Delayed Neutron Precursor Kinetics & Reactivity Drift', speaker: 'Dr. S. Mukherjee' },
-      { time: '05:15 PM', title: 'Interactive Simulator: Simulating Core Control Rod Scram', speaker: 'Faculty Team' }
-    ],
-    seatCapacity: 90,
-    seatsRemaining: 15,
-    prerequisites: 'Undergraduate nuclear physics and differential equations.',
-    isFeatured: false
-  },
-  {
-    id: 'ev-6',
-    title: 'Kerala Building By-Laws & Urban K-SMART Certification',
-    category: 'Civil & Urban',
-    type: 'workshop',
-    format: 'In-person',
-    date: 'Oct 28, 2026',
-    time: '11:30 AM - 02:30 PM',
-    month: 'OCT',
-    day: '28',
-    venue: 'Civil Engineering Block Hall 2, Smart City Lab',
-    image: '/assets/event-3.jpg',
-    points: 50,
-    speakers: [
-      { name: 'Er. Rajesh Varma', org: 'Town & Country Planning Directorate', role: 'Chief Town Planner' },
-      { name: 'Arch. Deepa George', org: 'Green Building Council', role: 'Urban Resilience Fellow' }
-    ],
-    desc: 'Practical operational seminar on Kerala Municipal Building Rules (2025/2026 amendments), slope geotechnical permits, rainwater cistern norms, and automated digital K-SMART approvals.',
-    agenda: [
-      { time: '11:30 AM', title: 'Risk-Based Classification: Low vs Medium vs High Hazard', speaker: 'Er. Rajesh Varma' },
-      { time: '12:45 PM', title: 'Slope Stability & Landslide Mitigation Standards', speaker: 'Arch. Deepa George' },
-      { time: '01:45 PM', title: 'Hands-on K-SMART Portal Application Drafting', speaker: 'Lab Demonstrators' }
-    ],
-    seatCapacity: 110,
-    seatsRemaining: 31,
-    prerequisites: 'Building layout drawings & AutoCAD/Revit familiarity.',
-    isFeatured: false
-  },
-  {
-    id: 'ev-7',
-    title: 'Semiconductor Device Physics & Quantum Tunneling Forum',
-    category: 'Manufacturing / Hardware',
-    type: 'summit',
-    format: 'Online / Live',
-    date: 'Nov 02, 2026',
-    time: '02:00 PM - 05:00 PM',
-    month: 'NOV',
-    day: '02',
-    venue: 'TrueSights Virtual Stage 2',
-    image: '/assets/event-1.jpg',
-    points: 90,
-    speakers: [
-      { name: 'Dr. Alok Chatterjee', org: 'Semiconductor Fab Initiative', role: 'Director of Lithography' },
-      { name: 'Naveen P', org: 'Solid-State Materials Institute', role: 'Research Fellow' }
-    ],
-    desc: 'Comprehensive overview of 3nm gate-all-around (GAA) nanosheet FETs, Zener breakdown tunneling mechanisms, and high-k dielectric gate degradation models.',
-    agenda: [
-      { time: '02:00 PM', title: 'From FinFET to GAA: Electrostatic Channel Confinement', speaker: 'Dr. Alok Chatterjee' },
-      { time: '03:15 PM', title: 'Quantum Band-to-Band Tunneling in Heavily Doped Silicon', speaker: 'Naveen P' },
-      { time: '04:15 PM', title: 'Future of 2D Transition Metal Dichalcogenides', speaker: 'Q&A Panel' }
-    ],
-    seatCapacity: 400,
-    seatsRemaining: 188,
-    prerequisites: 'Solid state physics and basic PN junction theory.',
-    isFeatured: false
-  },
-  {
-    id: 'ev-8',
-    title: 'Decentralized Bio-Informatics & Neuroimaging Hackathon',
-    category: 'AI & Robotics',
-    type: 'hackathon',
-    format: 'In-person',
-    date: 'Nov 08, 2026',
-    time: '09:30 AM - 06:30 PM',
-    month: 'NOV',
-    day: '08',
-    venue: 'Campus Innovation Center, Ground Floor Lab',
-    image: '/assets/event-2.jpg',
-    points: 200,
-    speakers: [
-      { name: 'Dr. Meenakshi S', org: 'Center for Neuro-Informatics', role: 'Director' },
-      { name: 'Kiran Kurian', org: 'Open Decentralized Science', role: 'Core Contributor' }
-    ],
-    desc: 'Build distributed archival, CID verification, and federated machine learning workflows for 3D MRI brain scans without centralizing confidential patient datasets.',
-    agenda: [
-      { time: '09:30 AM', title: 'Neuroimaging Data Standards: BIDS & NIfTI Overviews', speaker: 'Dr. Meenakshi S' },
-      { time: '11:00 AM', title: 'IPFS Content Addressing for Multi-Gigabyte Scans', speaker: 'Kiran Kurian' },
-      { time: '05:30 PM', title: 'Project Pitches & Institutional Evaluation', speaker: 'Judging Board' }
-    ],
-    seatCapacity: 150,
-    seatsRemaining: 27,
-    prerequisites: 'Python (PyTorch / NumPy) and distributed systems fundamentals.',
-    isFeatured: true
-  }
-];
+const timeRange = (startIso, endIso) => {
+  const fmt = (iso) => (iso ? new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : null);
+  const a = fmt(startIso);
+  const b = fmt(endIso);
+  return a ? (b ? `${a} - ${b}` : a) : 'Time TBA';
+};
 
-export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
-  // Navigation & Category state: 'all' | 'registered'
+/** A /api/v2/events event in the shape the event cards and detail modal render. */
+const toEvent = (e) => {
+  const start = e.dateTimeStart ? new Date(e.dateTimeStart) : null;
+  const view = toEventView(e);
+  return {
+    id: e.id,
+    title: e.title,
+    category: view.category,
+    format: modeLabel(e),
+    date: start ? start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBA',
+    time: timeRange(e.dateTimeStart, e.dateTimeEnd),
+    month: start ? start.toLocaleDateString('en-US', { month: 'short' }).toUpperCase() : '--',
+    day: start ? String(start.getDate()).padStart(2, '0') : '--',
+    venue: view.venue,
+    image: view.image,
+    points: Number(e.rewardPoints) || 0,
+    speakers: (e.speakers || [])
+      .map((sp) =>
+        typeof sp === 'string'
+          ? { name: sp, org: '', role: 'Speaker' }
+          : sp && { name: sp.name || sp.fullName || '', org: sp.affiliation || sp.organization || sp.company || '', role: sp.title || sp.role || sp.designation || 'Speaker' }
+      )
+      .filter((sp) => sp && sp.name),
+    desc: e.description || '',
+    agenda: (e.agenda || [])
+      .map((item) => (typeof item === 'string' ? { time: '', title: item, speaker: '' } : { time: item.time || item.startTime || '', title: item.title || item.topic || '', speaker: item.speaker || '' }))
+      .filter((item) => item.title),
+    seatCapacity: e.capacity || null,
+    seatsRemaining: e.capacity ? Math.max(0, e.capacity - (e.registeredCount || 0)) : null,
+    isFeatured: e.isFeatured,
+    isPast: new Date(e.dateTimeEnd || e.dateTimeStart || 0).getTime() < Date.now(),
+    registerUrl: view.registerUrl,
+    view,
+    raw: e
+  };
+};
+
+export default function EventsPage() {
+  const { id: routeEventId } = useParams();
+  const { go } = useTS();
+  const { profile } = useTS();
+  const { data, error, isLoading, refetch } = useQuery(keys.events(), api.events);
+  // 'all' = upcoming, 'registered' = past events
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Registration & RSVP State (Pre-registered on event 1 & 2 for realistic continuity)
-  const [registeredMap, setRegisteredMap] = useState({
-    'ev-1': { ticketNumber: 'TS-8492', timestamp: 'Today, 10:14 AM' },
-    'ev-2': { ticketNumber: 'TS-9104', timestamp: 'Yesterday, 03:40 PM' }
-  });
 
-  // Modal State
-  const [detailModalEvent, setDetailModalEvent] = useState(null);
+  const events = useMemo(() => (data?.events || []).map(toEvent), [data]);
+
+  // Older in-app registrations still carry a pass code.
+  const registeredMap = useMemo(() => {
+    const map = {};
+    (data?.events || []).forEach((e) => {
+      if (e.isRegistered) map[e.id] = { ticketNumber: e.registrationCode, timestamp: e.registeredAt };
+    });
+    return map;
+  }, [data]);
+
+  // Modal State: /events/:id opens that event's details
+  const detailModalEvent = routeEventId ? events.find((ev) => ev.id === routeEventId) || null : null;
+  const setDetailModalEvent = (ev) => go('events', ev ? ev.id : undefined);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
@@ -257,84 +89,37 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Toast feedback
-  const [toastMessage, setToastMessage] = useState(null);
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3200);
-  };
-
-  // Toggle RSVP
+  // Registration happens on the organiser's site.
   const handleToggleRSVP = (event) => {
-    const isCurrentlyReg = !!registeredMap[event.id];
-    if (isCurrentlyReg) {
-      const nextMap = { ...registeredMap };
-      delete nextMap[event.id];
-      setRegisteredMap(nextMap);
-      showToast(`Registration cancelled for "${event.title}".`);
-    } else {
-      const newTicket = `TS-${Math.floor(1000 + Math.random() * 9000)}`;
-      setRegisteredMap({
-        ...registeredMap,
-        [event.id]: { ticketNumber: newTicket, timestamp: 'Just now' }
-      });
-      if (onAwardPoints && event.points) {
-        onAwardPoints(event.points);
-      }
-      showToast(`Registration Confirmed! Pass #${newTicket} issued. (+${event.points} pts added)`);
-    }
+    if (event.registerUrl) window.open(event.registerUrl, '_blank', 'noopener,noreferrer');
+    else toast.info('The organiser has not published a registration link yet.');
   };
 
-  // Calendar (.ics) Generator
   const handleDownloadCalendar = (ev) => {
-    const icsContent = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//TrueSights Academic Platform//Events//EN',
-      'CALSCALE:GREGORIAN',
-      'METHOD:PUBLISH',
-      'BEGIN:VEVENT',
-      `SUMMARY:${ev.title}`,
-      `DESCRIPTION:${ev.desc} | Organized by TrueSights Academic Platform`,
-      `LOCATION:${ev.venue}`,
-      'STATUS:CONFIRMED',
-      'END:VEVENT',
-      'END:VCALENDAR'
-    ].join('\r\n');
-
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${ev.title.replace(/[^a-zA-Z0-9]/g, '_')}.ics`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast(`Calendar event (.ics) downloaded for "${ev.title}".`);
+    downloadCalendar(ev.view);
+    toast.success(`Calendar event (.ics) downloaded for "${ev.title}".`);
   };
 
-  // Filtered Events: only categories 'all' vs 'registered', plus search query
-  const filteredEvents = useMemo(() => {
-    return INITIAL_EVENTS.filter((item) => {
-      // Category filter: 'all' vs 'registered'
-      if (activeTab === 'registered' && !registeredMap[item.id]) return false;
+  const upcomingCount = events.filter((e) => !e.isPast).length;
+  const registeredCount = events.length - upcomingCount;
 
-      // Live search
+  const filteredEvents = useMemo(() => {
+    return events.filter((item) => {
+      if (activeTab === 'registered' ? !item.isPast : item.isPast) return false;
+
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const inTitle = item.title.toLowerCase().includes(q);
         const inDesc = item.desc.toLowerCase().includes(q);
         const inVenue = item.venue.toLowerCase().includes(q);
         const inCategory = item.category.toLowerCase().includes(q);
-        const inSpeakers = item.speakers.some((s) => s.name.toLowerCase().includes(q) || s.org.toLowerCase().includes(q));
+        const inSpeakers = item.speakers.some((sp) => sp.name.toLowerCase().includes(q) || sp.org.toLowerCase().includes(q));
         if (!inTitle && !inDesc && !inVenue && !inCategory && !inSpeakers) return false;
       }
 
       return true;
     });
-  }, [activeTab, searchQuery, registeredMap]);
-
-  const registeredCount = Object.keys(registeredMap).length;
+  }, [events, activeTab, searchQuery]);
 
   return (
     <div
@@ -465,7 +250,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
               gap: '8px'
             }}
           >
-            <span>All Events</span>
+            <span>Upcoming</span>
             <span
               style={{
                 background: activeTab === 'all' ? 'rgba(255, 255, 255, 0.24)' : '#E2E8F0',
@@ -476,7 +261,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                 borderRadius: '10px'
               }}
             >
-              {INITIAL_EVENTS.length}
+              {upcomingCount}
             </span>
           </button>
 
@@ -500,7 +285,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
               transition: 'all 0.15s ease'
             }}
           >
-            <span>My RSVPs</span>
+            <span>Past events</span>
             <span
               style={{
                 background: activeTab === 'registered' ? '#FEE047' : '#047857',
@@ -598,10 +383,22 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
         </div>
       </div>
 
+      {error && !data && (
+        <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '14px', padding: '14px 18px', color: '#DC2626', fontSize: '13px', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+          <span>Couldn't load events: {error.message}</span>
+          <button type="button" onClick={() => refetch()} style={{ background: '#FFFFFF', border: '1px solid #FECACA', borderRadius: '8px', padding: '6px 12px', color: '#DC2626', fontWeight: 700, cursor: 'pointer' }}>Retry</button>
+        </div>
+      )}
+      {isLoading && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
+          {[0, 1, 2].map((i) => <div key={i} className="skeleton-shimmer" style={{ height: '420px', borderRadius: '16px' }} />)}
+        </div>
+      )}
+
       {/* ======================================================================
           3. EVENTS CARDS GRID (TrueSights Design System)
           ====================================================================== */}
-      {filteredEvents.length === 0 ? (
+      {isLoading ? null : filteredEvents.length === 0 ? (
         <div
           style={{
             background: '#FFFFFF',
@@ -634,7 +431,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
           </h3>
           <p style={{ margin: 0, fontSize: '13px', color: '#64748B' }}>
             {activeTab === 'registered'
-              ? 'You have not registered for any events yet. Explore all events to secure your passes!'
+              ? 'No past events to show yet.'
               : 'Try clearing your search query to discover more sessions.'}
           </p>
           <button
@@ -823,6 +620,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                   </div>
 
                   {/* Bottom-right Reward Points Badge */}
+                  {event.points > 0 && (
                   <div
                     style={{
                       position: 'absolute',
@@ -842,6 +640,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                   >
                     <span>+{event.points} pts</span>
                   </div>
+                  )}
                 </div>
 
                 {/* 2. Main Content Body */}
@@ -1002,7 +801,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                   {isRegistered ? (
                     <button
                       type="button"
-                      onClick={() => handleToggleRSVP(event)}
+                      onClick={() => setDetailModalEvent(event)}
                       style={{
                         background: '#ECFDF5',
                         border: '1px solid #A7F3D0',
@@ -1017,17 +816,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                         gap: '6px',
                         transition: 'all 0.15s ease'
                       }}
-                      title="Click to cancel registration"
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#FEE2E2';
-                        e.currentTarget.style.borderColor = '#FCA5A5';
-                        e.currentTarget.style.color = '#DC2626';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#ECFDF5';
-                        e.currentTarget.style.borderColor = '#A7F3D0';
-                        e.currentTarget.style.color = '#047857';
-                      }}
+                      title="View your pass"
                     >
                       <Icon name="checkCircle" variant="bold" size={13} color="currentColor" />
                       <span>Registered ({regInfo?.ticketNumber})</span>
@@ -1036,7 +825,9 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                     <button
                       type="button"
                       onClick={() => handleToggleRSVP(event)}
+                      disabled={event.isPast || !event.registerUrl}
                       style={{
+                        opacity: event.isPast || !event.registerUrl ? 0.55 : 1,
                         background: '#FEE047',
                         border: 'none',
                         borderRadius: '8px',
@@ -1060,7 +851,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                         e.currentTarget.style.transform = 'none';
                       }}
                     >
-                      <span>Register Now</span>
+                      <span>{event.isPast ? 'Event ended' : event.registerUrl ? 'Register on official site' : 'Link coming soon'}</span>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8">
                         <polyline points="9 18 15 12 9 6" />
                       </svg>
@@ -1274,7 +1065,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                       Pass ID: {registeredMap[detailModalEvent.id].ticketNumber}
                     </div>
                     <div style={{ fontSize: '11px', color: '#047857', marginTop: '2px' }}>
-                      Student: Test Student (ID: TS-2026-ENG) · Hall Admittance Granted
+                      {profile?.name || 'Student'}{registeredMap[detailModalEvent.id].timestamp ? ` · registered ${new Date(registeredMap[detailModalEvent.id].timestamp).toLocaleDateString('en-GB')}` : ''}
                     </div>
                   </div>
 
@@ -1314,6 +1105,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                   Session Agenda & Timelines
                 </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {!detailModalEvent.agenda.length && <div style={{ fontSize: '12.5px', color: '#94A3B8' }}>The organiser hasn't published an agenda yet.</div>}
                   {detailModalEvent.agenda.map((item, idx) => (
                     <div
                       key={idx}
@@ -1334,7 +1126,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                           {item.title}
                         </div>
                         <div style={{ fontSize: '11px', color: '#64748B' }}>
-                          Speaker: {item.speaker}
+                          {item.speaker ? `Speaker: ${item.speaker}` : ''}
                         </div>
                       </div>
                     </div>
@@ -1382,7 +1174,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                           {sp.name}
                         </div>
                         <div style={{ fontSize: '11px', color: '#64748B' }}>
-                          {sp.role} · {sp.org}
+                          {[sp.role, sp.org].filter(Boolean).join(' · ')}
                         </div>
                       </div>
                     </div>
@@ -1452,9 +1244,11 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                   onClick={() => {
                     handleToggleRSVP(detailModalEvent);
                   }}
+                  disabled={detailModalEvent.isPast || !detailModalEvent.registerUrl}
                   style={{
-                    background: registeredMap[detailModalEvent.id] ? '#DC2626' : '#FEE047',
-                    color: registeredMap[detailModalEvent.id] ? '#FFFFFF' : '#0B1A2B',
+                    opacity: detailModalEvent.isPast || !detailModalEvent.registerUrl ? 0.55 : 1,
+                    background: '#FEE047',
+                    color: '#0B1A2B',
                     border: 'none',
                     borderRadius: '8px',
                     padding: '9px 22px',
@@ -1464,7 +1258,7 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                   }}
                 >
-                  {registeredMap[detailModalEvent.id] ? 'Cancel Registration' : 'Confirm Registration'}
+                  {detailModalEvent.isPast ? 'Event ended' : detailModalEvent.registerUrl ? 'Register on official site ↗' : 'Registration link coming soon'}
                 </button>
               </div>
             </div>
@@ -1474,30 +1268,6 @@ export default function EventsPage({ onBackToDashboard, onAwardPoints }) {
 
 
 
-      {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            background: '#0B1A2B',
-            color: '#FFFFFF',
-            padding: '12px 20px',
-            borderRadius: '10px',
-            fontSize: '13px',
-            fontWeight: 700,
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
-            zIndex: 99999,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            animation: 'slideUpToast 0.2s ease-out'
-          }}
-        >
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </div>
   );
 }

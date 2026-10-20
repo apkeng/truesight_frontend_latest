@@ -5,608 +5,70 @@ import ModalPortal from './ModalPortal';
 // ============================================================================
 // VERIFIED PEERS DATABASE FOR DIRECT ENGAGEMENT
 // ============================================================================
-const VERIFIED_PEERS = [
-  {
-    id: 'peer-1',
-    name: 'Sandeep C',
-    email: 'sandeep.c@campus.edu',
-    dept: 'Electronics & Communication · Sem 6',
-    avatar: '/assets/user-profile.jpg',
-    points: 2480,
-    rank: '#12 in Institute'
-  },
-  {
-    id: 'peer-2',
-    name: 'Roshan Thomas',
-    email: 'roshan.t@campus.edu',
-    dept: 'Civil & Urban Planning · Sem 8',
-    avatar: '/assets/student-avatar.jpg',
-    points: 1890,
-    rank: '#28 in Institute'
-  },
-  {
-    id: 'peer-3',
-    name: 'Ananya Sharma',
-    email: 'ananya.s@campus.edu',
-    dept: 'Computer Science · Sem 4',
-    avatar: '/assets/user-profile.jpg',
-    points: 3120,
-    rank: '#4 in Institute'
-  },
-  {
-    id: 'peer-4',
-    name: 'Testing Student',
-    email: 'test.student@campus.edu',
-    dept: 'Applied Physics & Nanotech · Sem 6',
-    avatar: '/assets/student-avatar.jpg',
-    points: 2150,
-    rank: '#19 in Institute'
-  },
-  {
-    id: 'peer-5',
-    name: 'Devika Menon',
-    email: 'devika.m@campus.edu',
-    dept: 'Signal Processing & Telecom · Sem 6',
-    avatar: '/assets/user-profile.jpg',
-    points: 2230,
-    rank: '#16 in Institute'
-  },
-  {
-    id: 'peer-6',
-    name: 'Karthik R',
-    email: 'karthik.r@campus.edu',
-    dept: 'Cybersecurity & CTF · Sem 8',
-    avatar: '/assets/student-avatar.jpg',
-    points: 2750,
-    rank: '#8 in Institute'
-  }
-];
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { api, invalidate, keys, setQueryData, useQuery } from '../data';
+import { pathFor } from '../session';
+import { countdown, timeAgo } from '../../revamp/lib/format';
 
-// ============================================================================
-// ACADEMIC DOMAINS & CURATED QUESTION HARNESSES
-// ============================================================================
-const ACADEMIC_DOMAINS = [
-  {
-    id: 'physics-energy',
-    name: 'Nuclear Engineering & Reactor Dynamics',
-    topics: [
-      { id: 'fission-energy', title: 'Energy Release in Fission', questionsKey: 'fission' },
-      { id: 'fission-mech', title: 'Mechanism of Fission', questionsKey: 'fission' },
-      { id: 'delayed-neutrons', title: 'Delayed Neutrons & Core Control', questionsKey: 'fission' }
-    ]
-  },
-  {
-    id: 'civil-urban',
-    name: 'Kerala Building By-Laws & Urban Governance (2025)',
-    topics: [
-      { id: 'ksmart-permits', title: 'Risk-Based Permitting & K-SMART Self-Certification', questionsKey: 'kerala' },
-      { id: 'slope-geotech', title: 'Topographical Slope Stability & Hill Terrains', questionsKey: 'kerala' },
-      { id: 'rainwater-cistern', title: 'Environmental Rainwater Harvesting Standards', questionsKey: 'kerala' }
-    ]
-  },
-  {
-    id: 'electronics-semi',
-    name: 'Electronic Devices & Semiconductor Physics',
-    topics: [
-      { id: 'iv-curve', title: 'The I-V Characteristic Curve', questionsKey: 'semi' },
-      { id: 'semi-basics', title: 'Semiconductor Basics & Dopant Bands', questionsKey: 'semi' },
-      { id: 'zener-tunneling', title: 'Quantum Tunneling & Zener Breakdown', questionsKey: 'semi' }
-    ]
-  },
-  {
-    id: 'ecology-env',
-    name: 'Environmental Sciences & Biodiversity',
-    topics: [
-      { id: 'biodiversity-hotspots', title: 'Biodiversity Hotspots & Conservation Endemism', questionsKey: 'ecology' },
-      { id: 'carbon-cycling', title: 'Wetland Carbon Sinks & Sequestration', questionsKey: 'ecology' }
-    ]
-  },
-  {
-    id: 'cloud-dsp',
-    name: 'Signal Processing & Distributed Bio-Informatics',
-    topics: [
-      { id: 'dsp-filters', title: 'Digital Signal Processing & FIR Filters', questionsKey: 'dsp' },
-      { id: 'neuro-storage', title: 'Decentralized Storage for Neuroimaging', questionsKey: 'dsp' }
-    ]
-  }
-];
-
-// Curated questions database for realistic challenge simulation
-const QUESTIONS_DATABASE = {
-  fission: [
-    {
-      id: 'q-f1',
-      question: 'What is the average energy liberated per single U-235 thermal neutron fission event?',
-      options: [
-        { letter: 'A', text: 'Approximately 200 MeV, predominantly partitioned into kinetic energy of fragments' },
-        { letter: 'B', text: 'Approximately 13.6 eV corresponding to atomic ionization potential' },
-        { letter: 'C', text: 'Exactly 1.022 MeV equivalent to electron-positron pair creation' },
-        { letter: 'D', text: 'Over 10 GeV released entirely in instantaneous prompt neutrinos' }
-      ],
-      correctIndex: 0,
-      explanation: 'Each thermal fission of U-235 liberates ~200 MeV: ~168 MeV as fragment kinetic energy, ~5 MeV in prompt neutrons, ~7 MeV in prompt gammas, with the remainder in beta/neutrino decay.'
-    },
-    {
-      id: 'q-f2',
-      question: 'What role do delayed neutrons play in safe nuclear fission reactor control?',
-      options: [
-        { letter: 'A', text: 'They increase core thermal power by a factor of 100 within milliseconds' },
-        { letter: 'B', text: 'They lengthen the effective neutron generation lifetime, allowing mechanical control rods to regulate power' },
-        { letter: 'C', text: 'They completely absorb prompt neutrons to cause emergency shutdown' },
-        { letter: 'D', text: 'They convert non-fissile Boron into fissile Uranium isotopes' }
-      ],
-      correctIndex: 1,
-      explanation: 'Delayed neutrons (~0.65% in U-235) are emitted seconds after precursor beta decays, stretching reactor response time from microseconds to seconds so mechanical rods can maintain criticality.'
-    },
-    {
-      id: 'q-f3',
-      question: 'In the liquid drop model of nuclear fission, what competing forces govern fissility?',
-      options: [
-        { letter: 'A', text: 'Gravitational attraction vs centrifugal rotational force' },
-        { letter: 'B', text: 'Surface tension (attractive nuclear force) vs Coulomb electrostatic repulsion' },
-        { letter: 'C', text: 'Strong force vs electroweak Higgs boson coupling' },
-        { letter: 'D', text: 'Van der Waals inter-nucleon forces vs magnetic dipoles' }
-      ],
-      correctIndex: 1,
-      explanation: 'Nuclear surface tension pulls the nucleus into a spherical drop, while electrostatic proton repulsion drives deformation toward scission.'
-    },
-    {
-      id: 'q-f4',
-      question: 'Which fission product isotope presents the highest thermal neutron absorption cross-section (fission poison)?',
-      options: [
-        { letter: 'A', text: 'Xenon-135 with ~2.6 million barns cross-section' },
-        { letter: 'B', text: 'Cesium-137 with 0.25 barns' },
-        { letter: 'C', text: 'Iodine-131 with negligible thermal absorption' },
-        { letter: 'D', text: 'Strontium-90 with pure beta emission' }
-      ],
-      correctIndex: 0,
-      explanation: 'Xe-135 is the strongest known thermal neutron absorber, producing transient reactor poisoning following power reductions.'
-    },
-    {
-      id: 'q-f5',
-      question: 'What defines the reproduction factor (k-effective) in a sustained critical reactor assembly?',
-      options: [
-        { letter: 'A', text: 'k = 0 (complete neutron vacuum)' },
-        { letter: 'B', text: 'k = 1.0 (neutron generation rate exactly balances absorption and leakage)' },
-        { letter: 'C', text: 'k > 2.5 (exponential explosive runaway)' },
-        { letter: 'D', text: 'k = 0.5 (decaying subcritical assembly)' }
-      ],
-      correctIndex: 1,
-      explanation: 'At exact criticality (k_eff = 1.0), each fission generation produces exactly one subsequent fission neutron, sustaining constant power.'
-    }
-  ],
-  kerala: [
-    {
-      id: 'q-k1',
-      question: 'Under Kerala Building Rules 2025, which residential buildings qualify for K-SMART self-certification deemed approval?',
-      options: [
-        { letter: 'A', text: 'Low-risk residential constructions with built-up area up to 300 sq.m certified by registered professionals' },
-        { letter: 'B', text: 'Any commercial high-rise over 15 meters' },
-        { letter: 'C', text: 'Properties situated inside Coastal Regulation Zone CRZ-1' },
-        { letter: 'D', text: 'All government hospitals regardless of structural floor plans' }
-      ],
-      correctIndex: 0,
-      explanation: 'Low-risk single family and two-unit residences up to 300 sq.m obtain instantaneous digital permits upon architect self-certification.'
-    },
-    {
-      id: 'q-k2',
-      question: 'At what natural terrain slope gradient do the 2025 rules mandate certified geotechnical slope stability analysis?',
-      options: [
-        { letter: 'A', text: 'Any flat terrain below 5 degrees' },
-        { letter: 'B', text: 'Slopes exceeding 25 degrees natural gradient prior to excavation' },
-        { letter: 'C', text: 'Only when constructing on municipal reclaimed wetlands' },
-        { letter: 'D', text: 'Optional advisory guideline without statutory enforcement' }
-      ],
-      correctIndex: 1,
-      explanation: 'In hilly revenue villages, terrain slope exceeding 25 degrees triggers compulsory geotechnical borehole investigations and engineered retaining structures.'
-    },
-    {
-      id: 'q-k3',
-      question: 'What is the statutory minimum rainwater harvesting storage capacity per square meter of roof catchment area?',
-      options: [
-        { letter: 'A', text: 'Minimum 50 liters per sq.m of effective rooftop catchment' },
-        { letter: 'B', text: '10 liters per sq.m only if piped water is absent' },
-        { letter: 'C', text: 'A single flat 200-liter drum irrespective of roof footprint' },
-        { letter: 'D', text: 'No rainwater harvesting required if connected to municipal lines' }
-      ],
-      correctIndex: 0,
-      explanation: 'Mandatory environmental compliance requires at least 50 liters of dedicated cistern storage or ground recharge per sq.m of roof area.'
-    },
-    {
-      id: 'q-k4',
-      question: 'What is the primary role of the K-SMART automated scrutiny engine in permit applications?',
-      options: [
-        { letter: 'A', text: 'Eliminates structural safety norms completely' },
-        { letter: 'B', text: 'Automates CAD rule-checking, setback verification, and eliminates manual clerical delays' },
-        { letter: 'C', text: 'Transfers local authority jurisdiction to central defense ministry' },
-        { letter: 'D', text: 'Increases processing fees based on builder revenue' }
-      ],
-      correctIndex: 1,
-      explanation: 'K-SMART delivers automated CAD drawing validation against FAR, coverage, and setback bylaws with end-to-end transparent telemetry.'
-    },
-    {
-      id: 'q-k5',
-      question: 'What mandatory fire safety installation is enforced for mixed-use buildings exceeding 15 meters in height?',
-      options: [
-        { letter: 'A', text: 'Automated wet riser fire pumps, monitored smoke dampers, and real-time telemetry dispatch' },
-        { letter: 'B', text: 'Only one manual water bucket per floor' },
-        { letter: 'C', text: 'Wooden unrated fire doors' },
-        { letter: 'D', text: 'Exterior spiral rope ladders' }
-      ],
-      correctIndex: 0,
-      explanation: 'High-occupancy and 15m+ structures require automated wet risers, certified two-hour fire doors, and synchronized central fire dispatch telemetry.'
-    }
-  ],
-  semi: [
-    {
-      id: 'q-s1',
-      question: 'What occurs across the depletion layer of a PN junction diode under reverse bias?',
-      options: [
-        { letter: 'A', text: 'Width widens as majority carriers are drawn away from the metallurgical junction' },
-        { letter: 'B', text: 'Depletion region completely collapses into an ohmic short circuit' },
-        { letter: 'C', text: 'Direct recombination rate increases by 1000%' },
-        { letter: 'D', text: 'Current increases exponentially with reverse voltage' }
-      ],
-      correctIndex: 0,
-      explanation: 'Under reverse bias, external positive and negative terminals pull mobile electrons and holes away from the junction, widening the unneutralized space charge zone.'
-    },
-    {
-      id: 'q-s2',
-      question: 'At room temperature (300K), what is the typical forward knee threshold for silicon PN junctions?',
-      options: [
-        { letter: 'A', text: 'Approximately 0.2V to 0.3V (Germanium value)' },
-        { letter: 'B', text: 'Approximately 0.6V to 0.7V' },
-        { letter: 'C', text: 'Over 2.5V' },
-        { letter: 'D', text: 'Zero volts (ideal diode)' }
-      ],
-      correctIndex: 1,
-      explanation: 'Silicon has an intrinsic bandgap of 1.12 eV, producing a built-in junction potential of ~0.65V to 0.7V at standard ambient temperature.'
-    },
-    {
-      id: 'q-s3',
-      question: 'What physical mechanism triggers Zener breakdown in heavily doped silicon junctions (< 5.6V)?',
-      options: [
-        { letter: 'A', text: 'Quantum mechanical tunneling of valence electrons across the ultra-thin barrier' },
-        { letter: 'B', text: 'Thermionic runaway and silicon lattice melting' },
-        { letter: 'C', text: 'Impact ionization avalanche cascading' },
-        { letter: 'D', text: 'Electrochemical contact corrosion' }
-      ],
-      correctIndex: 0,
-      explanation: 'Heavy doping creates an extremely narrow depletion barrier (<10 nm), enabling direct quantum mechanical tunneling without avalanche multiplication.'
-    },
-    {
-      id: 'q-s4',
-      question: 'How does thermal leakage current scale with temperature in silicon diodes?',
-      options: [
-        { letter: 'A', text: 'Decreases linearly with temperature rise' },
-        { letter: 'B', text: 'Doubles approximately every 10°C temperature increase' },
-        { letter: 'C', text: 'Remains strictly constant at all temperatures' },
-        { letter: 'D', text: 'Drops to absolute zero above 50°C' }
-      ],
-      correctIndex: 1,
-      explanation: 'Minority carrier thermal generation rate scales exponentially with temperature, doubling roughly every 10°C in silicon.'
-    },
-    {
-      id: 'q-s5',
-      question: 'In the Shockley diode equation, what is the thermal voltage Vt at 300 Kelvin?',
-      options: [
-        { letter: 'A', text: '0.7 V' },
-        { letter: 'B', text: 'Approximately 25.85 mV (~26 mV)' },
-        { letter: 'C', text: '1.5 V' },
-        { letter: 'D', text: '12 V' }
-      ],
-      correctIndex: 1,
-      explanation: 'Thermal voltage Vt = (k * T) / q ≈ (1.38e-23 * 300) / 1.6e-19 ≈ 25.85 mV.'
-    }
-  ],
-  ecology: [
-    {
-      id: 'q-e1',
-      question: 'What criteria define an official Myers Biodiversity Hotspot?',
-      options: [
-        { letter: 'A', text: 'At least 1,500 endemic vascular plant species and lost at least 70% of primary native vegetation' },
-        { letter: 'B', text: 'Any national park containing tigers or lions' },
-        { letter: 'C', text: 'Agricultural farmlands with high crop diversity' },
-        { letter: 'D', text: 'Urban green corridors with ornamental tree coverage' }
-      ],
-      correctIndex: 0,
-      explanation: 'Norman Myers criteria require exceptional plant endemism (≥1,500 endemic species) combined with severe habitat destruction (≥70% primary habitat lost).'
-    },
-    {
-      id: 'q-e2',
-      question: 'Which global biodiversity hotspot encompasses the southern tip of India and Sri Lanka?',
-      options: [
-        { letter: 'A', text: 'The Western Ghats and Sri Lanka' },
-        { letter: 'B', text: 'The Mediterranean Basin' },
-        { letter: 'C', text: 'The Succulent Karoo' },
-        { letter: 'D', text: 'The Cerrado' }
-      ],
-      correctIndex: 0,
-      explanation: 'The Western Ghats hotspot harbors immense tropical wet evergreen forest endemism including the Lion-tailed macaque and Nilgiri tahr.'
-    },
-    {
-      id: 'q-e3',
-      question: 'Why are mangrove wetlands designated as primary "blue carbon" ecosystems?',
-      options: [
-        { letter: 'A', text: 'They release carbon into the atmosphere faster than industrial power plants' },
-        { letter: 'B', text: 'Their anaerobic sediments sequester carbon up to 4x faster than terrestrial tropical forests' },
-        { letter: 'C', text: 'They only absorb carbon during nighttime low tides' },
-        { letter: 'D', text: 'They reflect solar radiation without photosynthesis' }
-      ],
-      correctIndex: 1,
-      explanation: 'Mangrove soils feature waterlogged, low-oxygen conditions that prevent organic decomposition, trapping organic carbon for millennia.'
-    },
-    {
-      id: 'q-e4',
-      question: 'What is the principal ecological consequence of habitat fragmentation in high-endemism zones?',
-      options: [
-        { letter: 'A', text: 'Elevated edge effects, reproductive isolation, and genetic drift leading to inbreeding depression' },
-        { letter: 'B', text: 'Instantaneous evolution of hyper-tolerant species' },
-        { letter: 'C', text: 'Elimination of all predatory interactions' },
-        { letter: 'D', text: 'Uniform increase in species populations' }
-      ],
-      correctIndex: 0,
-      explanation: 'Fragmentation produces microclimate alterations at forest boundaries and disrupts gene flow, drastically elevating local extinction risk.'
-    },
-    {
-      id: 'q-e5',
-      question: 'Under the IUCN Red List classification, which category directly precedes "Extinct in the Wild"?',
-      options: [
-        { letter: 'A', text: 'Critically Endangered (CR)' },
-        { letter: 'B', text: 'Near Threatened (NT)' },
-        { letter: 'C', text: 'Vulnerable (VU)' },
-        { letter: 'D', text: 'Least Concern (LC)' }
-      ],
-      correctIndex: 0,
-      explanation: 'The hierarchy of threat is Least Concern -> Near Threatened -> Vulnerable -> Endangered -> Critically Endangered -> Extinct in the Wild -> Extinct.'
-    }
-  ],
-  dsp: [
-    {
-      id: 'q-d1',
-      question: 'Why are Finite Impulse Response (FIR) digital filters inherently stable?',
-      options: [
-        { letter: 'A', text: 'Their transfer function poles are located exclusively at the origin (z = 0) of the z-plane' },
-        { letter: 'B', text: 'They rely exclusively on analog operational amplifiers' },
-        { letter: 'C', text: 'They require non-linear feedback loops' },
-        { letter: 'D', text: 'They amplify all high frequency noise infinitely' }
-      ],
-      correctIndex: 0,
-      explanation: 'FIR filters are all-zero systems with all poles strictly at z = 0, meaning bounded inputs unconditionally yield bounded outputs (BIBO stability).'
-    },
-    {
-      id: 'q-d2',
-      question: 'What mathematical symmetry condition is required for an FIR filter to exhibit exact linear phase response?',
-      options: [
-        { letter: 'A', text: 'Filter impulse coefficients must be symmetric or anti-symmetric around the midpoint: h[n] = ±h[N-1-n]' },
-        { letter: 'B', text: 'All coefficients must be prime numbers' },
-        { letter: 'C', text: 'The filter order must always be an odd multiple of 3' },
-        { letter: 'D', text: 'The impulse response must decay exponentially to zero' }
-      ],
-      correctIndex: 0,
-      explanation: 'Even or odd symmetry around the filter center guarantees constant group delay, preserving waveform shape without phase distortion.'
-    },
-    {
-      id: 'q-d3',
-      question: 'According to the Nyquist-Shannon sampling theorem, what is the minimum sampling frequency required to reconstruct a signal with maximum bandwidth B?',
-      options: [
-        { letter: 'A', text: 'Fs ≥ 2 * B to prevent spectral aliasing' },
-        { letter: 'B', text: 'Fs = B / 2' },
-        { letter: 'C', text: 'Fs = B^2' },
-        { letter: 'D', text: 'Fs must be infinite' }
-      ],
-      correctIndex: 0,
-      explanation: 'Sampling at least twice the highest frequency component (Fs ≥ 2*B) prevents adjacent spectral copies from overlapping in the frequency domain.'
-    },
-    {
-      id: 'q-d4',
-      question: 'In decentralized neuroimaging archival (IPFS / content addressing), how are multi-gigabyte MRI volumes uniquely referenced?',
-      options: [
-        { letter: 'A', text: 'Through cryptographic Content Identifiers (CIDs) derived from cryptographic SHA-256 / Blake3 hashing' },
-        { letter: 'B', text: 'Using static IP addresses hardcoded into the scanner' },
-        { letter: 'C', text: 'Through random integer file numbering on a single server' },
-        { letter: 'D', text: 'By storing MRI raw pixels directly in email headers' }
-      ],
-      correctIndex: 0,
-      explanation: 'Content addressing hashes the file bytes into a unique CID, guaranteeing tamper-proof verification and deduplication across peer nodes.'
-    },
-    {
-      id: 'q-d5',
-      question: 'What window function achieves the steepest roll-off at the expense of wider transition width in FIR filter design?',
-      options: [
-        { letter: 'A', text: 'Blackman or Kaiser window' },
-        { letter: 'B', text: 'Rectangular window' },
-        { letter: 'C', text: 'Dirac delta window' },
-        { letter: 'D', text: 'Unit step window' }
-      ],
-      correctIndex: 0,
-      explanation: 'Blackman and adjustable Kaiser windows heavily attenuate Gibbs phenomenon sidelobes (>-74 dB), delivering sharp stopband rejection.'
-    }
-  ]
+// Challenge card status from the API's viewer-relative `state`.
+const STATUS_FOR = {
+  awaiting_peer: 'pending',
+  invite_received: 'request',
+  active: 'active',
+  awaiting_peer_result: 'waiting',
+  completed: 'finished',
+  expired: 'expired',
+  cancelled: 'expired',
+  declined: 'expired'
 };
 
-// ============================================================================
-// INITIAL SEED CHALLENGES MATCHING FIGMA NODE 210:53374
-// ============================================================================
-const INITIAL_CHALLENGES = [
-  // 1. My Challenges (Sent Direct Invites)
-  {
-    id: 'ch-1',
-    type: 'sent', // sent direct invite
-    topic: 'Energy Release in Fission',
-    domain: 'Nuclear Engineering & Reactor Dynamics',
-    questionsKey: 'fission',
+/** A /api/v2/learn/challenges entry in the shape the challenge cards render. */
+const toItem = (c) => {
+  const status = STATUS_FOR[c.state] || 'expired';
+  const total = c.myResult?.total || c.peerResult?.total || c.questionCount;
+  const score = (r, won) => r && { points: r.score ?? 0, correct: r.score ?? 0, total: r.total || total, timeTaken: r.timeTaken || '—', won };
+  return {
+    id: c.id,
+    raw: c,
+    type: c.role === 'challenger' ? 'sent' : 'received',
+    topic: c.topic,
+    domain: c.domain || 'Peer quiz',
     opponent: {
-      name: 'Sandeep C',
-      email: 'sandeep.c@campus.edu',
-      dept: 'Electronics & Communication',
-      avatar: '/assets/user-profile.jpg'
+      uid: c.peer?.uid,
+      name: c.peer?.name || 'Peer',
+      email: c.peer?.emailHint || '',
+      dept: [c.peer?.educationLevel, c.peer?.instituteName].filter(Boolean).join(' · ') || 'TrueSights learner',
+      avatar: c.peer?.photoURL || null
     },
-    status: 'pending', // 'pending' | 'active' | 'expired' | 'finished'
+    status,
+    endedLabel: c.state === 'declined' ? 'Invitation declined' : c.state === 'cancelled' ? 'Invitation cancelled' : 'Invitation expired',
     mode: 'Any time',
-    expires: '23h 13m',
-    createdAt: 'Today, 11:20 AM',
-    userScore: null,
-    opponentScore: null
-  },
-  {
-    id: 'ch-2',
-    type: 'sent',
-    topic: 'Mechanism of Fission',
-    domain: 'Nuclear Engineering & Reactor Dynamics',
-    questionsKey: 'fission',
-    opponent: {
-      name: 'Testing Student',
-      email: 'test.student@campus.edu',
-      dept: 'Applied Physics & Nanotech',
-      avatar: '/assets/student-avatar.jpg'
-    },
-    status: 'pending',
-    mode: 'Any time',
-    expires: 'Terminated',
-    createdAt: 'Yesterday, 04:45 PM',
-    userScore: null,
-    opponentScore: null
-  },
-  {
-    id: 'ch-3',
-    type: 'sent',
-    topic: 'Biodiversity Hotspots & Conservation Endemism',
-    domain: 'Environmental Sciences & Biodiversity',
-    questionsKey: 'ecology',
-    opponent: {
-      name: 'Roshan Thomas',
-      email: 'roshan.t@campus.edu',
-      dept: 'Civil & Urban Planning',
-      avatar: '/assets/student-avatar.jpg'
-    },
-    status: 'expired',
-    mode: 'Any time',
-    expires: 'Terminated',
-    createdAt: '02 Oct 2026',
-    userScore: null,
-    opponentScore: null
-  },
-  {
-    id: 'ch-4',
-    type: 'sent',
-    topic: 'The I-V Characteristic Curve',
-    domain: 'Electronic Devices & Semiconductor Physics',
-    questionsKey: 'semi',
-    opponent: {
-      name: 'Ananya Sharma',
-      email: 'ananya.s@campus.edu',
-      dept: 'Computer Science',
-      avatar: '/assets/user-profile.jpg'
-    },
-    status: 'active',
-    mode: 'Any time',
-    expires: '18h 45m',
-    createdAt: 'Today, 09:15 AM',
-    userScore: null,
-    opponentScore: { points: 16, correct: 4, total: 5, timeTaken: '02:40' }
-  },
-
-  // 2. Incoming Requests (Received from peers waiting for your acceptance)
-  {
-    id: 'ch-req-1',
-    type: 'received',
-    topic: 'Risk-Based Permitting & K-SMART Self-Certification',
-    domain: 'Kerala Building By-Laws & Urban Governance (2025)',
-    questionsKey: 'kerala',
-    opponent: {
-      name: 'Sandeep C',
-      email: 'sandeep.c@campus.edu',
-      dept: 'Electronics & Communication',
-      avatar: '/assets/user-profile.jpg'
-    },
-    status: 'request',
-    mode: 'Any time',
-    expires: '21h 30m',
-    createdAt: '2 hours ago',
-    opponentScore: { points: 20, correct: 4, total: 5, timeTaken: '02:15' }
-  },
-  {
-    id: 'ch-req-2',
-    type: 'received',
-    topic: 'Digital Signal Processing & FIR Filters',
-    domain: 'Signal Processing & Distributed Bio-Informatics',
-    questionsKey: 'dsp',
-    opponent: {
-      name: 'Devika Menon',
-      email: 'devika.m@campus.edu',
-      dept: 'Signal Processing & Telecom',
-      avatar: '/assets/user-profile.jpg'
-    },
-    status: 'request',
-    mode: 'Any time',
-    expires: '14h 10m',
-    createdAt: '5 hours ago',
-    opponentScore: { points: 15, correct: 3, total: 5, timeTaken: '03:05' }
-  },
-
-  // 3. Finished Challenges (Completed with full comparative scores)
-  {
-    id: 'ch-fin-1',
-    type: 'sent',
-    topic: 'Decentralized Storage for Neuroimaging',
-    domain: 'Signal Processing & Distributed Bio-Informatics',
-    questionsKey: 'dsp',
-    opponent: {
-      name: 'Sandeep C',
-      email: 'sandeep.c@campus.edu',
-      dept: 'Electronics & Communication',
-      avatar: '/assets/user-profile.jpg'
-    },
-    status: 'finished',
-    mode: 'Any time',
-    expires: 'Completed',
-    createdAt: '03 Oct 2026',
-    userAnswers: [0, 0, 0, 0, 0],
-    opponentAnswers: [0, 0, 0, 0, 1],
-    userScore: { points: 25, correct: 5, total: 5, timeTaken: '01:50', won: true },
-    opponentScore: { points: 18, correct: 4, total: 5, timeTaken: '02:30', won: false }
-  },
-  {
-    id: 'ch-fin-2',
-    type: 'received',
-    topic: 'Quantum Tunneling & Zener Breakdown',
-    domain: 'Electronic Devices & Semiconductor Physics',
-    questionsKey: 'semi',
-    opponent: {
-      name: 'Roshan Thomas',
-      email: 'roshan.t@campus.edu',
-      dept: 'Civil & Urban Planning',
-      avatar: '/assets/student-avatar.jpg'
-    },
-    status: 'finished',
-    mode: 'Any time',
-    expires: 'Completed',
-    createdAt: '01 Oct 2026',
-    userAnswers: [0, 1, 0, 1, 0],
-    opponentAnswers: [0, 1, 0, 0, 2],
-    userScore: { points: 18, correct: 4, total: 5, timeTaken: '02:10', won: true },
-    opponentScore: { points: 12, correct: 3, total: 5, timeTaken: '02:45', won: false }
-  }
-];
+    expires: status === 'finished' ? 'Completed' : status === 'expired' ? 'Terminated' : countdown(c.expiresAt),
+    createdAt: c.completedAt ? new Date(c.completedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : timeAgo(c.createdAt),
+    userScore: score(c.myResult, c.outcome === 'victory'),
+    opponentScore: score(c.peerResult, c.outcome === 'defeat'),
+    outcome: c.outcome
+  };
+};
 
 // ============================================================================
 // MAIN COMPONENT: CHALLENGES PAGE
 // ============================================================================
-export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onViewResults }) {
+export default function ChallengesPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [params, setParams] = useSearchParams();
+  const { data, error, isLoading, refetch } = useQuery(keys.challenges(), api.challenges, { staleMs: 15_000 });
   // Navigation & Filter Tab state ('my-challenges' | 'requests' | 'active' | 'finished')
   const [activeTab, setActiveTab] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const urlTab = params.get('tab');
-      if (['my-challenges', 'requests', 'active', 'finished'].includes(urlTab)) {
-        return urlTab;
-      }
-    }
+    const urlTab = params.get('tab');
+    if (['my-challenges', 'requests', 'active', 'finished'].includes(urlTab)) return urlTab;
     return 'my-challenges';
   });
-  const [challenges, setChallenges] = useState(INITIAL_CHALLENGES);
-  const [toastMessage, setToastMessage] = useState(null);
+  const challenges = useMemo(() => (data?.challenges || []).map(toItem), [data]);
+  const [busyId, setBusyId] = useState(null);
+  const [, tick] = useState(0);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
@@ -619,73 +81,102 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Keep the "expires in" countdowns moving.
+  useEffect(() => {
+    const t = setInterval(() => tick((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
   // New Challenge Modal State
   const [isNewChallengeModalOpen, setIsNewChallengeModalOpen] = useState(false);
-  const [selectedDomainId, setSelectedDomainId] = useState(ACADEMIC_DOMAINS[0].id);
-  const [selectedTopicId, setSelectedTopicId] = useState(ACADEMIC_DOMAINS[0].topics[0].id);
+  const [preset, setPreset] = useState(null);
+  const topicsQuery = useQuery(isNewChallengeModalOpen ? keys.challengeTopics() : null, api.challengeTopics, { staleMs: 120_000 });
+  const ACADEMIC_DOMAINS = useMemo(() => {
+    const list = (topicsQuery.data || []).map((d) => ({ id: d.id, name: d.title, topics: d.topics.map((t) => ({ id: t, title: t })) }));
+    // A preset topic that isn't in any roadmap (e.g. re-challenge) still needs a home.
+    if (preset?.topic && !list.some((d) => d.topics.some((t) => t.id === preset.topic))) {
+      list.unshift({ id: '__preset', name: preset.domain || 'Selected topic', topics: [{ id: preset.topic, title: preset.topic }] });
+    }
+    return list;
+  }, [topicsQuery.data, preset]);
+  const [selectedDomainId, setSelectedDomainId] = useState('');
+  const [selectedTopicId, setSelectedTopicId] = useState('');
   const [searchPeerQuery, setSearchPeerQuery] = useState('');
   const [selectedPeer, setSelectedPeer] = useState(null);
   const [isPeerDropdownOpen, setIsPeerDropdownOpen] = useState(false);
+  const [peers, setPeers] = useState([]);
+  const [isAuthorizing, setIsAuthorizing] = useState(false);
 
-  // Active Challenge Runner (In-Quiz Engine) State
-  const [activeQuizChallenge, setActiveQuizChallenge] = useState(null);
-  const [quizPhase, setQuizPhase] = useState('loading'); // 'loading' | 'testing' | 'results'
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
-  const [timerSeconds, setTimerSeconds] = useState(25);
-  const [isTimerPaused, setIsTimerPaused] = useState(false);
-  const [quizResultSummary, setQuizResultSummary] = useState(null);
-  const [activeReviewIndex, setActiveReviewIndex] = useState(0);
-  const [reviewViewMode, setReviewViewMode] = useState('inspector'); // 'inspector' | 'matrix'
+  const openNewChallenge = (p = null) => {
+    setPreset(p);
+    setSelectedPeer(p?.peer ? { ...p.peer, id: p.peer.uid } : null);
+    setSearchPeerQuery(p?.peer?.name || '');
+    setSelectedDomainId('');
+    setSelectedTopicId(p?.topic || '');
+    setIsNewChallengeModalOpen(true);
+  };
+
+  // Arriving from a roadmap's "challenge a peer" button.
+  useEffect(() => {
+    if (location.state?.preset) {
+      openNewChallenge(location.state.preset);
+      navigate(location.pathname + location.search, { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Seed the domain/topic once the roadmaps load.
+  useEffect(() => {
+    if (!isNewChallengeModalOpen || !ACADEMIC_DOMAINS.length || selectedDomainId) return;
+    const match = preset?.topic && (ACADEMIC_DOMAINS.find((d) => d.name === preset.domain && d.topics.some((t) => t.id === preset.topic)) || ACADEMIC_DOMAINS.find((d) => d.topics.some((t) => t.id === preset.topic)));
+    const dom = match || ACADEMIC_DOMAINS[0];
+    setSelectedDomainId(dom.id);
+    setSelectedTopicId(preset?.topic && match ? preset.topic : dom.topics[0]?.id || '');
+  }, [isNewChallengeModalOpen, ACADEMIC_DOMAINS, selectedDomainId, preset]);
+
+  // Debounced peer search.
+  useEffect(() => {
+    if (!isNewChallengeModalOpen) return undefined;
+    const t = setTimeout(() => {
+      api.peers(selectedPeer && searchPeerQuery === selectedPeer.name ? '' : searchPeerQuery.trim())
+        .then((list) => setPeers(list.map((p) => ({ ...p, id: p.uid }))))
+        .catch(() => setPeers([]));
+    }, searchPeerQuery ? 220 : 0);
+    return () => clearTimeout(t);
+  }, [searchPeerQuery, isNewChallengeModalOpen, selectedPeer]);
 
   // Comparative Review Modal State for Finished challenges
   const [selectedComparisonModal, setSelectedComparisonModal] = useState(null);
+  const compare = useQuery(selectedComparisonModal ? keys.compare(selectedComparisonModal.id) : null, () => api.compare(selectedComparisonModal.id), { staleMs: 300_000 });
 
-  // Derive detailed question-by-question comparative breakdown for Finished modal
+  // ?compare=<id> / ?highlight=<id> from a notification.
+  useEffect(() => {
+    const target = challenges.find((c) => c.id === (params.get('compare') || params.get('highlight')));
+    if (!target) return;
+    setActiveTab(target.status === 'request' ? 'requests' : target.status === 'finished' ? 'finished' : 'my-challenges');
+    if (params.get('compare') && target.status === 'finished') setSelectedComparisonModal(target);
+    setParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [challenges]);
+
+  // Question-by-question comparison from /challenges/:id/compare.
   const comparisonQuestions = useMemo(() => {
-    if (!selectedComparisonModal) return [];
-    const key = selectedComparisonModal.questionsKey || 'kerala';
-    const questions = QUESTIONS_DATABASE[key] || QUESTIONS_DATABASE.kerala;
-
-    const userCorrectTarget = selectedComparisonModal.userScore?.correct ?? questions.length;
-    const oppCorrectTarget = selectedComparisonModal.opponentScore?.correct ?? Math.max(1, questions.length - 1);
-
-    return questions.map((q, idx) => {
-      let userAnsIdx;
-      if (selectedComparisonModal.userAnswers && selectedComparisonModal.userAnswers[idx] !== undefined) {
-        userAnsIdx = selectedComparisonModal.userAnswers[idx];
-      } else {
-        userAnsIdx = idx < userCorrectTarget ? q.correctIndex : (q.correctIndex + 1) % q.options.length;
-      }
-
-      let oppAnsIdx;
-      if (selectedComparisonModal.opponentAnswers && selectedComparisonModal.opponentAnswers[idx] !== undefined) {
-        oppAnsIdx = selectedComparisonModal.opponentAnswers[idx];
-      } else {
-        oppAnsIdx = idx < oppCorrectTarget ? q.correctIndex : (q.correctIndex + 1) % q.options.length;
-      }
-
-      const userOpt = q.options[userAnsIdx] || q.options[0];
-      const oppOpt = q.options[oppAnsIdx] || q.options[0];
-      const correctOpt = q.options[q.correctIndex] || q.options[0];
-
+    return (compare.data?.questions || []).map((q) => {
+      const correctOpt = { letter: '✓', text: q.correctAnswer };
+      const userOpt = { letter: q.mine?.isCorrect ? '✓' : '✕', text: q.mine ? q.mine.answer || 'No answer' : 'Not answered' };
+      const oppOpt = { letter: q.theirs?.isCorrect ? '✓' : '✕', text: q.theirs ? q.theirs.answer || 'No answer' : 'Not answered' };
       return {
-        qNum: idx + 1,
+        qNum: q.index,
         question: q.question,
-        options: q.options,
-        correctIndex: q.correctIndex,
         correctOpt,
-        userAnsIdx,
         userOpt,
-        isUserCorrect: userAnsIdx === q.correctIndex,
-        oppAnsIdx,
+        isUserCorrect: Boolean(q.mine?.isCorrect),
         oppOpt,
-        isOppCorrect: oppAnsIdx === q.correctIndex,
-        explanation: q.explanation
+        isOppCorrect: Boolean(q.theirs?.isCorrect),
+        explanation: q.explanation || ''
       };
     });
-  }, [selectedComparisonModal]);
+  }, [compare.data]);
 
   const comparisonStats = useMemo(() => {
     if (!comparisonQuestions.length) {
@@ -712,10 +203,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
     };
   }, [comparisonQuestions]);
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3200);
-  };
+  const showToast = (msg) => toast.info(msg);
 
   // Search state for filtering challenges by topic or opponent
   const [challengeSearchQuery, setChallengeSearchQuery] = useState('');
@@ -733,986 +221,100 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
 
   // Filtered lists for each tab
   const myChallengesList = useMemo(() => {
-    return filterBySearch(challenges.filter((c) => c.type === 'sent'));
+    return filterBySearch(challenges.filter((c) => c.status !== 'request'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [challenges, challengeSearchQuery]);
 
   const requestsList = useMemo(() => {
     return filterBySearch(challenges.filter((c) => c.status === 'request'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [challenges, challengeSearchQuery]);
 
   const activeList = useMemo(() => {
-    return filterBySearch(challenges.filter((c) => c.status === 'active'));
+    return filterBySearch(challenges.filter((c) => c.status === 'active' || c.status === 'waiting'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [challenges, challengeSearchQuery]);
 
   const finishedList = useMemo(() => {
     return filterBySearch(challenges.filter((c) => c.status === 'finished'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [challenges, challengeSearchQuery]);
 
   // Current domain & topics mapping
   const currentDomainObj = useMemo(() => {
-    return ACADEMIC_DOMAINS.find((d) => d.id === selectedDomainId) || ACADEMIC_DOMAINS[0];
-  }, [selectedDomainId]);
+    return ACADEMIC_DOMAINS.find((d) => d.id === selectedDomainId) || ACADEMIC_DOMAINS[0] || { id: '', name: '', topics: [] };
+  }, [ACADEMIC_DOMAINS, selectedDomainId]);
 
-  // Filtered peers based on search query
-  const filteredPeers = useMemo(() => {
-    if (!searchPeerQuery.trim()) return VERIFIED_PEERS;
-    const q = searchPeerQuery.toLowerCase().trim();
-    return VERIFIED_PEERS.filter(
-      (p) => p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || p.dept.toLowerCase().includes(q)
-    );
-  }, [searchPeerQuery]);
+  // Peers from the server-side search (name or email prefix; same campus first)
+  const filteredPeers = peers.map((p) => ({
+    ...p,
+    email: p.emailHint || '',
+    dept: [p.educationLevel, p.instituteName].filter(Boolean).join(' · ') || p.role || 'TrueSights learner',
+    avatar: p.photoURL
+  }));
 
   // Handler: Authorize and dispatch new peer challenge
-  const handleAuthorizeChallenge = () => {
+  const handleAuthorizeChallenge = async () => {
     if (!selectedPeer) {
       showToast('Please search and select a verified peer to authorize the challenge.');
       return;
     }
-
-    const currentTopic = currentDomainObj.topics.find((t) => t.id === selectedTopicId) || currentDomainObj.topics[0];
-
-    const newChallengeItem = {
-      id: `ch-${Date.now()}`,
-      type: 'sent',
-      topic: currentTopic.title,
-      domain: currentDomainObj.name,
-      questionsKey: currentTopic.questionsKey,
-      opponent: {
-        name: selectedPeer.name,
-        email: selectedPeer.email,
-        dept: selectedPeer.dept,
-        avatar: selectedPeer.avatar
-      },
-      status: 'pending',
-      mode: 'Any time',
-      expires: '24h 00m',
-      createdAt: 'Just now',
-      userScore: null,
-      opponentScore: null
-    };
-
-    setChallenges((prev) => [newChallengeItem, ...prev]);
-    setIsNewChallengeModalOpen(false);
-    setSelectedPeer(null);
-    setSearchPeerQuery('');
-    setActiveTab('my-challenges');
-    showToast(`Engagement authorized! Challenge invitation dispatched to ${selectedPeer.name}.`);
+    if (!selectedTopicId) {
+      showToast('Pick a topic from one of your roadmaps first.');
+      return;
+    }
+    setIsAuthorizing(true);
+    try {
+      await api.createChallenge({ topic: selectedTopicId, domain: currentDomainObj.id === '__preset' ? preset?.domain || null : currentDomainObj.name, opponentId: selectedPeer.uid });
+      invalidate(keys.challenges(), keys.dashboard());
+      toast.success(`Challenge sent to ${selectedPeer.name}. They have 24 hours to play.`);
+      setIsNewChallengeModalOpen(false);
+      setSelectedPeer(null);
+      setSearchPeerQuery('');
+      setActiveTab('my-challenges');
+    } catch (e) {
+      toast.error(e.message || "Couldn't create the challenge.");
+    } finally {
+      setIsAuthorizing(false);
+    }
   };
 
-  // Handler: Accept incoming friend request
-  const handleAcceptRequest = (challengeItem) => {
-    setChallenges((prev) =>
-      prev.map((c) => (c.id === challengeItem.id ? { ...c, status: 'active', expires: '23h 59m' } : c))
-    );
-    setActiveTab('active');
-    showToast(`Accepted challenge from ${challengeItem.opponent.name}! Challenge activated.`);
+  const act = async (item, fn, patch, message) => {
+    setBusyId(item.id);
+    try {
+      await fn(item.id);
+      setQueryData(keys.challenges(), (d) => d && { ...d, challenges: d.challenges.map((x) => (x.id === item.id ? { ...x, ...patch } : x)) });
+      invalidate(keys.challenges(), keys.bootstrap(), keys.dashboard());
+      if (message) toast.success(message);
+      return true;
+    } catch (e) {
+      toast.error(e.message);
+      invalidate(keys.challenges());
+      return false;
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const startQuizForChallenge = (item) => navigate(`${pathFor('quiz', item.topic)}?challengeId=${item.id}`);
+
+  // Handler: Accept incoming friend request, then play right away
+  const handleAcceptRequest = async (item) => {
+    if (await act(item, api.acceptChallenge, { status: 'accepted', state: 'active' }, 'Challenge accepted - good luck!')) startQuizForChallenge(item);
   };
 
   // Handler: Decline incoming request
   const handleDeclineRequest = (challengeId) => {
-    setChallenges((prev) => prev.filter((c) => c.id !== challengeId));
-    showToast('Challenge request declined.');
+    const item = challenges.find((c) => c.id === challengeId);
+    if (item) act(item, api.declineChallenge, { status: 'declined', state: 'declined' }, 'Challenge request declined.');
   };
 
   // Handler: Cancel sent challenge
   const handleCancelChallenge = (challengeId) => {
-    setChallenges((prev) => prev.filter((c) => c.id !== challengeId));
-    showToast('Challenge invitation cancelled.');
+    const item = challenges.find((c) => c.id === challengeId);
+    if (item) act(item, api.cancelChallenge, { status: 'cancelled', state: 'cancelled' }, 'Challenge invitation cancelled.');
   };
 
-  // ============================================================================
-  // QUIZ ENGINE CONTROLLERS
-  // ============================================================================
-  const startQuizForChallenge = (challengeItem) => {
-    setActiveQuizChallenge(challengeItem);
-    setQuizPhase('loading');
-    setLoadingProgress(0);
-    setCurrentQuestionIndex(0);
-    setSelectedAnswers({});
-    setTimerSeconds(25);
-    setIsTimerPaused(false);
-    setQuizResultSummary(null);
-  };
-
-  // 1. Loading Phase Simulator
-  useEffect(() => {
-    if (!activeQuizChallenge || quizPhase !== 'loading') return;
-    const startTime = Date.now();
-    const duration = 1100;
-
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const pct = Math.min(100, Math.round((elapsed / duration) * 100));
-      setLoadingProgress(pct);
-
-      if (pct >= 100) {
-        clearInterval(interval);
-        setTimeout(() => setQuizPhase('testing'), 150);
-      }
-    }, 25);
-
-    return () => clearInterval(interval);
-  }, [activeQuizChallenge, quizPhase]);
-
-  // Active questions for the current challenge
-  const activeQuestions = useMemo(() => {
-    if (!activeQuizChallenge) return QUESTIONS_DATABASE.kerala;
-    return QUESTIONS_DATABASE[activeQuizChallenge.questionsKey] || QUESTIONS_DATABASE.kerala;
-  }, [activeQuizChallenge]);
-
-  // 2. 25-Second Focus Timer
-  useEffect(() => {
-    if (quizPhase !== 'testing' || isTimerPaused) return;
-
-    const timer = setInterval(() => {
-      setTimerSeconds((prev) => {
-        if (prev <= 1) {
-          handleAutoAdvance();
-          return 25;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [quizPhase, currentQuestionIndex, isTimerPaused]);
-
-  const handleAutoAdvance = () => {
-    if (currentQuestionIndex < activeQuestions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-      setTimerSeconds(25);
-    } else {
-      handleCompleteQuiz();
-    }
-  };
-
-  const handleSelectOption = (optIdx) => {
-    setSelectedAnswers((prev) => ({
-      ...prev,
-      [currentQuestionIndex]: optIdx
-    }));
-  };
-
-  const handleNextOrSubmit = () => {
-    if (currentQuestionIndex < activeQuestions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-      setTimerSeconds(25);
-    } else {
-      handleCompleteQuiz();
-    }
-  };
-
-  // Keyboard navigation for A, B, C, D and Enter
-  useEffect(() => {
-    if (!activeQuizChallenge || quizPhase !== 'testing') return;
-
-    const currQ = activeQuestions[currentQuestionIndex];
-    if (!currQ) return;
-
-    const handleKeyDown = (e) => {
-      const key = e.key ? e.key.toUpperCase() : '';
-      if (['A', 'B', 'C', 'D'].includes(key)) {
-        const idx = ['A', 'B', 'C', 'D'].indexOf(key);
-        if (idx < currQ.options.length) {
-          handleSelectOption(idx);
-        }
-      } else if (e.key === 'Enter') {
-        handleNextOrSubmit();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeQuizChallenge, quizPhase, currentQuestionIndex, activeQuestions, selectedAnswers]);
-
-  // Complete Quiz & Compute Head-to-Head Comparative Result
-  const handleCompleteQuiz = () => {
-    let correctCount = 0;
-    activeQuestions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.correctIndex) {
-        correctCount += 1;
-      }
-    });
-
-    const earnedPoints = correctCount * 4 + (correctCount === activeQuestions.length ? 10 : 0);
-    const opponentPoints = activeQuizChallenge.opponentScore?.points ?? Math.max(8, (correctCount - 1) * 4);
-    const opponentCorrect = activeQuizChallenge.opponentScore?.correct ?? Math.max(2, correctCount - 1);
-    const isVictory = earnedPoints >= opponentPoints;
-
-    const summary = {
-      userCorrect: correctCount,
-      totalQuestions: activeQuestions.length,
-      userPoints: earnedPoints,
-      masteryPct: Math.round((correctCount / activeQuestions.length) * 100),
-      timeTaken: '02:08',
-      isVictory,
-      opponentName: activeQuizChallenge.opponent.name,
-      opponentPoints,
-      opponentCorrect
-    };
-
-    setQuizResultSummary(summary);
-    setQuizPhase('results');
-
-    // Reset any container scrolls so results render perfectly at top
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      const root = document.getElementById('root');
-      if (root) root.scrollTop = 0;
-      const rootDiv = root?.firstElementChild;
-      if (rootDiv) rootDiv.scrollTop = 0;
-      const main = document.querySelector('main');
-      if (main) main.scrollTop = 0;
-    }, 10);
-
-    if (onAwardPoints) onAwardPoints(earnedPoints);
-
-    // Update challenge in state to 'finished'
-    setChallenges((prev) =>
-      prev.map((c) => {
-        if (c.id === activeQuizChallenge.id) {
-          const userAnsArray = activeQuestions.map((q, idx) =>
-            selectedAnswers[idx] !== undefined ? selectedAnswers[idx] : q.correctIndex
-          );
-          const oppAnsArray = activeQuestions.map((q, idx) => {
-            if (idx < opponentCorrect) {
-              return q.correctIndex;
-            }
-            return (q.correctIndex + 1) % q.options.length;
-          });
-
-          return {
-            ...c,
-            status: 'finished',
-            userAnswers: userAnsArray,
-            opponentAnswers: oppAnsArray,
-            userScore: {
-              points: earnedPoints,
-              correct: correctCount,
-              total: activeQuestions.length,
-              timeTaken: '02:08',
-              won: isVictory
-            },
-            opponentScore: {
-              points: opponentPoints,
-              correct: opponentCorrect,
-              total: activeQuestions.length,
-              timeTaken: '02:45',
-              won: !isVictory
-            }
-          };
-        }
-        return c;
-      })
-    );
-  };
-
-  // ============================================================================
-  // RENDER: IN-QUIZ RUNNER OVERLAY (IF ACTIVE QUIZ IS RUNNING)
-  // ============================================================================
-  if (activeQuizChallenge) {
-    // 1. Loading Phase
-    if (quizPhase === 'loading') {
-      return (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxSizing: 'border-box'
-          }}
-        >
-          <div
-            style={{
-              background: '#FFFFFF',
-              border: '1px solid #E2E6EF',
-              borderRadius: '24px',
-              padding: '36px 32px',
-              boxShadow: '0 8px 30px rgba(40, 61, 130, 0.06)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-              maxWidth: '430px',
-              width: '100%',
-              boxSizing: 'border-box'
-            }}
-          >
-            <div
-              style={{
-                width: '72px',
-                height: '72px',
-                borderRadius: '20px',
-                background: '#FFFFFF',
-                border: '1.5px solid #ADC3F3',
-                boxShadow: '0 8px 24px rgba(40, 61, 130, 0.08)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '18px'
-              }}
-            >
-              <img
-                src="/assets/truesight-logo-colour-1024 2.png"
-                alt="TrueSights"
-                style={{ width: '44px', height: '44px', objectFit: 'contain' }}
-              />
-            </div>
-
-            <div
-              style={{
-                fontSize: '11px',
-                fontWeight: 800,
-                color: '#4B7EE8',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                marginBottom: '4px'
-              }}
-            >
-              PEER ENGAGEMENT HARNESS
-            </div>
-
-            <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1F2537', margin: '0 0 6px 0' }}>
-              Launching Peer Challenge
-            </h3>
-
-            <p style={{ fontSize: '13px', color: '#6B7790', margin: '0 0 18px 0' }}>
-              {activeQuizChallenge.topic} vs {activeQuizChallenge.opponent.name}
-            </p>
-
-            <div
-              style={{
-                width: '100%',
-                height: '6px',
-                background: '#EEF2F6',
-                borderRadius: '999px',
-                overflow: 'hidden'
-              }}
-            >
-              <div
-                style={{
-                  width: `${loadingProgress}%`,
-                  height: '100%',
-                  background: 'linear-gradient(90deg, #FEE047 0%, #4B7EE8 100%)',
-                  borderRadius: '999px',
-                  transition: 'width 0.1s linear'
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // 2. Testing Phase
-    if (quizPhase === 'testing') {
-      const currQ = activeQuestions[currentQuestionIndex];
-      const isSelected = (optIdx) => selectedAnswers[currentQuestionIndex] === optIdx;
-
-      return (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            boxSizing: 'border-box',
-            overflow: 'hidden'
-          }}
-        >
-          {/* Header Telemetry Bar */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '16px',
-              flexShrink: 0
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button
-                type="button"
-                onClick={() => setActiveQuizChallenge(null)}
-                style={{
-                  background: '#FFFFFF',
-                  border: '1px solid #CBD5E1',
-                  borderRadius: '8px',
-                  padding: '6px 12px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  color: '#0B1A2B',
-                  cursor: 'pointer'
-                }}
-              >
-                ← Exit Challenge
-              </button>
-              <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#8A97A6', textTransform: 'uppercase' }}>
-                  PEER SHOWDOWN
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: '#0B1A2B' }}>
-                  {activeQuizChallenge.topic} <span style={{ color: '#8A97A6' }}>vs</span> {activeQuizChallenge.opponent.name}
-                </div>
-              </div>
-            </div>
-
-            {/* Timer & Question Progress */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div
-                style={{
-                  background: timerSeconds <= 5 ? '#FEE2E2' : '#FFFFFF',
-                  border: `1px solid ${timerSeconds <= 5 ? '#EF4444' : '#E2DDD3'}`,
-                  borderRadius: '8px',
-                  padding: '6px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontWeight: 800,
-                  fontSize: '13px',
-                  color: timerSeconds <= 5 ? '#DC2626' : '#0B1A2B'
-                }}
-              >
-                <Icon name="clock" size={14} color="currentColor" />
-                <span>00:{timerSeconds < 10 ? `0${timerSeconds}` : timerSeconds}</span>
-              </div>
-
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#4B7EE8' }}>
-                Question {currentQuestionIndex + 1} of {activeQuestions.length}
-              </div>
-            </div>
-          </div>
-
-          {/* Question Box */}
-          <div
-            style={{
-              flex: 1,
-              background: '#FFFFFF',
-              borderRadius: '16px',
-              border: '1px solid #E2E6EF',
-              padding: '24px 32px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              boxSizing: 'border-box',
-              overflowY: 'auto'
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  color: '#8A97A6',
-                  textTransform: 'uppercase',
-                  marginBottom: '8px'
-                }}
-              >
-                QUESTION {currentQuestionIndex + 1}
-              </div>
-              <h2
-                style={{
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  color: '#0B1A2B',
-                  lineHeight: '26px',
-                  margin: '0 0 24px 0',
-                  fontFamily: 'var(--font-heading, "Space Grotesk", sans-serif)'
-                }}
-              >
-                {currQ.question}
-              </h2>
-
-              {/* Options Stack */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {currQ.options.map((opt, optIdx) => {
-                  const active = isSelected(optIdx);
-                  return (
-                    <button
-                      key={opt.letter}
-                      id={`quiz-option-${optIdx}`}
-                      type="button"
-                      onClick={() => handleSelectOption(optIdx)}
-                      style={{
-                        padding: '14px 18px',
-                        borderRadius: '12px',
-                        border: `1.5px solid ${active ? '#0B3A6F' : '#E2DDD3'}`,
-                        background: active ? '#F0F7FF' : '#FFFFFF',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '14px',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '8px',
-                          background: active ? '#0B3A6F' : '#F1F5F9',
-                          color: active ? '#FFFFFF' : '#64748B',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '12px',
-                          fontWeight: 800,
-                          flexShrink: 0
-                        }}
-                      >
-                        {opt.letter}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '13.5px',
-                          fontWeight: active ? 700 : 500,
-                          color: active ? '#0B1A2B' : '#334155',
-                          lineHeight: '19px'
-                        }}
-                      >
-                        {opt.text}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Bottom Actions */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingTop: '20px',
-                borderTop: '1px solid #EEF2F6',
-                marginTop: '20px'
-              }}
-            >
-              <div style={{ fontSize: '11px', color: '#8A97A6' }}>
-                Press <strong>A, B, C, D</strong> to select · <strong>Enter</strong> to advance
-              </div>
-
-              <button
-                id="quiz-next-question-btn"
-                type="button"
-                onClick={handleNextOrSubmit}
-                style={{
-                  background: '#FEE047',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 24px',
-                  color: '#0B1A2B',
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 2px 6px rgba(254, 224, 71, 0.35)'
-                }}
-              >
-                <span>{currentQuestionIndex === activeQuestions.length - 1 ? 'Submit Challenge' : 'Next Question'}</span>
-                <Icon name="chevronRight" size={14} color="#0B1A2B" />
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // 3. Results Phase (Comparative Head-to-Head Breakdown)
-    if (quizPhase === 'results' && quizResultSummary) {
-      const currReviewQ = activeQuestions[activeReviewIndex];
-      const isCorrectReview = selectedAnswers[activeReviewIndex] === currReviewQ.correctIndex;
-
-      return (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'grid',
-            gridTemplateColumns: '330px minmax(0, 1fr)',
-            gap: '16px',
-            boxSizing: 'border-box',
-            overflow: 'hidden'
-          }}
-        >
-          {/* LEFT COLUMN: Head-to-Head Winner Card & Mastery Gauge */}
-          <div
-            style={{
-              background: '#FFFFFF',
-              border: '1px solid #E2DDD3',
-              borderRadius: '16px',
-              padding: '16px 18px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              boxSizing: 'border-box',
-              height: '100%',
-              overflow: 'hidden'
-            }}
-          >
-            <div style={{ textAlign: 'center' }}>
-                {/* Victory Ribbon */}
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: quizResultSummary.isVictory ? '#ECFDF5' : '#FFFBEB',
-                    border: `1px solid ${quizResultSummary.isVictory ? '#A7F3D0' : '#FCD34D'}`,
-                    padding: '3px 12px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    color: quizResultSummary.isVictory ? '#059669' : '#D97706',
-                    marginBottom: '6px'
-                  }}
-                >
-                  <span>{quizResultSummary.isVictory ? 'CHALLENGE VICTORY!' : 'WELL CONTESTED!'}</span>
-                </div>
-
-                <h2
-                  style={{
-                    fontSize: '19px',
-                    fontWeight: 800,
-                    color: '#0B1A2B',
-                    margin: '0 0 2px 0',
-                    fontFamily: 'var(--font-heading, "Space Grotesk", sans-serif)'
-                  }}
-                >
-                  Session Results
-                </h2>
-                <p style={{ fontSize: '12px', color: '#6B7790', margin: 0 }}>
-                  Excellent work on {activeQuizChallenge.topic}!
-                </p>
-
-                {/* Score Circular Gauge */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', margin: '10px 0' }}>
-                  <div
-                    style={{
-                      width: '76px',
-                      height: '76px',
-                      borderRadius: '50%',
-                      background: quizResultSummary.isVictory ? '#ECFDF5' : '#F0F7FF',
-                      border: `3.5px solid ${quizResultSummary.isVictory ? '#10B981' : '#0B3A6F'}`,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <span style={{ fontSize: '20px', fontWeight: 800, color: '#0B1A2B', lineHeight: '22px' }}>
-                      {quizResultSummary.masteryPct}%
-                    </span>
-                    <span style={{ fontSize: '8.5px', fontWeight: 700, color: '#64748B', letterSpacing: '0.06em' }}>
-                      MASTERY
-                    </span>
-                  </div>
-
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#0B1A2B' }}>
-                    {quizResultSummary.userCorrect} of {quizResultSummary.totalQuestions} Questions Correct
-                  </div>
-                </div>
-
-                {/* COMPARATIVE HEAD-TO-HEAD PODIUM */}
-                <div
-                  style={{
-                    background: '#FFFFFF',
-                    border: '1px solid #E2DDD3',
-                    borderRadius: '10px',
-                    padding: '10px 12px',
-                    marginBottom: '10px',
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#8A97A6', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    PEER SCORE COMPARISON
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #F1F5F9' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0B1A2B' }}>You (Student)</span>
-                      {quizResultSummary.isVictory && (
-                        <span style={{ background: '#ECFDF5', color: '#059669', fontSize: '9.5px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px' }}>
-                          WINNER
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#0B3A6F' }}>
-                      {quizResultSummary.userPoints} pts ({quizResultSummary.userCorrect}/{quizResultSummary.totalQuestions})
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '5px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#64748B' }}>{quizResultSummary.opponentName}</span>
-                    </div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B' }}>
-                      {quizResultSummary.opponentPoints} pts ({quizResultSummary.opponentCorrect}/{quizResultSummary.totalQuestions})
-                    </div>
-                  </div>
-                </div>
-
-                {/* Points Reward Box */}
-                <div
-                  style={{
-                    background: '#FEF9C3',
-                    border: '1px solid #FDE047',
-                    borderRadius: '8px',
-                    padding: '8px 10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    textAlign: 'left'
-                  }}
-                >
-                  <Icon name="rewardGem" size={18} color="#D97706" />
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#854D0E' }}>
-                      +{quizResultSummary.userPoints} PTS ACQUIRED
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#A16207' }}>
-                      Added to Institute Leaderboard & Wallet
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveQuizChallenge(null);
-                    setActiveTab('finished');
-                  }}
-                  style={{
-                    width: '100%',
-                    height: '40px',
-                    background: '#FEE047',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: '#0B1A2B',
-                    fontSize: '12.5px',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    boxShadow: '0 2px 6px rgba(254, 224, 71, 0.35)'
-                  }}
-                >
-                  <span>Return to Challenges Hub</span>
-                </button>
-
-                {onViewResults && (
-                  <button
-                    type="button"
-                    onClick={onViewResults}
-                    style={{
-                      width: '100%',
-                      height: '38px',
-                      background: '#FFFFFF',
-                      border: '1px solid #CBD5E1',
-                      borderRadius: '8px',
-                      color: '#0B1A2B',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    View Overall Results Ledger →
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN: Question Detailed Feedback & Analysis */}
-            <div
-              style={{
-                background: '#FFFFFF',
-                border: '1px solid #E2DDD3',
-                borderRadius: '16px',
-                padding: '20px 24px',
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%',
-                boxSizing: 'border-box',
-                overflow: 'hidden'
-              }}
-            >
-              <div
-                style={{
-                  paddingBottom: '12px',
-                  borderBottom: '1px solid #EEF2F6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '10px', fontWeight: 800, color: '#8A97A6', textTransform: 'uppercase' }}>
-                    DETAILED QUESTION ANALYSIS
-                  </div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#0B1A2B' }}>
-                    {activeQuizChallenge.topic}
-                  </div>
-                </div>
-
-                {/* Question Numbers Strip */}
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {activeQuestions.map((_, idx) => {
-                    const isCorr = selectedAnswers[idx] === activeQuestions[idx].correctIndex;
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setActiveReviewIndex(idx)}
-                        style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '8px',
-                          border: idx === activeReviewIndex ? '2px solid #0B3A6F' : '1px solid transparent',
-                          background: isCorr ? '#DCFCE7' : '#FEE2E2',
-                          color: isCorr ? '#166534' : '#991B1B',
-                          fontSize: '12px',
-                          fontWeight: 800,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Q{idx + 1}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Active Review Question Card */}
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: 'auto',
-                  padding: '20px 0',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '16px'
-                }}
-              >
-                <div
-                  style={{
-                    background: isCorrectReview ? '#F0FDF4' : '#FEF2F2',
-                    border: `1px solid ${isCorrectReview ? '#BBF7D0' : '#FECACA'}`,
-                    borderRadius: '12px',
-                    padding: '18px 20px'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: isCorrectReview ? '#166534' : '#991B1B' }}>
-                      QUESTION {activeReviewIndex + 1} OF {activeQuestions.length}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        background: isCorrectReview ? '#DCFCE7' : '#FEE2E2',
-                        color: isCorrectReview ? '#166534' : '#991B1B'
-                      }}
-                    >
-                      {isCorrectReview ? '✓ Correct (+4 PTS)' : '✗ Incorrect (0 PTS)'}
-                    </span>
-                  </div>
-
-                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', lineHeight: '22px', margin: '0 0 14px 0' }}>
-                    {currReviewQ.question}
-                  </h3>
-
-                  {/* Options Overview */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {currReviewQ.options.map((opt, oIdx) => {
-                      const wasPicked = selectedAnswers[activeReviewIndex] === oIdx;
-                      const isTargetCorrect = currReviewQ.correctIndex === oIdx;
-
-                      let rowBg = '#FFFFFF';
-                      let rowBorder = '#E2E8F0';
-                      let label = null;
-
-                      if (isTargetCorrect) {
-                        rowBg = '#DCFCE7';
-                        rowBorder = '#86EFAC';
-                        label = 'CORRECT ANSWER';
-                      } else if (wasPicked) {
-                        rowBg = '#FEE2E2';
-                        rowBorder = '#FCA5A5';
-                        label = 'YOUR ANSWER';
-                      }
-
-                      return (
-                        <div
-                          key={opt.letter}
-                          style={{
-                            padding: '10px 14px',
-                            borderRadius: '8px',
-                            background: rowBg,
-                            border: `1px solid ${rowBorder}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            fontSize: '13px'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <strong style={{ color: '#0B1A2B' }}>{opt.letter}.</strong>
-                            <span style={{ color: '#1E293B' }}>{opt.text}</span>
-                          </div>
-                          {label && (
-                            <span style={{ fontSize: '10px', fontWeight: 800, color: isTargetCorrect ? '#166534' : '#991B1B' }}>
-                              {label}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Explanation Note */}
-                  {currReviewQ.explanation && (
-                    <div
-                      style={{
-                        marginTop: '14px',
-                        padding: '12px 14px',
-                        borderRadius: '8px',
-                        background: 'rgba(255, 255, 255, 0.85)',
-                        border: '1px solid rgba(0, 0, 0, 0.06)',
-                        fontSize: '12.5px',
-                        color: '#475569',
-                        lineHeight: '18px'
-                      }}
-                    >
-                      <strong style={{ color: '#0B1A2B' }}>Explanation: </strong>
-                      {currReviewQ.explanation}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      }
-    }
-
-  // ============================================================================
-  // MAIN DASHBOARD VIEW (MATCHING FIGMA NODE 210:53374)
-  // ============================================================================
   return (
     <div
       style={{
@@ -1793,7 +395,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
         {/* Right Action: "+ New Challenge" Yellow Button */}
         <button
           type="button"
-          onClick={() => setIsNewChallengeModalOpen(true)}
+          onClick={() => openNewChallenge()}
           style={{
             background: '#FEE047',
             border: 'none',
@@ -2084,6 +686,24 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
             ? activeList
             : finishedList;
 
+        if (error && !data) {
+          return (
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '14px', padding: '16px 18px', color: '#DC2626', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <span>Couldn't load your challenges: {error.message}</span>
+              <button type="button" onClick={() => refetch()} style={{ background: '#FFFFFF', border: '1px solid #FECACA', borderRadius: '8px', padding: '6px 12px', color: '#DC2626', fontWeight: 700, cursor: 'pointer' }}>
+                Retry
+              </button>
+            </div>
+          );
+        }
+        if (isLoading) {
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(420px, 1fr))', gap: isMobile ? '14px' : '20px' }}>
+              {[0, 1, 2, 3].map((i) => <div key={i} className="skeleton-shimmer" style={{ height: '260px', borderRadius: '16px' }} />)}
+            </div>
+          );
+        }
+
         if (currentTabList.length === 0) {
           return (
             <div
@@ -2125,7 +745,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
               {activeTab !== 'requests' && (
                 <button
                   type="button"
-                  onClick={() => setIsNewChallengeModalOpen(true)}
+                  onClick={() => openNewChallenge()}
                   style={{
                     marginTop: '8px',
                     padding: '8px 18px',
@@ -2183,6 +803,8 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                     }}
                   />
                 );
+              } else if (item.status === 'waiting') {
+                pillLabel = 'Peer Playing';
               } else if (item.status === 'request') {
                 pillBg = '#EFF6FF';
                 pillColor = '#1D4ED8';
@@ -2433,10 +1055,10 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                             style={{
                               fontSize: '12.5px',
                               fontWeight: 800,
-                              color: item.userScore.won ? '#059669' : '#0B3A6F'
+                              color: item.outcome === 'victory' ? '#059669' : item.outcome === 'tie' ? '#1D4ED8' : '#DC2626'
                             }}
                           >
-                            {item.userScore.won ? 'Victory' : 'Completed'}
+                            {item.outcome === 'victory' ? 'Victory' : item.outcome === 'tie' ? 'Tie' : 'Defeat'}
                           </span>
                         </div>
                       ) : (
@@ -2540,6 +1162,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                         <button
                           type="button"
                           onClick={() => handleDeclineRequest(item.id)}
+                          disabled={busyId === item.id}
                           style={{
                             background: '#FFFFFF',
                             border: '1px solid #CBD5E1',
@@ -2565,6 +1188,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                         <button
                           type="button"
                           onClick={() => handleAcceptRequest(item)}
+                          disabled={busyId === item.id}
                           style={{
                             background: '#FEE047',
                             border: 'none',
@@ -2592,7 +1216,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
-                          <span>Accept Challenge</span>
+                          <span>{busyId === item.id ? 'Accepting…' : 'Accept Challenge'}</span>
                         </button>
                       </div>
                     ) : item.status === 'active' ? (
@@ -2635,7 +1259,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Your Score:</span>
                           <strong style={{ fontSize: '13px', color: item.userScore?.won ? '#059669' : '#0B3A6F' }}>
-                            {item.userScore?.points} pts ({item.userScore?.correct}/{item.userScore?.total})
+                            {item.userScore?.correct ?? 0}/{item.userScore?.total}
                           </strong>
                         </div>
                         <button
@@ -2669,6 +1293,13 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                           <Icon name="chevronRight" size={12} color="#FFFFFF" />
                         </button>
                       </div>
+                    ) : item.status === 'waiting' ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#F59E0B', display: 'inline-block' }} />
+                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
+                          You scored <strong style={{ color: '#0B1A2B' }}>{item.userScore?.correct}/{item.userScore?.total}</strong> · waiting for {item.opponent.name} to play
+                        </span>
+                      </div>
                     ) : item.status === 'pending' ? (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -2688,6 +1319,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                         <button
                           type="button"
                           onClick={() => handleCancelChallenge(item.id)}
+                          disabled={busyId === item.id}
                           style={{
                             background: '#FFFFFF',
                             border: '1px solid #E2E8F0',
@@ -2715,14 +1347,11 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                       /* Expired */
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                         <span style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}>
-                          Invitation expired
+                          {item.endedLabel}
                         </span>
                         <button
                           type="button"
-                          onClick={() => {
-                            setSelectedDomainId(ACADEMIC_DOMAINS[0].id);
-                            setIsNewChallengeModalOpen(true);
-                          }}
+                          onClick={() => openNewChallenge({ topic: item.topic, domain: item.raw.domain, peer: item.raw.peer })}
                           style={{
                             background: '#FFFFFF',
                             border: '1px solid #CBD5E1',
@@ -2876,6 +1505,8 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                       cursor: 'pointer'
                     }}
                   >
+                    {topicsQuery.isLoading && <option value="">Loading your roadmaps…</option>}
+                    {!topicsQuery.isLoading && !ACADEMIC_DOMAINS.length && <option value="">Create a roadmap first to pick topics</option>}
                     {ACADEMIC_DOMAINS.map((dom) => (
                       <option key={dom.id} value={dom.id}>
                         {dom.name}
@@ -2975,7 +1606,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                 </div>
 
                 {/* Autocomplete peer dropdown */}
-                {isPeerDropdownOpen && (
+                {isPeerDropdownOpen && filteredPeers.length > 0 && (
                   <div
                     style={{
                       position: 'absolute',
@@ -3002,6 +1633,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                           setSearchPeerQuery(peer.name);
                           setIsPeerDropdownOpen(false);
                         }}
+                        title={peer.sameInstitute ? 'From your campus' : undefined}
                         style={{
                           padding: '10px 14px',
                           display: 'flex',
@@ -3017,23 +1649,31 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                         onMouseLeave={(e) => { e.currentTarget.style.background = selectedPeer?.id === peer.id ? '#F0F7FF' : '#FFFFFF'; }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img
-                            src={peer.avatar}
-                            alt={peer.name}
-                            style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                          />
+                          {peer.avatar ? (
+                            <img
+                              src={peer.avatar}
+                              alt={peer.name}
+                              style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <span style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#0B3A6F', color: '#FFFFFF', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {peer.name.charAt(0)}
+                            </span>
+                          )}
                           <div>
                             <div style={{ fontSize: '13px', fontWeight: 700, color: '#0B1A2B' }}>
                               {peer.name}
                             </div>
                             <div style={{ fontSize: '11px', color: '#64748B' }}>
-                              {peer.email} · {peer.dept}
+                              {[peer.email, peer.dept].filter(Boolean).join(' · ')}
                             </div>
                           </div>
                         </div>
-                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#4B7EE8' }}>
-                          {peer.points} PTS
-                        </span>
+                        {peer.sameInstitute && (
+                          <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#047857', background: '#ECFDF5', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>
+                            Your campus
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -3056,7 +1696,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ color: '#059669', fontSize: '14px' }}>✓</span>
                       <span style={{ fontSize: '12px', fontWeight: 700, color: '#065F46' }}>
-                        Verified Target: <strong>{selectedPeer.name}</strong> ({selectedPeer.email})
+                        Verified Target: <strong>{selectedPeer.name}</strong>{selectedPeer.email || selectedPeer.emailHint ? ` (${selectedPeer.email || selectedPeer.emailHint})` : ''}
                       </span>
                     </div>
                     <button
@@ -3126,6 +1766,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
               <button
                 type="button"
                 onClick={handleAuthorizeChallenge}
+                disabled={isAuthorizing}
                 style={{
                   background: '#FEE047',
                   border: 'none',
@@ -3141,7 +1782,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                   boxShadow: '0 2px 6px rgba(254, 224, 71, 0.35)'
                 }}
               >
-                <span>Authorize Challenge</span>
+                <span>{isAuthorizing ? 'Generating questions…' : 'Authorize Challenge'}</span>
                 <Icon name="chevronRight" size={12} color="#0B1A2B" />
               </button>
             </div>
@@ -3329,7 +1970,9 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                 <span style={{ fontSize: '12.5px', color: '#0369A1' }}>
                   {selectedComparisonModal.userScore?.won
                     ? `Victory verified! You outperformed ${selectedComparisonModal.opponent.name} by +${(selectedComparisonModal.userScore?.points || 0) - (selectedComparisonModal.opponentScore?.points || 0)} pts.`
-                    : `Well fought! ${selectedComparisonModal.opponent.name} earned top points in this engagement.`}
+                    : selectedComparisonModal.outcome === 'tie'
+                      ? `Dead heat - you and ${selectedComparisonModal.opponent.name} scored the same.`
+                      : `Well fought! ${selectedComparisonModal.opponent.name} earned top points in this engagement.`}
                 </span>
               </div>
 
@@ -3415,6 +2058,8 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
 
                 {/* List of Questions */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {compare.isLoading && <div className="skeleton-shimmer" style={{ height: '160px', borderRadius: '12px' }} />}
+                  {compare.error && <div style={{ color: '#DC2626', fontSize: '13px', fontWeight: 600 }}>{compare.error.message}</div>}
                   {comparisonQuestions.map((q) => (
                     <div
                       key={q.qNum}
@@ -3492,7 +2137,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                             }}
                           >
                             <Icon name="statusUp" size={12} color="#1D4ED8" />
-                            Advantage You (+4 pts)
+                            Advantage You (+1)
                           </span>
                         ) : !q.isUserCorrect && q.isOppCorrect ? (
                           <span
@@ -3510,7 +2155,7 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                             }}
                           >
                             <Icon name="clock" size={12} color="#B45309" />
-                            Advantage {selectedComparisonModal.opponent.name} (+4 pts)
+                            Advantage {selectedComparisonModal.opponent.name} (+1)
                           </span>
                         ) : (
                           <span
@@ -3666,11 +2311,11 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Icon name="checkCircle" size={14} color="#10B981" />
                           <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#065F46' }}>
-                            Correct Solution: Option {q.correctOpt.letter} — {q.correctOpt.text}
+                            Correct answer: {q.correctOpt.text}
                           </span>
                         </div>
                         <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: '1.45', paddingLeft: '20px' }}>
-                          <strong style={{ color: '#0B3A6F' }}>Technical Rationale:</strong> {q.explanation}
+                          {q.explanation && (<><strong style={{ color: '#0B3A6F' }}>Explanation:</strong> {q.explanation}</>)}
                         </div>
                       </div>
                     </div>
@@ -3721,30 +2366,6 @@ export default function ChallengesPage({ onBackToDashboard, onAwardPoints, onVie
         </ModalPortal>
       )}
 
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            background: '#0B1A2B',
-            color: '#FFFFFF',
-            padding: '12px 20px',
-            borderRadius: '8px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            fontSize: '13px',
-            fontWeight: 600,
-            zIndex: 10000
-          }}
-        >
-          <Icon name="checkCircle" variant="bold" size={16} color="#10B981" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,89 +1,55 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import Icon from '../design-system/icons';
+import { api, invalidate, keys, setQueryData, useQuery } from '../data';
+import { useTS } from '../session';
+import { uidKey } from '../../revamp/lib/api';
+import { deleteTextbook } from '../../utils/textbookServiceClient';
 import ModalPortal from './ModalPortal';
 
 // ============================================================================
 // INITIAL TRASH DATASET
 // Realistic student items: Projects, Textbook Notes, and Quiz Attempts
 // ============================================================================
-const INITIAL_TRASH_ITEMS = [
-  {
-    id: 'trash-1',
-    title: 'Kerala Building Rules 2025 (Draft Architecture v1)',
-    type: 'project',
-    category: 'Civil & Urban',
-    originalPath: 'Project Roadmaps > Private Roadmaps',
-    deletedDate: 'Oct 3, 2026',
-    daysRemaining: 27,
-    meta: '5 Modules · 18 Subtopics',
-    author: 'Test Student'
-  },
-  {
-    id: 'trash-2',
-    title: 'Marine Auxiliary Engine Telemetry Setup',
-    type: 'project',
-    category: 'Marine Engineering',
-    originalPath: 'Project Roadmaps > Active Workspace',
-    deletedDate: 'Sep 28, 2026',
-    daysRemaining: 22,
-    meta: '3 Milestones · 12 Wiring Schematics',
-    author: 'Test Student'
-  },
-  {
-    id: 'trash-3',
-    title: 'Autonomous Quadcopter Flight Dynamics Roadmap',
-    type: 'project',
-    category: 'AI & Robotics',
-    originalPath: 'Project Roadmaps > Draft Archives',
-    deletedDate: 'Sep 17, 2026',
-    daysRemaining: 11,
-    meta: '8 Modules · 34 Tasks',
-    author: 'Test Student'
-  },
-  {
-    id: 'trash-4',
-    title: 'Fluid Mechanics Ch 4 - Navier Stokes Derivation.pdf',
-    type: 'textbook',
-    category: 'Mechanical Systems',
-    originalPath: 'Ask a Textbook > Uploaded Sources',
-    deletedDate: 'Oct 1, 2026',
-    daysRemaining: 25,
-    meta: '4.2 MB PDF · 32 Pages',
-    author: 'System Upload'
-  },
-  {
-    id: 'trash-5',
-    title: 'Thermodynamics Rankine Cycle Q&A Extraction',
-    type: 'textbook',
-    category: 'Thermal & Energy',
-    originalPath: 'Ask a Textbook > Saved Summaries',
-    deletedDate: 'Sep 8, 2026',
-    daysRemaining: 2,
-    meta: '14 Questions Extracted',
-    author: 'AI Synthesis'
-  },
-  {
-    id: 'trash-6',
-    title: 'Mechatronics Sensor Fusion Mock Diagnostic',
-    type: 'quiz',
-    category: 'Systems Engineering',
-    originalPath: 'Challenges > Diagnostic Practice Runs',
-    deletedDate: 'Sep 24, 2026',
-    daysRemaining: 18,
-    meta: '10 Questions · Scored 8/10',
-    author: 'Self Assessment'
-  }
-];
+// API item types -> the three tabs of this screen.
+const TAB_TYPE = { project: 'project', textbook: 'textbook', chat: 'textbook', result: 'quiz' };
 
-export default function TrashPage({ onBackToDashboard, onNavigateToProjects }) {
-  const [items, setItems] = useState(INITIAL_TRASH_ITEMS);
+/** A /api/v2/trash item in the shape the trash rows render. */
+const toRow = (i) => ({
+  id: `${i.type}:${i.id}`,
+  apiType: i.type,
+  apiId: i.id,
+  title: i.title,
+  type: TAB_TYPE[i.type] || 'project',
+  category: i.domain || (i.type === 'result' ? 'Quiz' : i.type === 'chat' ? 'Saved conversation' : i.type === 'textbook' ? 'Uploaded source' : 'Roadmap'),
+  originalPath: (i.source || '').replace(/ › /g, ' > '),
+  deletedDate: i.trashedAt ? new Date(i.trashedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+  daysRemaining: i.daysLeft,
+  meta: i.meta || ''
+});
+
+const asApi = (rows) => rows.map((r) => ({ type: r.apiType, id: r.apiId }));
+
+/** Delete textbooks from the textbook service (only the owner's token can). */
+const purgeBooks = (bookIds) =>
+  Promise.allSettled(bookIds.map((bookId) => deleteTextbook(bookId))).then((r) => r.filter((x) => x.status === 'rejected').length);
+
+export default function TrashPage() {
+  const { go } = useTS();
+  const [params] = useSearchParams();
+  const { data, error, isLoading, refetch } = useQuery(keys.trash(), api.trash, { staleMs: 15_000 });
+  const items = useMemo(() => (data?.items || []).map(toRow), [data]);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'project' | 'textbook' | 'quiz'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [busy, setBusy] = useState(false);
+  const expiredHandled = useRef(false);
+  const highlight = params.get('highlight'); // "<type>:<id>" from a trash-expiring notification
 
   // Modal Dialogs
   const [confirmEmptyOpen, setConfirmEmptyOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null); // a row, or { title, rows } for a batch
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
@@ -96,12 +62,19 @@ export default function TrashPage({ onBackToDashboard, onNavigateToProjects }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Toast feedback
-  const [toastMessage, setToastMessage] = useState(null);
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3200);
-  };
+  // Finish the 30-day purge for textbooks (the backend can't delete those itself).
+  useEffect(() => {
+    if (!data?.expiredTextbooks?.length || expiredHandled.current) return;
+    expiredHandled.current = true;
+    const ids = data.expiredTextbooks.map((b) => b.bookId);
+    purgeBooks(ids).then(() => api.purge(ids.map((bookId) => ({ type: 'textbook', id: bookId })))).catch(() => {});
+  }, [data]);
+
+  useEffect(() => {
+    if (highlight && items.some((i) => i.id === highlight)) setSelectedIds(new Set([highlight]));
+  }, [highlight, items]);
+
+  const showToast = (msg) => toast.success(msg);
 
   // Filtered Items
   const filteredItems = useMemo(() => {
@@ -143,47 +116,80 @@ export default function TrashPage({ onBackToDashboard, onNavigateToProjects }) {
     }
   };
 
-  // Restore Single Item
-  const handleRestore = (item) => {
-    setItems((prev) => prev.filter((i) => i.id !== item.id));
-    selectedIds.delete(item.id);
-    setSelectedIds(new Set(selectedIds));
-    showToast(`✓ Restored "${item.title}" to ${item.originalPath}.`);
+  const drop = (rows) => {
+    const gone = new Set(rows.map((r) => `${r.apiType}:${r.apiId}`));
+    setQueryData(keys.trash(), (d) => d && { ...d, items: d.items.filter((i) => !gone.has(`${i.type}:${i.id}`)) });
+    setSelectedIds((sel) => new Set([...sel].filter((k) => !gone.has(k))));
   };
+
+  const restore = async (rows) => {
+    if (!rows.length) return;
+    setBusy(true);
+    try {
+      await api.restore(asApi(rows));
+      drop(rows);
+      invalidate(keys.projects(), keys.results(), keys.dashboard(), `${uidKey('chats:')}*`, uidKey('assistant:trashed-books'));
+      showToast(rows.length === 1 ? `Restored "${rows[0].title}" to ${rows[0].originalPath}.` : `Restored ${rows.length} items to your workspace.`);
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const destroy = async (rows) => {
+    if (!rows.length) return;
+    setBusy(true);
+    try {
+      const res = await api.purge(asApi(rows));
+      const failed = await purgeBooks(res.textbooksToDelete || []);
+      drop(rows);
+      showToast(`Permanently deleted ${rows.length === 1 ? `"${rows[0].title}"` : `${rows.length} items`}.${failed ? " Some textbooks couldn't be removed from the library - try again later." : ''}`);
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Restore Single Item
+  const handleRestore = (item) => restore([item]);
 
   // Restore Batch
-  const handleRestoreSelected = () => {
-    const count = selectedIds.size;
-    setItems((prev) => prev.filter((i) => !selectedIds.has(i.id)));
-    setSelectedIds(new Set());
-    showToast(`✓ Restored ${count} item${count > 1 ? 's' : ''} to original workspace.`);
-  };
+  const handleRestoreSelected = () => restore(items.filter((i) => selectedIds.has(i.id)));
 
-  // Permanent Delete Single Item
+  // Permanent Delete (single row or a confirmed batch)
   const handleConfirmPermanentDelete = () => {
     if (!itemToDelete) return;
-    setItems((prev) => prev.filter((i) => i.id !== itemToDelete.id));
-    selectedIds.delete(itemToDelete.id);
-    setSelectedIds(new Set(selectedIds));
-    showToast(`Permanently deleted "${itemToDelete.title}".`);
+    const rows = itemToDelete.rows || [itemToDelete];
     setItemToDelete(null);
+    destroy(rows);
   };
 
-  // Delete Batch
+  // Delete Batch: confirm first, it can't be undone
   const handleDeleteSelected = () => {
-    const count = selectedIds.size;
-    setItems((prev) => prev.filter((i) => !selectedIds.has(i.id)));
-    setSelectedIds(new Set());
-    showToast(`Permanently deleted ${count} item${count > 1 ? 's' : ''}.`);
+    const rows = items.filter((i) => selectedIds.has(i.id));
+    if (rows.length) setItemToDelete({ title: `${rows.length} selected item${rows.length > 1 ? 's' : ''}`, rows });
   };
 
   // Empty Entire Trash
-  const handleConfirmEmptyTrash = () => {
-    setItems([]);
-    setSelectedIds(new Set());
+  const handleConfirmEmptyTrash = async () => {
     setConfirmEmptyOpen(false);
-    showToast('Trash emptied permanently. All archived files purged.');
+    setBusy(true);
+    try {
+      const res = await api.emptyTrash();
+      await purgeBooks(res.textbooksToDelete || []);
+      setQueryData(keys.trash(), (d) => d && { ...d, items: [] });
+      setSelectedIds(new Set());
+      showToast('Trash emptied.');
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
   };
+
+  const onBackToDashboard = () => go('dashboard');
 
   // Get icon and badge styling per item type
   const getTypeBadge = (type) => {
@@ -302,6 +308,7 @@ export default function TrashPage({ onBackToDashboard, onNavigateToProjects }) {
             <button
               type="button"
               onClick={() => setConfirmEmptyOpen(true)}
+              disabled={busy || !items.length}
               style={{
                 background: 'rgba(239, 68, 68, 0.18)',
                 border: '1px solid rgba(239, 68, 68, 0.45)',
@@ -643,6 +650,7 @@ export default function TrashPage({ onBackToDashboard, onNavigateToProjects }) {
               <button
                 type="button"
                 onClick={handleRestoreSelected}
+                disabled={busy}
                 style={{
                   background: '#0B3A6F',
                   color: '#FFFFFF',
@@ -663,6 +671,7 @@ export default function TrashPage({ onBackToDashboard, onNavigateToProjects }) {
               <button
                 type="button"
                 onClick={handleDeleteSelected}
+                disabled={busy}
                 style={{
                   background: '#FEF2F2',
                   color: '#DC2626',
@@ -687,7 +696,17 @@ export default function TrashPage({ onBackToDashboard, onNavigateToProjects }) {
       {/* ======================================================================
           4. TRASH ITEMS LIST (Clean TrueSights Design System Cards)
           ====================================================================== */}
-      {filteredItems.length === 0 ? (
+      {error && !data && (
+        <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '14px', padding: '14px 18px', color: '#DC2626', fontSize: '13px', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+          <span>Couldn't load your trash: {error.message}</span>
+          <button type="button" onClick={() => refetch()} style={{ background: '#FFFFFF', border: '1px solid #FECACA', borderRadius: '8px', padding: '6px 12px', color: '#DC2626', fontWeight: 700, cursor: 'pointer' }}>Retry</button>
+        </div>
+      )}
+      {isLoading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {[0, 1, 2].map((i) => <div key={i} className="skeleton-shimmer" style={{ height: '96px', borderRadius: '14px' }} />)}
+        </div>
+      ) : filteredItems.length === 0 ? (
         <div
           style={{
             background: '#FFFFFF',
@@ -1210,29 +1229,6 @@ export default function TrashPage({ onBackToDashboard, onNavigateToProjects }) {
         </ModalPortal>
       )}
 
-      {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            background: '#0B1A2B',
-            color: '#FFFFFF',
-            padding: '12px 20px',
-            borderRadius: '10px',
-            fontSize: '13px',
-            fontWeight: 700,
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
-            zIndex: 99999,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </div>
   );
 }

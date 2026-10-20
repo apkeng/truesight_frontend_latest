@@ -1,27 +1,37 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import Icon from '../design-system/icons';
 import ModalPortal from './ModalPortal';
+import UserAvatar from './UserAvatar';
+import { api, invalidate, keys, setQueryData, useQuery } from '../data';
+import { fileToAvatarDataUrl, timeAgo } from '../../revamp/lib/format';
 
-export default function ProfilePage({ onBackToDashboard }) {
-  // Profile State
-  const [profile, setProfile] = useState({
-    fullName: 'Yadu Krishna Pullagura',
-    email: 'yadu.krishna@truesights.edu',
-    phone: '+91 98765 43210',
-    academicLevel: 'Postgraduate (M.Tech Autonomous Systems)',
-    institutionName: 'Indian Institute of Technology, Madras (IIT-M)',
-    organizationId: 'TS-2026-IITM-8942',
-    avatarUrl: '/assets/user-profile.jpg',
-    accountRole: 'Verified Student',
-    securityStatus: 'Hardware Token 2FA Active',
-    privacyStatus: 'Privacy Secured',
-    protocolIdentityUrl: 'https://truesights.id/student/yadu.krishna',
-    lastUpdated: 'Today at 02:45 PM'
-  });
+/** /api/v2/me in the shape the profile form edits. */
+const toForm = (me) => ({
+  fullName: me.name || '',
+  email: me.email || '',
+  phone: me.phone || '',
+  academicLevel: me.educationLevel || '',
+  institutionName: me.instituteName || '',
+  organizationId: me.studentId || '',
+  avatarUrl: me.photoURL || null,
+  accountRole: me.verified ? (me.role === 'Level-1' ? 'Verified Educator' : 'Verified Student') : 'Student',
+  securityStatus: me.passwordChangedAt ? `Password changed ${timeAgo(me.passwordChangedAt)}` : 'Password protected',
+  privacyStatus: 'Privacy Secured',
+  protocolIdentityUrl: me.uid,
+  lastUpdated: me.createdAt ? `Member since ${new Date(me.createdAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}` : ''
+});
+
+export default function ProfilePage() {
+  const { data: me, error, isLoading, refetch } = useQuery(keys.me(), api.me, { staleMs: 120_000 });
+  // Profile State (the editable copy of /api/v2/me)
+  const [profile, setProfile] = useState(null);
+  useEffect(() => {
+    if (me) setProfile(toForm(me));
+  }, [me]);
 
   // Updating Lifecycle State
   const [isUpdating, setIsUpdating] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
   const [copiedUrl, setCopiedUrl] = useState(false);
 
   // Password Modal State
@@ -41,30 +51,27 @@ export default function ProfilePage({ onBackToDashboard }) {
   const fileInputRef = useRef(null);
 
   // Toast Helper
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 2800);
-  };
+  const showToast = (msg) => toast.success(msg);
 
-  // Avatar Photo Upload Handler
-  const handlePhotoSelect = (e) => {
+  // Avatar Photo Upload Handler: resized client-side, stored as a small data URL
+  const setPhoto = async (photo) => {
+    try {
+      await api.setPhoto(photo);
+      setQueryData(keys.me(), (d) => d && { ...d, photoURL: photo });
+      setQueryData(keys.bootstrap(), (d) => d && { ...d, profile: { ...d.profile, photoURL: photo } });
+      showToast(photo ? 'Profile photo updated.' : 'Profile photo removed.');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+  const handlePhotoSelect = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        showToast('Image size exceeds 5MB limit.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setProfile((prev) => ({
-          ...prev,
-          avatarUrl: event.target.result
-        }));
-        showToast('Profile photo updated.');
-      };
-      reader.readAsDataURL(file);
+    e.target.value = '';
+    if (!file) return;
+    try {
+      await setPhoto(await fileToAvatarDataUrl(file));
+    } catch (err) {
+      toast.error(err.message);
     }
   };
 
@@ -74,38 +81,37 @@ export default function ProfilePage({ onBackToDashboard }) {
       navigator.clipboard.writeText(profile.protocolIdentityUrl);
     }
     setCopiedUrl(true);
-    showToast('Protocol URL copied.');
+    showToast('TrueSights ID copied.');
     setTimeout(() => setCopiedUrl(false), 2000);
   };
 
   // Update Profile Form Submit
-  const handleUpdateProfile = (e) => {
+  const handleUpdateProfile = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
     if (!profile.fullName.trim()) {
       showToast('Legal full name cannot be blank.');
       return;
     }
-    if (!profile.email.trim() || !profile.email.includes('@')) {
-      showToast('Please enter a valid electronic email.');
-      return;
-    }
-    if (!profile.institutionName.trim()) {
-      showToast('Institution name is required.');
-      return;
-    }
 
     setIsUpdating(true);
-
-    setTimeout(() => {
-      setIsUpdating(false);
-      setProfile((prev) => ({
-        ...prev,
-        lastUpdated: 'Just now',
-        protocolIdentityUrl: `https://truesights.id/student/${prev.fullName.toLowerCase().replace(/[^a-z0-9]/g, '.')}`
-      }));
+    try {
+      const updated = await api.updateMe({
+        name: profile.fullName,
+        phone: profile.phone,
+        instituteName: profile.institutionName,
+        educationLevel: profile.academicLevel,
+        studentId: profile.organizationId
+      });
+      setQueryData(keys.me(), updated);
+      setQueryData(keys.bootstrap(), (d) => d && { ...d, profile: { ...d.profile, name: updated.name, instituteName: updated.instituteName, educationLevel: updated.educationLevel } });
+      invalidate(keys.dashboard());
       showToast('Profile updated successfully.');
-    }, 500);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   // Password Strength Calculator
@@ -126,7 +132,7 @@ export default function ProfilePage({ onBackToDashboard }) {
   const strength = getPasswordStrength(passwordForm.newPassword);
 
   // Handle Password Change Submit
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setPasswordError('');
 
@@ -144,13 +150,39 @@ export default function ProfilePage({ onBackToDashboard }) {
     }
 
     setIsChangingPass(true);
-    setTimeout(() => {
-      setIsChangingPass(false);
+    try {
+      await api.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
       setShowPasswordModal(false);
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setQueryData(keys.me(), (d) => d && { ...d, passwordChangedAt: new Date().toISOString() });
       showToast('Password changed successfully.');
-    }, 600);
+    } catch (err) {
+      setPasswordError(err.message);
+    } finally {
+      setIsChangingPass(false);
+    }
   };
+
+  if (error && !me) {
+    return (
+      <div style={{ padding: '40px 20px', textAlign: 'center', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+        <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1E293B', marginBottom: '8px' }}>Couldn't load your profile</h3>
+        <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '18px' }}>{error.message}</p>
+        <button type="button" onClick={() => refetch()} style={{ background: '#0B3A6F', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+          Try again
+        </button>
+      </div>
+    );
+  }
+  if (isLoading || !profile) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+        <div className="skeleton-shimmer" style={{ height: '64px', borderRadius: '14px' }} />
+        <div className="skeleton-shimmer" style={{ height: '150px', borderRadius: '14px' }} />
+        <div className="skeleton-shimmer" style={{ height: '320px', borderRadius: '14px' }} />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -167,30 +199,6 @@ export default function ProfilePage({ onBackToDashboard }) {
         fontFamily: 'var(--font-primary, "Plus Jakarta Sans", sans-serif)'
       }}
     >
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '20px',
-            right: '24px',
-            zIndex: 99999,
-            backgroundColor: '#0B3A6F',
-            color: '#FFFFFF',
-            padding: '10px 18px',
-            borderRadius: '10px',
-            boxShadow: '0 8px 24px rgba(11, 58, 111, 0.25)',
-            fontSize: '13px',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* ======================================================================
           1. HEADER BAR: Clear Hierarchy (Title + Action)
           ====================================================================== */}
@@ -271,17 +279,7 @@ export default function ProfilePage({ onBackToDashboard }) {
           {/* User Bio + Photo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ position: 'relative', width: '68px', height: '68px', flexShrink: 0 }}>
-              <img
-                src={profile.avatarUrl}
-                alt={profile.fullName}
-                style={{
-                  width: '68px',
-                  height: '68px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  border: '2px solid #E2E8F0'
-                }}
-              />
+              <UserAvatar name={profile.fullName} photoURL={profile.avatarUrl} size={68} style={{ border: '2px solid #E2E8F0' }} />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -445,7 +443,7 @@ export default function ProfilePage({ onBackToDashboard }) {
               padding: '3px 8px'
             }}
           >
-            <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Protocol ID:</span>
+            <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>TrueSights ID:</span>
             <code style={{ fontSize: '12px', color: '#0F172A', fontWeight: 600 }}>
               {profile.protocolIdentityUrl}
             </code>
@@ -526,13 +524,15 @@ export default function ProfilePage({ onBackToDashboard }) {
             {/* Electronic Email */}
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '5px' }}>
-                Electronic Email <span style={{ color: '#EF4444' }}>*</span>
+                Electronic Email <span style={{ color: '#94A3B8', fontWeight: 500 }}>(sign-in email, can't be changed here)</span>
               </label>
               <input
                 type="email"
                 value={profile.email}
-                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                disabled
+                title="Your sign-in email - contact support to change it."
                 style={{
+                  background: '#F8FAFC',
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
