@@ -1,299 +1,69 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import Icon from '../design-system/icons';
 import ModalPortal from './ModalPortal';
+import { TSButton } from './TSModal';
+import { api, invalidate, keys, setQueryData, useQuery } from '../data';
+import { pathFor, useTS } from '../session';
+import { generateSubtopics, updateProject, updateStudyPlan } from '../../utils/apiServices';
 
-// Core curriculum dataset consumed from user's Kerala Building Rules knowledge
-const KERALA_PROJECT_DATA = {
-  id: 'priv-kerala-2025',
-  title: 'Kerala Building Rules 2025 Amendment',
-  type: 'private',
-  level: 'POSTGRADUATE',
-  coverImage: '/assets/book-building.jpg',
-  description:
-    'A comprehensive postgraduate-level study plan focused on the anticipated 2025 amendments to the Kerala Municipality and Panchayat Building Rules.',
-  totalModules: 5,
-  initialProgress: 39,
-  modules: [
-    {
-      id: 'mod-1',
-      number: 1,
-      title: 'Administrative Reforms & Digital Governance',
-      description:
-        'Explores the shift towards fully digitized permit approvals and risk-based administrative workflows introduced in the 2025 amendment to improve ease of doing business in Kerala construction.',
-      subtopics: [
-        {
-          id: 'st-1-1',
-          number: '01',
-          title: 'K-SMART Integration and Automated Approvals',
-          readTime: '18 mins',
-          tag: 'DIGITAL WORKFLOW',
-          overview:
-            'Details the mandatory use of the K-SMART platform for building plan submissions, focusing on automated scrutiny and structural verification processes across all local self-government institutions.',
-          concepts: [
-            {
-              id: 'c-1-1',
-              title: 'Auto-Scrutiny of Building Plans',
-              icon: 'aiAutomation',
-              description:
-                'Algorithmic software within K-SMART automatically inspects CAD/BIM models against statutory building parameters like FAR, setbacks, and height limits without manual intervention.',
-              memoryAnchor: 'CAD: Check Automatically Dimensions'
-            },
-            {
-              id: 'c-1-2',
-              title: 'Single Window Clearance System',
-              icon: 'docUpload',
-              description:
-                'A centralized digital portal where clearances from various statutory departments (Fire & Rescue, Pollution Control Board, Coastal Zone Management) are routed and obtained simultaneously.',
-              memoryAnchor: 'ONE: One Network Environment'
-            }
-          ],
-          quizQuestion: {
-            question: 'What is the primary function of K-SMART integration in the 2025 building rules amendment?',
-            options: [
-              'Automated CAD/BIM rule-checking and single-window digital permits',
-              'Manual physical document scrutiny at local municipal panchayats',
-              'Calculating commercial property tax assessments annually',
-              'Standardizing municipal water drainage connection charges'
-            ],
-            correctIndex: 0,
-            explanation:
-              'K-SMART provides an algorithmic rule engine that auto-validates CAD submissions against zoning setbacks and height regulations without manual delays.'
-          }
-        },
-        {
-          id: 'st-1-2',
-          number: '02',
-          title: 'Risk-Based Permit Classification',
-          readTime: '22 mins',
-          tag: 'PERMIT TIERS',
-          overview:
-            'Categorizes building proposals into objective risk tiers to eliminate bureaucratic bottlenecks for standard low-impact residential structures.',
-          concepts: [
-            {
-              id: 'c-2-1',
-              title: 'Self-Certification for Low-Risk Structures',
-              icon: 'statusUp',
-              description:
-                'Residential plots with built-up areas under 300 sq.m qualify for immediate self-certification through registered architects and structural engineers.',
-              memoryAnchor: 'LOW: Low Obstacles With 300sqm'
-            },
-            {
-              id: 'c-2-2',
-              title: 'High-Risk Environmental & Fire Scrutiny',
-              icon: 'bookSquareBold',
-              description:
-                'High-occupancy commercial assemblies and structures exceeding 15 meters undergo multi-agency site visits and advanced structural peer reviews.',
-              memoryAnchor: 'HIGH: Height Inspections Guard Hazards'
-            }
-          ],
-          quizQuestion: {
-            question: 'Under the risk-based classification, what qualifies a residential structure for fast-track self-certification?',
-            options: [
-              'Built-up area under 300 sq.m with registered professional certification',
-              'Any commercial mall with adequate road frontage',
-              'Multistory residential towers located in municipal corporation zones',
-              'Only heritage conservation zone properties'
-            ],
-            correctIndex: 0,
-            explanation:
-              'Low-risk residential constructions up to 300 sq.m can proceed on registered professional self-certification with deemed approval.'
-          }
-        }
-      ]
-    },
-    {
-      id: 'mod-2',
-      number: 2,
-      title: 'Disaster Resilience & Topographical Safety',
-      description:
-        'Standards for slope stability, landslide hazard zoning, flood-resistant plinth elevations, and mandatory soil stabilization norms in hilly terrains of Wayanad and Idukki districts.',
-      subtopics: [
-        {
-          id: 'st-2-1',
-          number: '01',
-          title: 'Slope Stability & Retaining Wall Codification',
-          readTime: '25 mins',
-          tag: 'GEO-TECHNICAL',
-          overview:
-            'Mandatory geo-technical investigations and reinforced retaining walls for construction on natural terrain slopes exceeding 25 degrees gradient.',
-          concepts: [
-            {
-              id: 'c-3-1',
-              title: 'Geo-Technical Borehole Protocols',
-              icon: 'statusUp',
-              description:
-                'Soil boring and sub-surface rock profiling required before foundation permits on steep gradients.',
-              memoryAnchor: 'SOIL: Subsurface Observations Indicate Landslides'
-            }
-          ],
-          quizQuestion: {
-            question: 'At what terrain slope threshold do the 2025 rules mandate geo-technical slope stability clearance?',
-            options: [
-              'Slopes exceeding 25 degrees gradient',
-              'Only slopes exceeding 60 degrees gradient',
-              'Any flat land adjacent to coastal beaches',
-              'Slopes under 5 degrees gradient'
-            ],
-            correctIndex: 0,
-            explanation:
-              'Slopes over 25 degrees require detailed soil boring tests and certified retaining wall structural calculations.'
-          }
-        }
-      ]
-    },
-    {
-      id: 'mod-3',
-      number: 3,
-      title: 'Sustainability & Water Management',
-      description:
-        'Comprehensive rainwater harvesting standards, decentralized greywater recycling, rooftop solar photovoltaic mandates, and organic waste processing in collective residential communities.',
-      subtopics: [
-        {
-          id: 'st-3-1',
-          number: '01',
-          title: 'Mandatory Decentralized Rainwater Harvesting',
-          readTime: '16 mins',
-          tag: 'ECOLOGICAL',
-          overview:
-            'Minimum storage capacity calculated at 50 liters per square meter of roof catchment area, coupled with groundwater recharge percolation wells.',
-          concepts: [
-            {
-              id: 'c-4-1',
-              title: 'Roof Catchment Storage Sizing',
-              icon: 'sunFog',
-              description:
-                'Statutory formula mandating 50 L/sq.m storage tank capacity combined with filtration desilting chambers.',
-              memoryAnchor: 'RAIN: Retain Aquifers In Nature'
-            }
-          ],
-          quizQuestion: {
-            question: 'What is the required rainwater storage capacity per square meter of roof catchment area?',
-            options: [
-              '50 liters per square meter of roof area',
-              '5 liters per square meter of roof area',
-              '200 liters per square meter of roof area',
-              'Voluntary guideline with zero mandatory capacity'
-            ],
-            correctIndex: 0,
-            explanation:
-              'The 2025 amendment prescribes a strict 50 L/sq.m storage minimum to build regional aquifer resilience.'
-          }
-        }
-      ]
-    },
-    {
-      id: 'mod-4',
-      number: 4,
-      title: 'FAR, Zoning & Height Regulations',
-      description:
-        'Reformulated base FAR allowances, purchasable Premium FAR indexation linked to transit corridors, and relaxed height restrictions on road widths exceeding 12 meters.',
-      subtopics: [
-        {
-          id: 'st-4-1',
-          number: '01',
-          title: 'Transit-Oriented Premium FAR Corridors',
-          readTime: '24 mins',
-          tag: 'URBAN PLANNING',
-          overview:
-            'Incentivizing compact high-density urban development within 500m of Metro and Suburban railway corridors with up to 1.5x additional purchasable FAR.',
-          concepts: [
-            {
-              id: 'c-5-1',
-              title: 'TOD Indexation and Setbacks',
-              icon: 'card',
-              description:
-                'Enhanced Floor Area Ratio granted within 500m of mass rapid transit corridors to curb peripheral urban sprawl.',
-              memoryAnchor: 'TOD: Transit Oriented Density'
-            }
-          ],
-          quizQuestion: {
-            question: 'Where is the maximum purchasable Premium FAR allowed under the 2025 rules?',
-            options: [
-              'Within 500m of designated mass transit corridors',
-              'Exclusively in agricultural preservation zones',
-              'Within designated hill sanctuary reserves',
-              'Only on island water boundaries'
-            ],
-            correctIndex: 0,
-            explanation:
-              'Transit-oriented development zones permit enhanced FAR to reduce sprawling peripheral vehicle commutes.'
-          }
-        }
-      ]
-    },
-    {
-      id: 'mod-5',
-      number: 5,
-      title: 'Mobility & EV Parking Norms',
-      description:
-        'Electric Vehicle (EV) charging infrastructure conduits, mechanized puzzle parking specifications, and dedicated safe pedestrian pathways inside gated residential complexes.',
-      subtopics: [
-        {
-          id: 'st-5-1',
-          number: '01',
-          title: 'Electric Vehicle (EV) Charging Conduits',
-          readTime: '15 mins',
-          tag: 'INFRASTRUCTURE',
-          overview:
-            'Mandating that at least 25% of designated residential parking slots and 40% of commercial parking slots include dedicated EV charging power conduits.',
-          concepts: [
-            {
-              id: 'c-6-1',
-              title: 'EV Charging Readiness Specifications',
-              icon: 'statusUp',
-              description:
-                'Statutory requirement for high-load power conduits in 40% of commercial parking stalls.',
-              memoryAnchor: 'VOLT: Verify Outlets Linked Today'
-            }
-          ],
-          quizQuestion: {
-            question: 'What percentage of parking slots in commercial complexes must have EV charging conduits installed?',
-            options: [
-              'At least 40% of commercial parking slots',
-              'At least 100% of all parking slots',
-              'Less than 5% on voluntary basis',
-              'EV charging is restricted from indoor parking'
-            ],
-            correctIndex: 0,
-            explanation:
-              'The 2025 rules mandate that 40% of commercial bays be pre-wired with dedicated electrical conduits for EV chargers.'
-          }
-        }
-      ]
-    }
-  ]
-};
+const CONCEPT_ICONS = ['aiAutomation', 'docUpload', 'statusUp', 'bookSquareBold', 'sunFog', 'card'];
 
-export default function ProjectWorkspace({
-  project,
-  onExit,
-  onAwardPoints,
-  onStartLiveChallenge,
-  savedChallengeSession
-}) {
-  const projectTitle = project?.title || project?.name || KERALA_PROJECT_DATA.title;
-  const isKerala = projectTitle.toLowerCase().includes('kerala');
-  const activeData = isKerala
-    ? KERALA_PROJECT_DATA
-    : {
-        ...KERALA_PROJECT_DATA,
-        title: projectTitle,
-        level: project?.level || KERALA_PROJECT_DATA.level,
-        description: project?.description || project?.desc || KERALA_PROJECT_DATA.description,
-        modules: (Array.isArray(project?.modules) && typeof project.modules[0] === 'object' && project.modules[0]?.subtopics)
-          ? project.modules
-          : KERALA_PROJECT_DATA.modules
+const topicName = (t, i) => t.topic || t.name || t.title || t.description?.split('.')[0] || `Module ${i + 1}`;
+const subName = (st) => st.subtopic || st.name || st.title || 'Subtopic';
+// Rough reading time: ~6 minutes per key concept, never under 8.
+const minutesFor = (st) => Math.max(8, (st.keyConcepts || []).length * 6);
+
+/** The roadmap from /api/v2/learn/projects/:kind/:id in the shape the layout below renders. */
+const toWorkspace = (project, history) => ({
+  title: project.title,
+  level: (project.levelOfLearning || 'Self-paced').toUpperCase(),
+  description: project.introduction || '',
+  totalModules: project.modules,
+  progress: project.progress,
+  modules: (project.topics || []).map((t, i) => ({
+    id: t.id || `m${i}`,
+    number: i + 1,
+    title: topicName(t, i),
+    description: t.description || '',
+    raw: t,
+    subtopics: (t.subtopics || []).map((st, j) => {
+      const concepts = st.keyConcepts || [];
+      return {
+        id: st.id || `m${i}s${j}`,
+        number: String(j + 1).padStart(2, '0'),
+        title: subName(st),
+        readTime: `${minutesFor(st)} mins`,
+        tag: `${concepts.length} KEY CONCEPTS`,
+        overview: st.description || '',
+        history: history[subName(st)] || null,
+        concepts: concepts.map((c, k) => ({
+          id: c.id || `m${i}s${j}c${k}`,
+          title: c.keyConcept,
+          icon: CONCEPT_ICONS[k % CONCEPT_ICONS.length],
+          description: c.description,
+          example: c.example,
+          memoryAnchor: c.mnemonic
+        }))
       };
+    })
+  }))
+});
+
+export default function ProjectWorkspace() {
+  const { kind, id } = useParams();
+  const navigate = useNavigate();
+  const { go, points } = useTS();
+  const { data, error, isLoading, refetch } = useQuery(keys.project(kind, id), () => api.project(kind, id));
+  const project = data?.project;
+  const history = useMemo(() => data?.history || {}, [data]);
+  const activeData = useMemo(() => (project ? toWorkspace(project, history) : null), [project, history]);
 
   const [activeModuleIndex, setActiveModuleIndex] = useState(0);
-  const [expandedSubtopics, setExpandedSubtopics] = useState({ 'st-1-1': true });
-
-  // Quiz Modal State
-  const [activeQuizSubtopic, setActiveQuizSubtopic] = useState(null);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [completedQuizzes, setCompletedQuizzes] = useState({});
-  const [progressScore, setProgressScore] = useState(activeData.initialProgress || 39);
+  const [expandedSubtopics, setExpandedSubtopics] = useState({});
+  const [generating, setGenerating] = useState(false);
+  const [confirmTrash, setConfirmTrash] = useState(false);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
@@ -306,42 +76,81 @@ export default function ProjectWorkspace({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Toast
-  const [toastMessage, setToastMessage] = useState(null);
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const currentModule = (activeData.modules && activeData.modules[activeModuleIndex]) || (activeData.modules && activeData.modules[0]) || KERALA_PROJECT_DATA.modules[0];
-
-  const toggleSubtopic = (id) => {
+  const toggleSubtopic = (stId) => {
     setExpandedSubtopics((prev) => ({
       ...prev,
-      [id]: !prev[id]
+      [stId]: !prev[stId]
     }));
   };
 
-  const openQuiz = (subtopic, e) => {
-    e.stopPropagation();
-    setActiveQuizSubtopic(subtopic);
-    setSelectedOption(null);
-    setIsSubmitted(false);
-  };
+  const onExit = () => go('projects');
+  const quizUrl = (sub) =>
+    `${pathFor('quiz', sub)}?projectTopic=${encodeURIComponent(project.topic || project.title)}&from=${kind}/${id}`;
+  const startQuiz = (st) => navigate(quizUrl(st.title));
+  const challengePeer = (st) => navigate(pathFor('challenges'), { state: { preset: { topic: st.title, domain: project.title } } });
 
-  const handleVerifyQuiz = () => {
-    if (selectedOption === null || !activeQuizSubtopic) return;
-    setIsSubmitted(true);
-    const isCorrect = selectedOption === activeQuizSubtopic.quizQuestion.correctIndex;
+  const nextSubtopic = useMemo(() => {
+    for (const m of activeData?.modules || []) for (const st of m.subtopics) if (!st.history) return st;
+    return null;
+  }, [activeData]);
 
-    if (isCorrect && !completedQuizzes[activeQuizSubtopic.id]) {
-      setCompletedQuizzes((prev) => ({ ...prev, [activeQuizSubtopic.id]: true }));
-      const newScore = Math.min(100, progressScore + 18);
-      setProgressScore(newScore);
-      if (onAwardPoints) onAwardPoints(25);
-      showToast('Mastery Verified! +25 Points Added to Wallet.');
+  const generateMore = async () => {
+    const current = activeData.modules[activeModuleIndex];
+    setGenerating(true);
+    try {
+      const extra = await generateSubtopics(current.title, current.raw.subtopics || []);
+      if (!Array.isArray(extra) || !extra.length) throw new Error('No new subtopics came back - try again.');
+      const updatedTopics = project.topics.map((t, i) => (i === activeModuleIndex ? { ...t, subtopics: [...(t.subtopics || []), ...extra] } : t));
+      await (kind === 'educator' ? updateStudyPlan(id, { topics: updatedTopics }) : updateProject(id, { topics: updatedTopics }));
+      setQueryData(keys.project(kind, id), (d) => d && { ...d, project: { ...d.project, topics: updatedTopics, subtopics: d.project.subtopics + extra.length } });
+      invalidate(keys.projects(), keys.dashboard());
+      toast.success(`Added ${extra.length} subtopics.`);
+    } catch (e) {
+      toast.error(e.message || "Couldn't generate more subtopics right now.");
+    } finally {
+      setGenerating(false);
     }
   };
+
+  const trash = async () => {
+    setConfirmTrash(false);
+    try {
+      await api.trashProject(id);
+      invalidate(keys.projects(), keys.dashboard(), keys.trash());
+      toast.success('Moved to trash.');
+      go('projects');
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
+  if (error && !data) {
+    return (
+      <div style={{ padding: '40px 20px', textAlign: 'center', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+        <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1E293B', marginBottom: '8px' }}>Couldn't open this roadmap</h3>
+        <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '18px' }}>{error.message}</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <TSButton variant="secondary" onClick={onExit}>Back to Projects</TSButton>
+          <TSButton onClick={() => refetch()}>Try again</TSButton>
+        </div>
+      </div>
+    );
+  }
+  if (isLoading || !activeData) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+        <div className="skeleton-shimmer" style={{ height: '36px', width: '160px', borderRadius: '999px' }} />
+        <div className="skeleton-shimmer" style={{ height: '110px', borderRadius: '16px' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '290px 1fr', gap: '16px' }}>
+          <div className="skeleton-shimmer" style={{ height: '420px', borderRadius: '16px' }} />
+          <div className="skeleton-shimmer" style={{ height: '420px', borderRadius: '16px' }} />
+        </div>
+      </div>
+    );
+  }
+
+  const progressScore = activeData.progress;
+  const currentModule = activeData.modules[activeModuleIndex] || activeData.modules[0] || { title: 'No modules yet', description: 'This roadmap has no modules yet.', subtopics: [] };
 
   return (
     <div
@@ -415,7 +224,7 @@ export default function ProjectWorkspace({
           >
             <Icon name="rewardGem" size={isMobile ? 13 : 15} color="#F59E0B" />
             <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: 800, color: '#1F2537', fontFamily: 'var(--font-primary)' }}>
-              150 PTS
+              {points.toLocaleString()} PTS
             </span>
           </div>
 
@@ -507,6 +316,28 @@ export default function ProjectWorkspace({
           >
             {activeData.description}
           </p>
+          {project.generation && (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                marginTop: '8px',
+                background: 'rgba(16, 185, 129, 0.16)',
+                border: '1px solid rgba(167, 243, 208, 0.35)',
+                color: '#D1FAE5',
+                borderRadius: '999px',
+                padding: '3px 10px',
+                fontSize: '11px',
+                fontWeight: 700
+              }}
+            >
+              <Icon name="checkCircle" size={12} color="#A7F3D0" />
+              Researched & fact-checked
+              {project.generation.averageFinalScore != null && ` · accuracy ${project.generation.averageFinalScore}/100`}
+              {project.generation.sources?.length > 0 && ` · ${project.generation.sources.length} sources`}
+            </div>
+          )}
         </div>
 
         {/* Banner Right Metric Pills */}
@@ -546,6 +377,55 @@ export default function ProjectWorkspace({
               COMPLETED
             </div>
           </div>
+
+          <button
+            type="button"
+            disabled={!nextSubtopic}
+            onClick={() => nextSubtopic && startQuiz(nextSubtopic)}
+            style={{
+              flex: isMobile ? 1 : 'none',
+              height: '44px',
+              padding: '0 18px',
+              background: nextSubtopic ? '#FEE047' : 'rgba(255,255,255,0.2)',
+              color: nextSubtopic ? '#0F1219' : 'rgba(255,255,255,0.7)',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '12.5px',
+              fontWeight: 800,
+              cursor: nextSubtopic ? 'pointer' : 'default',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Icon name="playBold" size={12} color={nextSubtopic ? '#0F1219' : 'rgba(255,255,255,0.7)'} />
+            {nextSubtopic ? 'Next quiz' : 'All done'}
+          </button>
+          {kind === 'self' && project.canEdit && (
+            <button
+              type="button"
+              onClick={() => setConfirmTrash(true)}
+              aria-label="Move project to trash"
+              title="Move project to trash"
+              style={{
+                width: '40px',
+                height: '44px',
+                borderRadius: '10px',
+                border: '1px solid rgba(255,255,255,0.16)',
+                background: 'rgba(255,255,255,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+            >
+              <Icon name="trash" size={16} color="#FFFFFF" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -704,6 +584,7 @@ export default function ProjectWorkspace({
               <div
                 key={mod.id}
                 onClick={() => setActiveModuleIndex(idx)}
+                title={mod.title}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -773,6 +654,7 @@ export default function ProjectWorkspace({
                     }}
                   >
                     {mod.subtopics?.length || 0} subtopics
+                    {mod.subtopics?.filter((x) => x.history).length ? ` · ${mod.subtopics.filter((x) => x.history).length} quizzed` : ''}
                   </div>
                 </div>
               </div>
@@ -796,7 +678,8 @@ export default function ProjectWorkspace({
           }}
         >
           {/* Module Title Header */}
-          <div style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '14px' }}>
+          <div style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
             <h2
               style={{
                 fontFamily: 'var(--font-primary)',
@@ -820,13 +703,22 @@ export default function ProjectWorkspace({
             >
               {currentModule.description}
             </p>
+            </div>
+            {project.canEdit && activeData.modules.length > 0 && (
+              <TSButton variant="secondary" busy={generating} onClick={generateMore}>
+                <Icon name="aiAutomation" size={14} color="#0B1A2B" /> More subtopics
+              </TSButton>
+            )}
           </div>
 
           {/* Subtopics List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {!currentModule.subtopics.length && (
+              <div style={{ padding: '30px 0', textAlign: 'center', fontSize: '13px', color: '#94A3B8' }}>No subtopics in this module yet.</div>
+            )}
             {currentModule.subtopics.map((st) => {
               const isExpanded = !!expandedSubtopics[st.id];
-              const isMastered = !!completedQuizzes[st.id];
+              const isMastered = st.history?.best === 100;
 
               return (
                 <div
@@ -903,6 +795,22 @@ export default function ProjectWorkspace({
                               MASTERED
                             </span>
                           )}
+                          {st.history && !isMastered && (
+                            <span
+                              style={{
+                                background: '#EFF6FF',
+                                border: '1px solid #BFDBFE',
+                                color: '#1D4ED8',
+                                fontSize: '10px',
+                                fontWeight: 800,
+                                padding: '1px 6px',
+                                borderRadius: '999px',
+                                fontFamily: 'var(--font-primary)'
+                              }}
+                            >
+                              BEST {st.history.best}%
+                            </span>
+                          )}
                         </div>
                         <div style={{ fontSize: isMobile ? '11px' : '11.5px', color: '#64748B', fontFamily: 'var(--font-primary)', marginTop: '2px' }}>
                           {st.readTime} · {st.tag}
@@ -910,8 +818,29 @@ export default function ProjectWorkspace({
                       </div>
                     </div>
 
-                    {/* Action Buttons: Explore & Quiz */}
+                    {/* Action Buttons: Explore, Challenge & Quiz */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
+                      <button
+                        type="button"
+                        onClick={() => challengePeer(st)}
+                        title="Challenge a peer on this topic"
+                        aria-label="Challenge a peer on this topic"
+                        style={{
+                          width: '36px',
+                          height: isMobile ? '38px' : '36px',
+                          borderRadius: '8px',
+                          background: '#F8FAFC',
+                          border: '1px solid #E2E8F0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <Icon name="challenges" size={16} color="#20346B" />
+                      </button>
                       <button
                         type="button"
                         onClick={() => toggleSubtopic(st.id)}
@@ -966,11 +895,7 @@ export default function ProjectWorkspace({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (onStartLiveChallenge) {
-                            onStartLiveChallenge(st);
-                          } else {
-                            openQuiz(st, e);
-                          }
+                          startQuiz(st);
                         }}
                         style={{
                           flex: isMobile ? 1 : 'none',
@@ -1002,11 +927,7 @@ export default function ProjectWorkspace({
                       >
                         <Icon name="playBold" size={11} color={isMastered ? '#FFFFFF' : '#0F1219'} />
                         <span>
-                          {savedChallengeSession && savedChallengeSession.subtopicId === st.id
-                            ? `Resume Quiz (Q${savedChallengeSession.currentIndex + 1})`
-                            : isMastered
-                            ? 'Retake Quiz'
-                            : 'Start Quiz'}
+                          {st.history ? 'Retake Quiz' : 'Start Quiz'}
                         </span>
                       </button>
                     </div>
@@ -1026,6 +947,7 @@ export default function ProjectWorkspace({
                       }}
                     >
                       {/* Overview Box */}
+                      {st.overview && (
                       <div
                         style={{
                           background: '#F8FAFC',
@@ -1059,6 +981,7 @@ export default function ProjectWorkspace({
                           {st.overview}
                         </p>
                       </div>
+                      )}
 
                       {/* Concepts List */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1114,8 +1037,15 @@ export default function ProjectWorkspace({
                               >
                                 {concept.description}
                               </p>
+                              {concept.example && (
+                                <p style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.45, margin: '0 0 8px 0' }}>
+                                  <strong style={{ color: '#1F2537' }}>Example: </strong>
+                                  {concept.example}
+                                </p>
+                              )}
 
                               {/* Clean Mnemonic Anchor Chip */}
+                              {concept.memoryAnchor && (
                               <div
                                 style={{
                                   display: 'inline-flex',
@@ -1139,264 +1069,67 @@ export default function ProjectWorkspace({
                                   Memory Anchor: "{concept.memoryAnchor}"
                                 </span>
                               </div>
+                              )}
                             </div>
                           </div>
                         ))}
                       </div>
+                      {st.history?.last && (
+                        <div style={{ fontSize: '11px', color: '#64748B' }}>
+                          {st.history.attempts} attempt{st.history.attempts > 1 ? 's' : ''} · last scored {st.history.last.percent}% on{' '}
+                          {new Date(st.history.last.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               );
             })}
           </div>
+
+          {project.generation?.sources?.length > 0 && (
+            <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 800, color: '#1F2537' }}>
+                <Icon name="checkCircle" size={14} color="#059669" /> Sources used to research this roadmap
+              </div>
+              <p style={{ fontSize: '11.5px', color: '#64748B', margin: '2px 0 10px 0' }}>
+                Every module was fact-checked against these references; flagged facts were re-verified with a web search before being corrected.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '6px 18px' }}>
+                {project.generation.sources.map((src) => (
+                  <a
+                    key={src.uri}
+                    href={src.uri}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ fontSize: '12px', color: '#2563EB', textDecoration: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  >
+                    ↗ {src.title}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 4. CLEAN DEDICATED QUIZ MODAL (Opens cleanly when user clicks QUIZ) */}
-      {activeQuizSubtopic && (
-        <ModalPortal isOpen={true} onClose={() => setActiveQuizSubtopic(null)}>
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-              width: '100%',
-              maxWidth: '540px',
-              background: '#FFFFFF',
-              borderRadius: '16px',
-              border: '1px solid #E2E6EF',
-              boxShadow: '0 16px 40px rgba(0,0,0,0.18)',
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-              animation: 'modalContentPop 0.2s ease'
-            }}
+      {/* 4. MOVE-TO-TRASH CONFIRMATION */}
+      {confirmTrash && (
+        <ModalPortal isOpen={true} onClose={() => setConfirmTrash(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '360px', maxWidth: '92vw', background: '#FFFFFF', borderRadius: '18px', padding: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)', textAlign: 'center', animation: 'modalContentPop 0.25s ease' }}
           >
-            {/* Modal Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    color: 'var(--primary-navy, #20346B)',
-                    letterSpacing: '0.05em',
-                    textTransform: 'uppercase',
-                    fontFamily: 'var(--font-primary)'
-                  }}
-                >
-                  KNOWLEDGE CHECK · +25 PTS
-                </span>
-                <h3
-                  style={{
-                    fontFamily: 'var(--font-primary)',
-                    fontSize: '16px',
-                    fontWeight: 800,
-                    color: 'var(--heading-text, #1F2537)',
-                    margin: '3px 0 0 0'
-                  }}
-                >
-                  {activeQuizSubtopic.title}
-                </h3>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setActiveQuizSubtopic(null)}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  border: '1px solid #E2E6EF',
-                  background: '#FFFFFF',
-                  color: '#64748B',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer'
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Question Text */}
-            <div
-              style={{
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#1F2537',
-                fontFamily: 'var(--font-primary)',
-                lineHeight: 1.45
-              }}
-            >
-              {activeQuizSubtopic.quizQuestion.question}
-            </div>
-
-            {/* Options List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {activeQuizSubtopic.quizQuestion.options.map((opt, oIdx) => {
-                const isSelected = selectedOption === oIdx;
-                const isCorrect = oIdx === activeQuizSubtopic.quizQuestion.correctIndex;
-
-                let optBg = '#FFFFFF';
-                let optBorder = '#E2E6EF';
-                let optColor = '#1F2537';
-
-                if (isSubmitted) {
-                  if (isCorrect) {
-                    optBg = '#ECFDF5';
-                    optBorder = '#10B981';
-                    optColor = '#065F46';
-                  } else if (isSelected) {
-                    optBg = '#FEF2F2';
-                    optBorder = '#EF4444';
-                    optColor = '#991B1B';
-                  }
-                } else if (isSelected) {
-                  optBg = '#F0F4FF';
-                  optBorder = 'var(--primary-navy, #20346B)';
-                  optColor = 'var(--primary-navy, #20346B)';
-                }
-
-                return (
-                  <button
-                    key={oIdx}
-                    type="button"
-                    onClick={() => {
-                      if (!isSubmitted) setSelectedOption(oIdx);
-                    }}
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      background: optBg,
-                      border: `1.5px solid ${optBorder}`,
-                      color: optColor,
-                      fontFamily: 'var(--font-primary)',
-                      fontSize: '13px',
-                      fontWeight: isSelected ? 700 : 500,
-                      textAlign: 'left',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      cursor: isSubmitted ? 'default' : 'pointer'
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: '999px',
-                        background: isSelected ? 'var(--primary-navy, #20346B)' : '#F1F5F9',
-                        color: isSelected ? '#FFFFFF' : '#64748B',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        fontFamily: 'var(--font-primary)',
-                        flexShrink: 0
-                      }}
-                    >
-                      {String.fromCharCode(65 + oIdx)}
-                    </span>
-                    <span>{opt}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Explanation card after submit */}
-            {isSubmitted && (
-              <div
-                style={{
-                  background: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '10px',
-                  padding: '12px 14px',
-                  fontSize: '12.5px',
-                  color: '#334155',
-                  lineHeight: 1.5,
-                  fontFamily: 'var(--font-primary)'
-                }}
-              >
-                <strong style={{ color: 'var(--primary-navy, #20346B)' }}>Ruling: </strong>
-                {activeQuizSubtopic.quizQuestion.explanation}
-              </div>
-            )}
-
-            {/* Modal Bottom Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
-              {!isSubmitted ? (
-                <button
-                  type="button"
-                  disabled={selectedOption === null}
-                  onClick={handleVerifyQuiz}
-                  style={{
-                    height: '40px',
-                    padding: '0 20px',
-                    background: selectedOption === null ? '#E2E8F0' : '#FEE047',
-                    border: 'none',
-                    borderRadius: '10px',
-                    color: selectedOption === null ? '#94A3B8' : '#101D3B',
-                    fontFamily: 'var(--font-primary)',
-                    fontSize: '12.5px',
-                    fontWeight: 800,
-                    letterSpacing: '0.04em',
-                    cursor: selectedOption === null ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  Verify Answer
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setActiveQuizSubtopic(null)}
-                  style={{
-                    height: '40px',
-                    padding: '0 20px',
-                    background: 'var(--primary-navy, #20346B)',
-                    border: 'none',
-                    borderRadius: '10px',
-                    color: '#FFFFFF',
-                    fontFamily: 'var(--font-primary)',
-                    fontSize: '12.5px',
-                    fontWeight: 800,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Done
-                </button>
-              )}
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1E293B', marginBottom: '8px' }}>Move to trash?</h3>
+            <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5, marginBottom: '20px' }}>
+              "{activeData.title}" stays in Trash for 30 days before it's permanently deleted.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <TSButton variant="secondary" style={{ flex: 1 }} onClick={() => setConfirmTrash(false)}>Cancel</TSButton>
+              <TSButton variant="danger" style={{ flex: 1 }} onClick={trash}>Move to trash</TSButton>
             </div>
           </div>
         </ModalPortal>
-      )}
-
-      {/* FLOATING SUCCESS TOAST */}
-      {toastMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            background: '#101D3B',
-            color: '#FFFFFF',
-            padding: '12px 20px',
-            borderRadius: '12px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            fontFamily: 'var(--font-primary)',
-            fontSize: '13px',
-            fontWeight: 700,
-            zIndex: 9999,
-            animation: 'modalContentPop 0.22s ease'
-          }}
-        >
-          <Icon name="rewardGem" size={18} color="#FEE047" />
-          <span>{toastMessage}</span>
-        </div>
       )}
     </div>
   );

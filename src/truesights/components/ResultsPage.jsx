@@ -1,5 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import Icon from '../design-system/icons';
+import { api, invalidate, keys, setQueryData, useQuery } from '../data';
+import { pickCoverForTopic } from '../covers';
+import { pathFor } from '../session';
 import ModalPortal from './ModalPortal';
 
 // Exact SVG icons directly extracted from Figma Node 210:54581
@@ -60,190 +65,41 @@ const FigmaIcons = {
 };
 
 // Realistic authentic cards matching Figma node 210:54581 with real 3D book cover thumbnails
-const FIGMA_RESULTS_CARDS = [
-  {
-    id: 'res-1',
-    topicKey: 'q-curve',
-    topic: 'The I-V Characteristic Curve',
-    thumbnail: '/assets/book-mosfet.jpg',
-    category: 'Electronic Devices & Physics',
-    date: '30 Sept 2026',
-    time: '12:33',
-    correctNumerator: 3,
-    correctDenominator: 5,
-    scorePercentage: 60,
-    points: 3,
-    basePoints: '3 pts',
-    timeTaken: '02:01',
-    streakBonus: '+0 pts',
-    status: 'Verified',
-    pillStyle: 'amber'
-  },
-  {
-    id: 'res-2',
-    topicKey: 'semi-basics-1',
-    topic: 'Semiconductor Basics',
-    thumbnail: '/assets/book-circuits.jpg',
-    category: 'Solid-State Materials',
-    date: '27 Sept 2026',
-    time: '09:39',
-    correctNumerator: 1,
-    correctDenominator: 7,
-    scorePercentage: 14,
-    points: 1,
-    basePoints: '1 pts',
-    timeTaken: '02:04',
-    streakBonus: '+0 pts',
-    status: 'Verified',
-    pillStyle: 'red'
-  },
-  {
-    id: 'res-3',
-    topicKey: 'semi-basics-2',
-    topic: 'Semiconductor Basics',
-    thumbnail: '/assets/book-circuits.jpg',
-    category: 'Solid-State Materials',
-    date: '27 Sept 2026',
-    time: '09:39',
-    correctNumerator: 1,
-    correctDenominator: 6,
-    scorePercentage: 17,
-    points: 1,
-    basePoints: '1 pts',
-    timeTaken: '02:04',
-    streakBonus: '+0 pts',
-    status: 'Verified',
-    pillStyle: 'red'
-  },
-  {
-    id: 'res-4',
-    topicKey: 'neuro-storage',
-    topic: 'Decentralized Storage for Large-Scale Neuroimaging',
-    thumbnail: '/assets/book-ux-ai.jpg',
-    category: 'Cloud & Bio-Informatics',
-    date: '10 May 2026',
-    time: '18:11',
-    correctNumerator: 0,
-    correctDenominator: 255,
-    scorePercentage: 0,
-    points: 0,
-    basePoints: '0 pts',
-    timeTaken: '02:30',
-    streakBonus: '+0 pts',
-    status: 'Verified',
-    pillStyle: 'red'
-  },
-  {
-    id: 'res-5',
-    topicKey: 'dsp-filters',
-    topic: 'Digital Signal Processing & FIR Filters',
-    thumbnail: '/assets/book-html.jpg',
-    category: 'Signal Processing',
-    date: '04 May 2026',
-    time: '16:45',
-    correctNumerator: 10,
-    correctDenominator: 10,
-    scorePercentage: 100,
-    points: 20,
-    basePoints: '10 pts',
-    timeTaken: '03:15',
-    streakBonus: '+10 pts',
-    status: 'Verified',
-    pillStyle: 'green'
-  },
-  {
-    id: 'res-6',
-    topicKey: 'nuclear-fission',
-    topic: 'Nuclear Fission & Reactor Dynamics',
-    thumbnail: '/assets/book-nuclear-fission.jpg',
-    category: 'Physics & Energy',
-    date: '18 Apr 2026',
-    time: '14:20',
-    correctNumerator: 8,
-    correctDenominator: 8,
-    scorePercentage: 100,
-    points: 16,
-    basePoints: '8 pts',
-    timeTaken: '02:45',
-    streakBonus: '+8 pts',
-    status: 'Verified',
-    pillStyle: 'green'
-  }
-];
+const PAGE = 30;
 
-// Sample questions for the review modal ("Result option for that particular topic")
-const SAMPLE_BREAKDOWNS = {
-  'q-curve': [
-    {
-      qNum: 1,
-      question: 'What occurs across the depletion region in a silicon PN junction under reverse bias?',
-      userAnswer: 'Depletion width increases due to majority carriers retreating from the metallurgical junction',
-      correctAnswer: 'Depletion width increases due to majority carriers retreating from the metallurgical junction',
-      isCorrect: true,
-      explanation: 'Under reverse bias, external negative and positive terminals attract mobile holes and electrons away from the interface.'
-    },
-    {
-      qNum: 2,
-      question: 'At room temperature (300K), what is the typical forward knee voltage for a silicon diode?',
-      userAnswer: '0.6V to 0.7V',
-      correctAnswer: '0.6V to 0.7V',
-      isCorrect: true,
-      explanation: 'The built-in potential barrier of silicon requires approximately ~0.7V before significant forward injection occurs.'
-    },
-    {
-      qNum: 3,
-      question: 'What governs reverse Zener breakdown in heavily doped junctions below 5.6V?',
-      userAnswer: 'Quantum mechanical tunneling of valence electrons into the conduction band',
-      correctAnswer: 'Quantum mechanical tunneling of valence electrons into the conduction band',
-      isCorrect: true,
-      explanation: 'Heavily doped junctions create an extremely thin barrier (<10nm) enabling quantum tunneling.'
-    },
-    {
-      qNum: 4,
-      question: 'How does thermal leakage current scale with temperature in silicon diodes?',
-      userAnswer: 'Decreases linearly with temperature rise',
-      correctAnswer: 'Doubles approximately every 10°C temperature increase',
-      isCorrect: false,
-      explanation: 'Thermal carrier generation rate scales exponentially with temperature.'
-    },
-    {
-      qNum: 5,
-      question: 'What is the thermal voltage Vt at 300 Kelvin in the Shockley diode equation?',
-      userAnswer: '0.7V',
-      correctAnswer: 'Approximately 26 mV (k*T/q)',
-      isCorrect: false,
-      explanation: 'Vt is defined as (Boltzmann constant * Absolute Temperature) / Elementary charge ≈ 25.85 mV.'
-    }
-  ],
-  'semi-basics-1': [
-    {
-      qNum: 1,
-      question: 'Which dopant element is introduced into intrinsic silicon to create an n-type semiconductor?',
-      userAnswer: 'Phosphorus or Arsenic (Group V)',
-      correctAnswer: 'Phosphorus or Arsenic (Group V)',
-      isCorrect: true,
-      explanation: 'Pentavalent Group V atoms have 5 valence electrons. 4 form covalent bonds with silicon, and the 5th electron is free to conduct in the conduction band.'
-    },
-    {
-      qNum: 2,
-      question: 'What is the dominant charge carrier in an intrinsic (undoped) semiconductor?',
-      userAnswer: 'Electrons only',
-      correctAnswer: 'Equal concentrations of thermally generated electrons and holes (ni = pi)',
-      isCorrect: false,
-      explanation: 'In pure semiconductors, carrier creation is purely thermal, yielding identical densities of free electrons and holes.'
-    }
-  ]
+/** A /api/v2/learn/results summary in the shape the result cards render. */
+const toCard = (r) => {
+  const d = r.createdAt ? new Date(r.createdAt) : null;
+  return {
+    id: r.id,
+    topic: r.subtopic,
+    thumbnail: pickCoverForTopic(r.subtopic),
+    category: r.source === 'challenge' ? 'Peer challenge' : 'Quiz topic',
+    date: d ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+    time: d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '',
+    correctNumerator: r.correct,
+    correctDenominator: r.total,
+    scorePercentage: r.percent,
+    points: r.pointsEarned,
+    basePoints: `${r.pointsEarned} pts`,
+    timeTaken: r.timeTaken || '—',
+    streakBonus: r.source === 'challenge' ? 'Challenge' : 'Practice',
+    status: 'Verified'
+  };
 };
 
-export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
+export default function ResultsPage() {
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const { data, error, isLoading, isFetching, refetch } = useQuery(keys.results(), api.results);
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'full-marks'
   const [searchQuery, setSearchQuery] = useState('');
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedReviewModal, setSelectedReviewModal] = useState(null);
-  const [toastMessage, setToastMessage] = useState(null);
+  const [limit, setLimit] = useState(PAGE);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
+  const isRefreshing = isFetching;
 
   useEffect(() => {
     const handleResize = () => {
@@ -253,32 +109,44 @@ export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
+  // ?open=<id> (from a notification) opens that result's breakdown.
+  const openId = params.get('open');
+  useEffect(() => {
+    const target = openId && data?.results.find((r) => r.id === openId);
+    if (target) setSelectedReviewModal(toCard(target));
+  }, [openId, data]);
+
+  const detail = useQuery(selectedReviewModal ? keys.result(selectedReviewModal.id) : null, () => api.result(selectedReviewModal.id), { staleMs: 600_000 });
+
+  const onRetakeQuiz = (topic) => navigate(pathFor('quiz', topic));
+  const handleRefresh = () => refetch().catch(() => {});
+
+  const trash = async (item) => {
+    setQueryData(keys.results(), (d) => d && { ...d, results: d.results.filter((x) => x.id !== item.id), stats: { ...d.stats, attempts: d.stats.attempts - 1 } });
+    try {
+      await api.trashResult(item.id);
+      invalidate(keys.trash(), keys.dashboard());
+      toast.success('Result moved to trash.');
+    } catch (e) {
+      toast.error(e.message);
+      invalidate(keys.results());
+    }
   };
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-      showToast('Results synchronized with academic ledger!');
-    }, 600);
-  };
-
-  const fullMarksCount = FIGMA_RESULTS_CARDS.filter((c) => c.scorePercentage === 100).length;
+  const allCards = useMemo(() => (data?.results || []).map(toCard), [data]);
+  const fullMarksCount = data?.stats?.fullMarks ?? 0;
 
   const displayedCards = useMemo(() => {
-    let list = FIGMA_RESULTS_CARDS;
+    let list = allCards;
     if (activeFilter === 'full-marks') {
-      list = list.filter((c) => c.scorePercentage === 100);
+      list = list.filter((c) => c.correctDenominator > 0 && c.scorePercentage === 100);
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter((c) => c.topic.toLowerCase().includes(q) || c.category.toLowerCase().includes(q));
     }
     return list;
-  }, [activeFilter, searchQuery]);
+  }, [allCards, activeFilter, searchQuery]);
 
   return (
     <div
@@ -427,7 +295,7 @@ export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
                 lineHeight: '38px'
               }}
             >
-              478
+              {(data?.stats?.attempts ?? 0).toLocaleString()}
             </div>
             <div
               style={{
@@ -485,7 +353,7 @@ export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
                   textAlign: 'center'
                 }}
               >
-                All ({FIGMA_RESULTS_CARDS.length})
+                All ({(data?.stats?.attempts ?? 0)})
               </button>
 
               <button
@@ -627,7 +495,7 @@ export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                   <path d="M3 3v5h5" />
                 </svg>
-                <span>All results ({FIGMA_RESULTS_CARDS.length})</span>
+                <span>All results ({(data?.stats?.attempts ?? 0)})</span>
               </button>
 
               {/* FULL MARKS BUTTON */}
@@ -726,7 +594,7 @@ export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
                 color: '#8A97A6'
               }}
             >
-              Avg 0 pts
+              Avg {data?.stats?.averagePercent ?? 0}%
             </span>
 
             <button
@@ -785,7 +653,23 @@ export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
           paddingBottom: '32px'
         }}
       >
-        {displayedCards.map((item) => {
+        {error && !data && (
+          <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '12px', padding: '14px 16px', color: '#DC2626', fontSize: '13px', fontWeight: 600 }}>
+            Couldn't load your results: {error.message}
+          </div>
+        )}
+        {isLoading && [0, 1, 2].map((i) => <div key={i} className="skeleton-shimmer" style={{ height: '150px', borderRadius: '14px' }} />)}
+        {data && !displayedCards.length && (
+          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: '#0B1A2B', marginBottom: '6px' }}>
+              {allCards.length ? 'Nothing matches' : 'No results yet'}
+            </div>
+            <div style={{ fontSize: '13px', color: '#64748B' }}>
+              {allCards.length ? 'Try another search or filter.' : 'Finish a quiz from any roadmap and it shows up here.'}
+            </div>
+          </div>
+        )}
+        {displayedCards.slice(0, limit).map((item) => {
           // Pill Colors matching Figma exact visual
           let pillBg = '#FFF4E5';
           let pillColor = '#D97706';
@@ -1277,7 +1161,7 @@ export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
                         color: '#8A97A6'
                       }}
                     >
-                      Streak bonus
+                      Type
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: '#0B1A2B' }}>
                       {FigmaIcons.streakBonus}
@@ -1307,6 +1191,27 @@ export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
 
                 {/* Right: Action Buttons */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                  <button
+                    type="button"
+                    onClick={() => trash(item)}
+                    aria-label="Move result to trash"
+                    title="Move result to trash"
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: '#FFFFFF',
+                      border: '1px solid #E2E8F0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Icon name="trash" size={14} color="#94A3B8" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => setSelectedReviewModal(item)}
@@ -1383,6 +1288,17 @@ export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
             </div>
           );
         })}
+        {displayedCards.length > limit && (
+          <div style={{ textAlign: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setLimit(limit + PAGE)}
+              style={{ background: '#FFFFFF', color: '#0B1A2B', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 16px', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s ease' }}
+            >
+              Show more ({displayedCards.length - limit} older)
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ======================================================================
@@ -1521,7 +1437,9 @@ export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
                 WebkitOverflowScrolling: 'touch'
               }}
             >
-              {(SAMPLE_BREAKDOWNS[selectedReviewModal.topicKey] || SAMPLE_BREAKDOWNS['q-curve']).map((q) => (
+              {detail.isLoading && <div className="skeleton-shimmer" style={{ height: '140px', borderRadius: '10px' }} />}
+              {detail.error && <div style={{ color: '#DC2626', fontSize: '13px', fontWeight: 600 }}>{detail.error.message}</div>}
+              {(detail.data?.answers || []).slice(0, 50).map((a) => ({ ...a, qNum: a.index, userAnswer: a.userAnswer || 'No answer given' })).map((q) => (
                 <div
                   key={q.qNum}
                   style={{
@@ -1655,30 +1573,6 @@ export default function ResultsPage({ onBackToDashboard, onRetakeQuiz }) {
         </ModalPortal>
       )}
 
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            background: '#0B1A2B',
-            color: '#FFFFFF',
-            padding: '12px 20px',
-            borderRadius: '8px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            fontSize: '13px',
-            fontWeight: 600,
-            zIndex: 10000
-          }}
-        >
-          <Icon name="checkCircle" variant="bold" size={16} color="#10B981" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </div>
   );
 }

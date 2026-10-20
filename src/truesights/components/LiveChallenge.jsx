@@ -1,93 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import Icon from '../design-system/icons';
+import { api, invalidate, keys } from '../data';
+import { pathFor } from '../session';
+import { uidKey } from '../../revamp/lib/api';
 
-// Curated 5 Questions extracted from Kerala Building Rules 2025
-const CHALLENGE_QUESTIONS = [
-  {
-    id: 'q-1',
-    category: 'DIGITAL GOVERNANCE & PERMITS',
-    question: 'An architect is submitting a residential building plan under the new Kerala Building Rules 2025. Instead of visiting the municipal office, they use the K-SMART platform. What is the primary conceptual benefit of this integration?',
-    options: [
-      { letter: 'A', text: 'It eliminates the need to follow any structural safety codes or building rules.' },
-      { letter: 'B', text: 'It ensures transparency, allows real-time tracking, and reduces manual bureaucratic delays.' },
-      { letter: 'C', text: 'It allows builders to construct properties without keeping any official government records.' },
-      { letter: 'D', text: 'It transfers the local building approval authority directly to the central government.' }
-    ],
-    correctIndex: 1,
-    explanation: 'K-SMART delivers automated rule scrutiny and transparent end-to-end digital tracking, eliminating manual clerical delays in statutory permit approvals.'
-  },
-  {
-    id: 'q-2',
-    category: 'PERMIT TIERS & SELF-CERTIFICATION',
-    question: 'Under the risk-based permit framework of the 2025 amendments, what built-up area threshold qualifies low-risk residential buildings for registered self-certification?',
-    options: [
-      { letter: 'A', text: 'Structures with total built-up area up to 300 sq.m certified by registered professionals.' },
-      { letter: 'B', text: 'Any commercial complex with a minimum 12-meter road frontage.' },
-      { letter: 'C', text: 'High-rise residential buildings exceeding 15 meters in municipal corporation limits.' },
-      { letter: 'D', text: 'Properties located exclusively within designated coastal CRZ-1 zones.' }
-    ],
-    correctIndex: 0,
-    explanation: 'Residential plots with built-up areas under 300 sq.m qualify for immediate self-certification through registered architects with deemed approval.'
-  },
-  {
-    id: 'q-3',
-    category: 'GEO-TECHNICAL & TOPOGRAPHICAL SAFETY',
-    question: 'In ecologically sensitive hilly terrains of Wayanad and Idukki, at what natural terrain gradient does the 2025 code mandate certified slope stability and geotechnical borehole testing?',
-    options: [
-      { letter: 'A', text: 'Terrain slopes under 10 degrees gradient.' },
-      { letter: 'B', text: 'Slopes exceeding 25 degrees gradient prior to foundation excavation.' },
-      { letter: 'C', text: 'Only when constructing on flat reclaimed wetland beds.' },
-      { letter: 'D', text: 'Voluntary geotechnical clearance recommended but not legally enforced.' }
-    ],
-    correctIndex: 1,
-    explanation: 'Terrain slopes exceeding 25 degrees require mandatory geotechnical investigations and certified retaining wall structural calculations to safeguard against landslide hazards.'
-  },
-  {
-    id: 'q-4',
-    category: 'SUSTAINABILITY & WATER MANAGEMENT',
-    question: 'What is the statutory rainwater harvesting cistern capacity mandated for new residential constructions with a plot size exceeding 200 sq.m under the updated environmental norms?',
-    options: [
-      { letter: 'A', text: 'Minimum 50 liters per square meter of effective roof catchment area.' },
-      { letter: 'B', text: 'No rainwater harvesting is required if connected to municipal piped water.' },
-      { letter: 'C', text: 'A flat 500-liter storage barrel regardless of plot dimensions.' },
-      { letter: 'D', text: 'Unfiltered open surface percolation trenches without desilting chambers.' }
-    ],
-    correctIndex: 0,
-    explanation: 'The 2025 rules mandate minimum 50 liters of dedicated rainwater storage or ground recharge capacity per square meter of rooftop catchment area.'
-  },
-  {
-    id: 'q-5',
-    category: 'FIRE & LIFE SAFETY COMPLIANCE',
-    question: 'For commercial assembly buildings and mixed-use structures exceeding 15 meters in height, what automated life safety infrastructure is now compulsory before obtaining an occupancy certificate?',
-    options: [
-      { letter: 'A', text: 'Dedicated smoke evacuation shafts and automated central riser booster pumps linked to fire telemetry.' },
-      { letter: 'B', text: 'Manual handheld fire extinguishers placed only at the ground floor entrance.' },
-      { letter: 'C', text: 'Wooden fire doors without certified two-hour fire endurance ratings.' },
-      { letter: 'D', text: 'A single exterior spiral staircase serving all upper floors.' }
-    ],
-    correctIndex: 0,
-    explanation: 'High-occupancy buildings above 15m require synchronized automated fire suppression, monitored smoke management dampers, and direct telemetry dispatch links.'
+const QUESTION_TIME_LIMIT = 25;
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+const draftKey = (topic, challengeId) => `ts-quiz-draft:${challengeId || topic}`;
+
+const readDraft = (key) => {
+  try {
+    return JSON.parse(sessionStorage.getItem(key) || 'null');
+  } catch {
+    return null;
   }
-];
+};
+const writeDraft = (key, value) => {
+  try {
+    if (value) sessionStorage.setItem(key, JSON.stringify(value));
+    else sessionStorage.removeItem(key);
+  } catch {
+    // ignore
+  }
+};
 
-export default function LiveChallenge({
-  project,
-  subtopic,
-  savedSession,
-  onSaveAndExit,
-  onFinishChallenge,
-  onReturnToWorkspace,
-  onViewResults
-}) {
-  // Phase: 'loading' | 'testing' | 'results'
+const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+/** A question from the quiz/challenge API in the shape the console renders. */
+const toQuestion = (q, i, topic) => ({
+  id: q.id || `q-${i + 1}`,
+  category: (q.keyConcept || topic || 'Knowledge check').toUpperCase(),
+  question: q.question,
+  options: (q.options || []).map((text, j) => ({ letter: LETTERS[j] || String(j + 1), text }))
+});
+
+/**
+ * Quiz runner for a roadmap subtopic (/quiz/:topic?projectTopic=&from=kind/id)
+ * or a peer challenge (?challengeId=). Questions carry no answer key: the
+ * server grades the submission and returns the correct answers for review.
+ */
+export default function LiveChallenge() {
+  const { topic: rawTopic } = useParams();
+  const topic = decodeURIComponent(rawTopic || '');
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const challengeId = params.get('challengeId');
+  const projectTopic = params.get('projectTopic');
+  const from = params.get('from'); // "self/<id>" | "educator/<id>"
+  const backTo = from ? `${pathFor('projects')}/${from}` : challengeId ? pathFor('challenges') : pathFor('projects');
+  const key = draftKey(topic, challengeId);
+  const subtopic = { title: topic };
+
+  // Phase: 'loading' | 'testing' | 'submitting' | 'results' | 'error'
   const [phase, setPhase] = useState('loading');
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadError, setLoadError] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [quizId, setQuizId] = useState(null);
+  const [challengeOutcome, setChallengeOutcome] = useState(null);
+  const [usedSeconds, setUsedSeconds] = useState(0);
 
   // Challenge State
-  const [currentIndex, setCurrentIndex] = useState(savedSession?.currentIndex || 0);
-  const [selectedAnswers, setSelectedAnswers] = useState(savedSession?.selectedAnswers || {});
-  const [timerSeconds, setTimerSeconds] = useState(savedSession?.timerSeconds || 25);
-  const [isTimerPaused, setIsTimerPaused] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [timerSeconds, setTimerSeconds] = useState(QUESTION_TIME_LIMIT);
 
   // Results Review State
   const [activeReviewIndex, setActiveReviewIndex] = useState(0);
@@ -97,6 +75,7 @@ export default function LiveChallenge({
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -106,34 +85,64 @@ export default function LiveChallenge({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const QUESTION_TIME_LIMIT = 25;
-
-  // 1. Sleek TrueSights Continuous Loader (smooth 1.2s transition without broken animation)
+  // 1. Load questions (or resume a saved draft) behind the launch screen.
   useEffect(() => {
+    let alive = true;
     const startTime = Date.now();
-    const duration = 1200;
-
-    const interval = setInterval(() => {
+    let loaded = false;
+    const tick = setInterval(() => {
+      // The bar creeps toward 90% until the questions arrive, then completes.
       const elapsed = Date.now() - startTime;
-      const pct = Math.min(100, Math.round((elapsed / duration) * 100));
-      setLoadingProgress(pct);
+      setLoadingProgress((p) => (loaded ? Math.min(100, p + 8) : Math.min(90, Math.round((elapsed / 12000) * 90))));
+    }, 60);
 
-      if (pct >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setPhase('testing');
-        }, 180);
-      }
-    }, 25);
+    const begin = (qs, extra = {}) => {
+      if (!alive) return;
+      loaded = true;
+      setQuestions(qs);
+      if (extra.answers) setSelectedAnswers(extra.answers);
+      if (extra.index) setCurrentIndex(extra.index);
+      if (extra.used) setUsedSeconds(extra.used);
+      setTimeout(() => alive && setPhase('testing'), Math.max(0, 900 - (Date.now() - startTime)));
+    };
 
-    return () => clearInterval(interval);
-  }, []);
+    const draft = readDraft(key);
+    if (draft?.questions?.length) {
+      setQuizId(draft.quizId || null);
+      begin(draft.questions, { answers: draft.answers || {}, index: draft.index || 0, used: draft.used || 0 });
+      toast.info('Resumed your saved quiz.');
+    } else {
+      const load = challengeId
+        ? api.getChallenge(challengeId).then((c) => {
+            if (!c?.questions?.length) throw new Error('This challenge has no questions.');
+            return { questions: c.questions };
+          })
+        : api.generateQuiz(topic, projectTopic);
+      load
+        .then((res) => {
+          const qs = res?.questions;
+          if (!Array.isArray(qs) || !qs.length) throw new Error('No questions came back - please try again.');
+          if (alive) setQuizId(res?.quizId || null);
+          begin(qs.map((q, i) => toQuestion(q, i, topic)));
+        })
+        .catch((e) => {
+          if (!alive) return;
+          setLoadError(e);
+          setPhase('error');
+        });
+    }
+    return () => {
+      alive = false;
+      clearInterval(tick);
+    };
+  }, [key, challengeId, topic, projectTopic]);
 
   // 2. 25-Second Focus Timer
   useEffect(() => {
-    if (phase !== 'testing' || isTimerPaused) return;
+    if (phase !== 'testing') return;
 
     const timer = setInterval(() => {
+      setUsedSeconds((u) => u + 1);
       setTimerSeconds((prev) => {
         if (prev <= 1) {
           handleAutoAdvance();
@@ -144,7 +153,8 @@ export default function LiveChallenge({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [phase, currentIndex, isTimerPaused, selectedAnswers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, currentIndex, selectedAnswers]);
 
   // Keyboard Shortcuts for testing
   useEffect(() => {
@@ -161,6 +171,7 @@ export default function LiveChallenge({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentIndex, selectedAnswers]);
 
   // Arrow key navigation for Results review
@@ -168,7 +179,7 @@ export default function LiveChallenge({
     if (phase !== 'results') return;
 
     const handleReviewKeys = (e) => {
-      if (e.key === 'ArrowRight' && activeReviewIndex < CHALLENGE_QUESTIONS.length - 1) {
+      if (e.key === 'ArrowRight' && activeReviewIndex < questions.length - 1) {
         setActiveReviewIndex((prev) => prev + 1);
       } else if (e.key === 'ArrowLeft' && activeReviewIndex > 0) {
         setActiveReviewIndex((prev) => prev - 1);
@@ -177,10 +188,10 @@ export default function LiveChallenge({
 
     window.addEventListener('keydown', handleReviewKeys);
     return () => window.removeEventListener('keydown', handleReviewKeys);
-  }, [phase, activeReviewIndex]);
+  }, [phase, activeReviewIndex, questions.length]);
 
   const handleAutoAdvance = () => {
-    if (currentIndex < CHALLENGE_QUESTIONS.length - 1) {
+    if (currentIndex < questions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       setTimerSeconds(QUESTION_TIME_LIMIT);
     } else {
@@ -189,6 +200,7 @@ export default function LiveChallenge({
   };
 
   const handleSelectOption = (optionIndex) => {
+    if (!questions[currentIndex] || optionIndex >= questions[currentIndex].options.length) return;
     setSelectedAnswers((prev) => ({
       ...prev,
       [currentIndex]: optionIndex
@@ -196,7 +208,7 @@ export default function LiveChallenge({
   };
 
   const handleNextOrSubmit = () => {
-    if (currentIndex < CHALLENGE_QUESTIONS.length - 1) {
+    if (currentIndex < questions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       setTimerSeconds(QUESTION_TIME_LIMIT);
     } else {
@@ -204,78 +216,113 @@ export default function LiveChallenge({
     }
   };
 
-  const handleSubmitQuiz = () => {
-    setPhase('results');
-    let correctCount = 0;
-    CHALLENGE_QUESTIONS.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.correctIndex) {
-        correctCount += 1;
+  const handleSubmitQuiz = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setPhase('submitting');
+    const total = questions.length * QUESTION_TIME_LIMIT;
+    const timeTaken = mmss(Math.max(0, usedSeconds));
+    const timeLeft = Math.max(0, total - usedSeconds);
+    // Only the picked options go up; the server marks them against its key.
+    const picked = questions.map((q, i) => ({
+      question: q.question,
+      userAnswer: selectedAnswers[i] !== undefined ? q.options[selectedAnswers[i]].text : null
+    }));
+    try {
+      let rows;
+      if (challengeId) {
+        const res = await api.submitChallenge(challengeId, { answers: picked, timeTaken });
+        rows = res.answers;
+        setChallengeOutcome(res.challenge || null);
+      } else {
+        const result = await api.submitQuiz({ quizId, answers: picked, timeLeft, timeTaken, subtopic: topic });
+        rows = result.answers;
       }
-    });
+      writeDraft(key, null);
+      invalidate(keys.results(), keys.dashboard(), keys.bootstrap(), keys.projects(), `${uidKey('learn:project:')}*`, keys.challenges());
+      if (from) invalidate(keys.project(...from.split('/')));
 
-    const earnedPoints = correctCount * 5;
-    if (onFinishChallenge) {
-      onFinishChallenge({
-        subtopicId: subtopic?.id,
-        score: correctCount,
-        total: CHALLENGE_QUESTIONS.length,
-        points: earnedPoints
+      // Merge the graded key into the questions so the review can show it.
+      const graded = questions.map((q, i) => {
+        const row = rows?.[i] || {};
+        const correctIndex = q.options.findIndex((o) => o.text.trim() === String(row.correctAnswer || '').trim());
+        return { ...q, correctIndex, explanation: row.explanation || '' };
       });
-    }
+      setQuestions(graded);
+      const correctCount = rows ? rows.filter((r) => r.isCorrect).length : 0;
+      setPhase('results');
+      if (correctCount >= Math.ceil(graded.length / 2)) setShowConfetti(true);
 
-    if (correctCount >= 2) {
-      setShowConfetti(true);
-    }
-
-    // Points ticker animation
-    let count = 0;
-    const targetPoints = earnedPoints > 0 ? earnedPoints : 5;
-    const ticker = setInterval(() => {
-      count += 1;
-      setAnimatedPoints(count);
-      if (count >= targetPoints) {
-        clearInterval(ticker);
+      // Points ticker animation (1 point per correct answer).
+      let count = 0;
+      const ticker = setInterval(() => {
+        count += 1;
+        setAnimatedPoints(Math.min(count, correctCount));
+        if (count >= correctCount) clearInterval(ticker);
+      }, 60);
+    } catch (e) {
+      submittingRef.current = false;
+      // 429 = usage limit, 409 = already submitted (e.g. another tab).
+      if (e.status === 429 || e.status === 409) {
+        toast.error(e.message || 'This quiz can no longer be submitted.');
+        writeDraft(key, null);
+        navigate(backTo);
+        return;
       }
-    }, 45);
+      toast.error(e.message || "Couldn't submit - your answers are kept, try again.");
+      setPhase('testing');
+    }
   };
 
   const handleSaveAndExit = () => {
-    if (onSaveAndExit) {
-      onSaveAndExit({
-        projectId: project?.id,
-        subtopicId: subtopic?.id,
-        currentIndex,
-        selectedAnswers,
-        timerSeconds
-      });
-    }
+    writeDraft(key, { questions, quizId, answers: selectedAnswers, index: currentIndex, used: usedSeconds });
+    toast.success('Progress saved - pick up where you left off any time this session.');
+    navigate(backTo);
   };
 
+  // Retake: a fresh quiz (new questions); challenges can only be played once.
   const handleRetakeChallenge = () => {
-    setSelectedAnswers({});
-    setCurrentIndex(0);
-    setTimerSeconds(QUESTION_TIME_LIMIT);
-    setAnimatedPoints(0);
-    setShowConfetti(false);
-    setActiveReviewIndex(0);
-    setPhase('testing');
+    writeDraft(key, null);
+    window.location.reload();
   };
 
-  const currentQ = CHALLENGE_QUESTIONS[currentIndex];
-  const progressPercent = ((currentIndex + 1) / CHALLENGE_QUESTIONS.length) * 100;
+  const onReturnToWorkspace = () => navigate(backTo);
+  const onViewResults = () => navigate(pathFor('results'));
+
+  if (phase === 'error') {
+    return (
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E6EF', borderRadius: '20px', padding: '32px', maxWidth: '430px', width: '100%', textAlign: 'center', boxShadow: '0 8px 30px rgba(40, 61, 130, 0.08)' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1F2537', marginBottom: '8px' }}>Couldn't start this quiz</h3>
+          <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5, marginBottom: '20px' }}>{loadError?.message}</p>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <button type="button" onClick={() => navigate(backTo)} style={{ background: '#FFFFFF', color: '#0B1A2B', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '9px 16px', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}>
+              Back
+            </button>
+            <button type="button" onClick={() => window.location.reload()} style={{ background: '#0B3A6F', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+              Try again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentQ = questions[currentIndex] || { category: '', question: '', options: [] };
+  const progressPercent = ((currentIndex + 1) / questions.length) * 100;
   const isTimerUrgent = timerSeconds <= 5;
 
-  const correctTotal = CHALLENGE_QUESTIONS.filter(
+  const correctTotal = questions.filter(
     (q, idx) => selectedAnswers[idx] === q.correctIndex
   ).length;
-  const masteryPercentage = Math.round((correctTotal / CHALLENGE_QUESTIONS.length) * 100);
+  const masteryPercentage = questions.length ? Math.round((correctTotal / questions.length) * 100) : 0;
 
   // Active Review Question for Results Inspector
-  const activeReviewQ = CHALLENGE_QUESTIONS[activeReviewIndex];
+  const activeReviewQ = questions[activeReviewIndex] || { options: [], correctIndex: -1 };
   const userReviewChoice = selectedAnswers[activeReviewIndex];
   const isReviewCorrect = userReviewChoice === activeReviewQ.correctIndex;
   const chosenReviewOpt = userReviewChoice !== undefined ? activeReviewQ.options[userReviewChoice] : null;
-  const correctReviewOpt = activeReviewQ.options[activeReviewQ.correctIndex];
+  const correctReviewOpt = activeReviewQ.options[activeReviewQ.correctIndex] || { letter: '?', text: 'See explanation' };
 
   // SVG Gauge calculations
   const gaugeRadius = 40;
@@ -285,7 +332,7 @@ export default function LiveChallenge({
   // =============================================================
   // 1. TRUESIGHTS MINIMAL LIGHT LOADING SCREEN (WITH OFFICIAL LOGO)
   // =============================================================
-  if (phase === 'loading') {
+  if (phase === 'loading' || phase === 'submitting') {
     return (
       <div
         style={{
@@ -377,7 +424,7 @@ export default function LiveChallenge({
               letterSpacing: '-0.01em'
             }}
           >
-            Launching Live Challenge
+            {phase === 'submitting' ? 'Grading your answers' : challengeId ? 'Launching Live Challenge' : 'Generating your questions'}
           </h3>
 
           <p
@@ -388,7 +435,7 @@ export default function LiveChallenge({
               fontFamily: 'var(--font-primary)'
             }}
           >
-            {subtopic?.title || 'Kerala Building Rules 2025'}
+            {subtopic.title}
           </p>
 
           {/* Smooth Continuous Progress Bar */}
@@ -403,7 +450,7 @@ export default function LiveChallenge({
           >
             <div
               style={{
-                width: `${loadingProgress}%`,
+                width: `${phase === 'submitting' ? 100 : loadingProgress}%`,
                 height: '100%',
                 background: 'linear-gradient(90deg, #4B7EE8 0%, #2563EB 100%)',
                 borderRadius: '999px',
@@ -421,10 +468,12 @@ export default function LiveChallenge({
               fontFamily: 'var(--font-primary)'
             }}
           >
-            {loadingProgress < 45
-              ? 'Verifying statutory scenario parameters...'
-              : loadingProgress < 85
-              ? 'Synthesizing automated approval criteria...'
+            {phase === 'submitting'
+              ? 'Checking your answers against the key...'
+              : loadingProgress < 45
+              ? 'Drafting fresh questions on this topic...'
+              : loadingProgress < 90
+              ? 'Checking every question against the source...'
               : 'Launching challenge harness...'}
           </div>
         </div>
@@ -531,7 +580,7 @@ export default function LiveChallenge({
                 >
                   <Icon name="challenges" size={12} color="#4B7EE8" />
                   <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1F2537', fontFamily: 'var(--font-primary)' }}>
-                    {currentIndex + 1}/{CHALLENGE_QUESTIONS.length}
+                    {currentIndex + 1}/{questions.length}
                   </span>
                 </div>
 
@@ -646,7 +695,7 @@ export default function LiveChallenge({
                     fontFamily: 'var(--font-primary)'
                   }}
                 >
-                  KNOWLEDGE STACK · {subtopic?.title || 'K-SMART INTEGRATION AND AUTOMATED APPROVALS'}
+                  {challengeId ? 'PEER CHALLENGE' : 'KNOWLEDGE STACK'} · {subtopic.title}
                 </div>
               </div>
 
@@ -693,7 +742,7 @@ export default function LiveChallenge({
                       QUESTION
                     </div>
                     <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--heading-text, #1F2537)', fontFamily: 'var(--font-primary)' }}>
-                      {currentIndex + 1} <span style={{ fontSize: '11.5px', color: '#8A97A6' }}>/ {CHALLENGE_QUESTIONS.length}</span>
+                      {currentIndex + 1} <span style={{ fontSize: '11.5px', color: '#8A97A6' }}>/ {questions.length}</span>
                     </div>
                   </div>
                 </div>
@@ -712,7 +761,7 @@ export default function LiveChallenge({
                 >
                   <Icon name="rewardGem" size={15} color="#F59E0B" />
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#1F2537', fontFamily: 'var(--font-primary)' }}>
-                    +25 PTS
+                    +{questions.length} PTS MAX
                   </span>
                 </div>
               </div>
@@ -900,7 +949,7 @@ export default function LiveChallenge({
           >
             {/* Question Quick Pills with Official Icon Status */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch', paddingBottom: isMobile ? '2px' : 0 }}>
-              {CHALLENGE_QUESTIONS.map((_, idx) => {
+              {questions.map((_, idx) => {
                 const isCurrent = idx === currentIndex;
                 const isAnswered = selectedAnswers[idx] !== undefined;
 
@@ -1002,7 +1051,7 @@ export default function LiveChallenge({
                 }}
               >
                 <span>
-                  {currentIndex === CHALLENGE_QUESTIONS.length - 1
+                  {currentIndex === questions.length - 1
                     ? 'Submit Challenge'
                     : 'Next Question'}
                 </span>
@@ -1140,7 +1189,7 @@ export default function LiveChallenge({
                 fontFamily: 'var(--font-primary)'
               }}
             >
-              {subtopic?.title || 'Kerala Building Rules 2025'}
+              {subtopic.title}
             </p>
           </div>
 
@@ -1196,7 +1245,7 @@ export default function LiveChallenge({
               {/* Stats column next to gauge */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', fontFamily: 'var(--font-primary)' }}>
-                  {correctTotal} of {CHALLENGE_QUESTIONS.length} Correct
+                  {correctTotal} of {questions.length} Correct
                 </div>
 
                 <div
@@ -1254,7 +1303,7 @@ export default function LiveChallenge({
               </div>
 
               <div style={{ fontSize: '12px', fontWeight: 700, color: '#475569', fontFamily: 'var(--font-primary)' }}>
-                {correctTotal} of {CHALLENGE_QUESTIONS.length} Questions Correct
+                {correctTotal} of {questions.length} Questions Correct
               </div>
 
               {/* Points Acquired Highlight Banner */}
@@ -1284,6 +1333,16 @@ export default function LiveChallenge({
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {challengeId && (
+            <div style={{ fontSize: '12px', fontWeight: 600, color: '#475569', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 12px', textAlign: 'center' }}>
+              {challengeOutcome?.status === 'completed'
+                ? challengeOutcome.winner === 'tie'
+                  ? "Both players finished - it's a tie!"
+                  : 'Both players finished - compare scores on the Challenges page.'
+                : 'Waiting for your peer to play. The winner earns double points.'}
             </div>
           )}
 
@@ -1500,7 +1559,7 @@ export default function LiveChallenge({
                   QUESTION ANALYSIS
                 </span>
                 <span style={{ fontSize: '11px', color: '#8A97A6', fontWeight: 600 }}>
-                  • Kerala Building Rules 2025
+                  • {subtopic.title}
                 </span>
               </div>
 
@@ -1599,7 +1658,7 @@ export default function LiveChallenge({
                     <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, marginRight: '3px', flexShrink: 0 }}>
                       Select:
                     </span>
-                    {CHALLENGE_QUESTIONS.map((q, idx) => {
+                    {questions.map((q, idx) => {
                       const isCorrect = selectedAnswers[idx] === q.correctIndex;
                       const isActive = idx === activeReviewIndex;
 
@@ -1634,7 +1693,7 @@ export default function LiveChallenge({
                   </div>
 
                   <span style={{ fontSize: '11px', color: '#8A97A6', fontWeight: 600 }}>
-                    Question {activeReviewIndex + 1} of {CHALLENGE_QUESTIONS.length}
+                    Question {activeReviewIndex + 1} of {questions.length}
                   </span>
                 </>
               ) : (
@@ -1659,12 +1718,12 @@ export default function LiveChallenge({
                         fontWeight: 800,
                         padding: '2px 8px',
                         borderRadius: '6px',
-                        background: CHALLENGE_QUESTIONS.length - correctTotal > 0 ? '#FEE2E2' : '#F1F5F9',
-                        color: CHALLENGE_QUESTIONS.length - correctTotal > 0 ? '#B91C1C' : '#64748B',
+                        background: questions.length - correctTotal > 0 ? '#FEE2E2' : '#F1F5F9',
+                        color: questions.length - correctTotal > 0 ? '#B91C1C' : '#64748B',
                         fontFamily: 'var(--font-primary)'
                       }}
                     >
-                      {CHALLENGE_QUESTIONS.length - correctTotal} Incorrect
+                      {questions.length - correctTotal} Incorrect
                     </span>
                   </div>
 
@@ -1731,7 +1790,7 @@ export default function LiveChallenge({
                       fontFamily: 'var(--font-primary)'
                     }}
                   >
-                    {isReviewCorrect ? 'CORRECT (+5 PTS)' : 'INCORRECT (+0 PTS)'}
+                    {isReviewCorrect ? 'CORRECT (+1 PT)' : 'INCORRECT (+0 PTS)'}
                   </span>
                 </div>
 
@@ -1781,7 +1840,7 @@ export default function LiveChallenge({
                           ✓ YOUR SUBMITTED ANSWER (CORRECT)
                         </span>
                         <span style={{ fontSize: '11px', fontWeight: 800, color: '#166534' }}>
-                          Complies with Kerala Rules 2025
+                          Well done
                         </span>
                       </div>
 
@@ -1828,7 +1887,7 @@ export default function LiveChallenge({
                         }}
                       >
                         <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                          Statutory Authority & Rule Rationale:
+                          Explanation:
                         </div>
                         <div style={{ fontSize: '11.5px', color: '#14532D', fontWeight: 500, lineHeight: 1.4, marginTop: '2px', fontFamily: 'var(--font-primary)' }}>
                           {activeReviewQ.explanation}
@@ -1978,7 +2037,7 @@ export default function LiveChallenge({
                           }}
                         >
                           <div style={{ fontSize: '9px', fontWeight: 800, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            Statutory Legal Basis:
+                            Explanation:
                           </div>
                           <div style={{ fontSize: '11.5px', color: '#14532D', fontWeight: 500, lineHeight: 1.4, marginTop: '2px', fontFamily: 'var(--font-primary)' }}>
                             {activeReviewQ.explanation}
@@ -2016,17 +2075,17 @@ export default function LiveChallenge({
 
                   <button
                     type="button"
-                    disabled={activeReviewIndex === CHALLENGE_QUESTIONS.length - 1}
+                    disabled={activeReviewIndex === questions.length - 1}
                     onClick={() => setActiveReviewIndex((prev) => prev + 1)}
                     style={{
                       padding: '5px 12px',
                       background: '#FFFFFF',
                       border: '1px solid #CBD5E1',
                       borderRadius: '6px',
-                      color: activeReviewIndex === CHALLENGE_QUESTIONS.length - 1 ? '#94A3B8' : '#1F2537',
+                      color: activeReviewIndex === questions.length - 1 ? '#94A3B8' : '#1F2537',
                       fontSize: '11.5px',
                       fontWeight: 700,
-                      cursor: activeReviewIndex === CHALLENGE_QUESTIONS.length - 1 ? 'default' : 'pointer',
+                      cursor: activeReviewIndex === questions.length - 1 ? 'default' : 'pointer',
                       fontFamily: 'var(--font-primary)'
                     }}
                   >
@@ -2047,7 +2106,7 @@ export default function LiveChallenge({
                   justifyContent: 'flex-start'
                 }}
               >
-                {CHALLENGE_QUESTIONS.map((q, qIdx) => {
+                {questions.map((q, qIdx) => {
                   const userPick = selectedAnswers[qIdx];
                   const isRight = userPick === q.correctIndex;
                   const chosen = userPick !== undefined ? q.options[userPick] : null;
@@ -2126,7 +2185,7 @@ export default function LiveChallenge({
                               fontFamily: 'var(--font-primary)'
                             }}
                           >
-                            {isRight ? '+5 PTS' : '0 PTS'}
+                            {isRight ? '+1 PT' : '0 PTS'}
                           </span>
                           <span style={{ fontSize: '10.5px', color: '#4B7EE8', fontWeight: 700 }}>
                             Inspect →
@@ -2248,7 +2307,7 @@ export default function LiveChallenge({
                             wordBreak: 'break-word'
                           }}
                         >
-                          Legal Basis: {q.explanation}
+                          {q.explanation ? `Explanation: ${q.explanation}` : ''}
                         </div>
                       </div>
                     </div>
