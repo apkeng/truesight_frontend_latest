@@ -1,15 +1,31 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import { api, keys, useQuery } from '../data';
+import { useTS } from '../session';
+
+const ADDRESS_KEY = 'ts-last-address';
+const readSaved = () => {
+  try {
+    return JSON.parse(localStorage.getItem(ADDRESS_KEY) || 'null') || {};
+  } catch {
+    return {};
+  }
+};
 
 export default function CheckoutPage({
   product,
   selectedChoice,
-  pointsWallet = 161,
+  pointsWallet = 0,
+  submitting = false,
   onBackToProduct,
   onConfirmAcquisition,
   onOpenOrders,
   ordersCount = 0,
   isMobile: propIsMobile
 }) {
+  const { profile } = useTS();
+  const me = useQuery(keys.me(), api.me, { staleMs: 300_000 });
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
@@ -28,15 +44,27 @@ export default function CheckoutPage({
 
   const isMobile = propIsMobile !== undefined ? propIsMobile : internalIsMobile;
 
-  // Shipping Form State with clean campus student defaults
-  const [shippingForm, setShippingForm] = useState({
-    fullName: 'Yadu Test Student',
-    email: 'yadu.student@truesights.edu',
-    phone: '+91 98765 43210',
-    deliveryAddress: 'Room 302, Hostel 4, North Campus Residence',
-    city: 'Hyderabad',
-    zipCode: '500032'
+  // Shipping form: prefilled from the profile and the last address used
+  const [shippingForm, setShippingForm] = useState(() => {
+    const saved = readSaved();
+    return {
+      fullName: profile?.name || '',
+      email: profile?.email || '',
+      phone: saved.phone || '',
+      deliveryAddress: saved.deliveryAddress || '',
+      city: saved.city || '',
+      zipCode: saved.zipCode || ''
+    };
   });
+  useEffect(() => {
+    if (!me.data) return;
+    setShippingForm((f) => ({
+      ...f,
+      fullName: f.fullName || me.data.name || '',
+      email: f.email || me.data.email || '',
+      phone: f.phone || me.data.phone || ''
+    }));
+  }, [me.data]);
 
   // Calculate pricing & balance
   const discountPoints = appliedCoupon ? appliedCoupon.discount : 0;
@@ -44,20 +72,22 @@ export default function CheckoutPage({
   const postBalance = Math.max(0, pointsWallet - finalPoints);
   const canAfford = pointsWallet >= finalPoints;
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     setCouponError('');
     const code = couponCode.trim().toUpperCase();
     if (!code) {
       setCouponError('Please enter a coupon code.');
       return;
     }
-    if (code === 'CAMPUS10' || code === 'STUDENT10') {
-      const disc = Math.min(10, Math.floor(product.points * 0.25) || 5);
-      setAppliedCoupon({ code, discount: disc, label: `${disc} PTS Discount` });
-    } else if (code === 'BONUS5' || code === 'SAVE5') {
-      setAppliedCoupon({ code, discount: 5, label: '5 PTS Student Subsidy' });
-    } else {
-      setCouponError('Invalid code. Try "CAMPUS10" or "BONUS5".');
+    setCheckingCoupon(true);
+    try {
+      const result = await api.validateCoupon(code, product.points);
+      setAppliedCoupon({ code: result.coupon.code, discount: result.discount, label: `${result.discount} PTS off with ${result.coupon.code}` });
+    } catch (err) {
+      setAppliedCoupon(null);
+      setCouponError(err.message || 'That coupon is not valid.');
+    } finally {
+      setCheckingCoupon(false);
     }
   };
 
@@ -65,14 +95,30 @@ export default function CheckoutPage({
     setShippingForm((prev) => ({ ...prev, [field]: val }));
   };
 
+  const fullAddress = [shippingForm.deliveryAddress, shippingForm.city, shippingForm.zipCode].map((x) => x.trim()).filter(Boolean).join(', ');
+
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
-    if (!canAfford) return;
+    if (!canAfford || submitting) return;
+    if (fullAddress.length < 10) {
+      toast.error('Please enter a full delivery address.');
+      return;
+    }
+    if (!/^[+\d\s()-]{6,20}$/.test(shippingForm.phone.trim())) {
+      toast.error('Please enter a valid phone number.');
+      return;
+    }
+    try {
+      localStorage.setItem(ADDRESS_KEY, JSON.stringify({ phone: shippingForm.phone, deliveryAddress: shippingForm.deliveryAddress, city: shippingForm.city, zipCode: shippingForm.zipCode }));
+    } catch {
+      // ignore
+    }
     onConfirmAcquisition({
       product,
       selectedChoice,
       finalPoints,
       shippingForm,
+      address: fullAddress,
       appliedCoupon
     });
   };
@@ -421,7 +467,7 @@ export default function CheckoutPage({
 
           <button
             type="button"
-            disabled={!canAfford}
+            disabled={!canAfford || submitting}
             onClick={handleSubmit}
             style={{
               width: '100%',
@@ -441,7 +487,7 @@ export default function CheckoutPage({
               boxShadow: canAfford ? '0 2px 8px rgba(254, 224, 71, 0.4)' : 'none'
             }}
           >
-            <span>Confirm &amp; Acquire Reward</span>
+            <span>{submitting ? 'Placing your order…' : 'Confirm & Acquire Reward'}</span>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
@@ -853,7 +899,7 @@ export default function CheckoutPage({
                   justifyContent: 'space-between'
                 }}
               >
-                <span>Express Campus Motorbike</span>
+                <span>Standard delivery</span>
                 <span style={{ color: '#10B981', fontWeight: 800 }}>FREE</span>
               </div>
             </div>
@@ -1010,6 +1056,7 @@ export default function CheckoutPage({
                     <button
                       type="button"
                       onClick={handleApplyCoupon}
+                      disabled={checkingCoupon}
                       style={{
                         background: '#20346B',
                         color: '#FFFFFF',
@@ -1129,7 +1176,7 @@ export default function CheckoutPage({
 
             <button
               type="button"
-              disabled={!canAfford}
+              disabled={!canAfford || submitting}
               onClick={handleSubmit}
               style={{
                 width: '100%',
@@ -1161,7 +1208,7 @@ export default function CheckoutPage({
                 }
               }}
             >
-              <span>Authorize &amp; Confirm Acquisition</span>
+              <span>{submitting ? 'Placing your order…' : 'Authorize & Confirm Acquisition'}</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>

@@ -561,7 +561,7 @@ export default function DispatchAnimationPage({
                 Courier Rajesh K. En Route with Your Parcel
               </h2>
               <span style={{ fontSize: '13px', color: '#64748B', maxWidth: '440px', lineHeight: '18px' }}>
-                The bike is in active transit towards the regional logistics sorting facility.
+                Your order is confirmed. We'll notify you at every step until it reaches you.
               </span>
             </div>
           </div>
@@ -947,7 +947,7 @@ export default function DispatchAnimationPage({
                   }}
                 />
                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
-                  Delivery Window: <strong style={{ color: '#101D3B' }}>3 to 4 Working Days</strong>
+                  Delivery Window: <strong style={{ color: '#101D3B' }}>{order.eta}</strong>
                 </span>
               </div>
             </div>
@@ -1173,7 +1173,7 @@ export default function DispatchAnimationPage({
                     Delivery Timeline
                   </div>
                   <div style={{ fontSize: '14px', fontWeight: 800, color: '#101D3B', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                    3 to 4 Working Days
+                    {order.eta}
                   </div>
                 </div>
               </div>
@@ -1258,7 +1258,7 @@ export default function DispatchAnimationPage({
                     style={{ fontSize: '13px', fontWeight: 800, color: '#101D3B', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}
                     title={order.shipping?.deliveryAddress}
                   >
-                    {order.shipping?.deliveryAddress || 'Hostel Quad 4'}
+                    {order.shipping?.deliveryAddress || 'Campus pickup at your institute'}
                   </div>
                 </div>
               </div>
@@ -1365,13 +1365,13 @@ export default function DispatchAnimationPage({
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
                   <span style={{ fontSize: '11px', fontWeight: 800, color: '#15803D' }}>ESTIMATED DELIVERY</span>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#101D3B' }}>3 to 4 Working Days</span>
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#101D3B' }}>{order.eta}</span>
                 </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
                 <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803D' }}>SECURITY PROTOCOL</span>
-                <span style={{ fontSize: '12px', color: '#166534', fontWeight: 600 }}>OTP Handover at Hostel</span>
+                <span style={{ fontSize: '12px', color: '#166534', fontWeight: 600 }}>{order.fulfilment === 'pickup' ? 'Collect at your institute' : 'Delivered to your address'}</span>
               </div>
             </div>
 

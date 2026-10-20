@@ -72,6 +72,26 @@ export default function FirstTimeUserScreen({
           </div>
         </div>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {onBackToDashboard && (
+          <button
+            type="button"
+            onClick={onBackToDashboard}
+            style={{
+              background: '#FFFFFF',
+              color: '#0B1A2B',
+              border: '1px solid #E2E8F0',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              fontSize: '12.5px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            Skip to dashboard
+          </button>
+        )}
         {onCreateProject && (
           <button
             type="button"
@@ -95,6 +115,7 @@ export default function FirstTimeUserScreen({
             <span>Create New Project</span>
           </button>
         )}
+        </div>
       </div>
 
       {/* Main Hero Card: Clean & Direct */}

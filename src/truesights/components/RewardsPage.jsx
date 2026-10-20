@@ -1,226 +1,136 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { toast as notify } from 'react-toastify';
 import Icon from '../design-system/icons';
 import ProductDetailPage from './ProductDetailPage';
 import CheckoutPage from './CheckoutPage';
 import DispatchAnimationPage from './DispatchAnimationPage';
 import OrdersTrackerPage from './OrdersTrackerPage';
 import WishlistCartPage from './WishlistCartPage';
+import { api, invalidate, keys, setQueryData, useQuery } from '../data';
+import { pathFor, useTS } from '../session';
 
-// Data reflecting the reference screen + TrueSights campus rewards
-const REWARDS_CATALOG = [
-  {
-    id: 'rew-1',
-    title: 'Yoga Mat',
-    category: 'wellness',
-    categoryLabel: 'WELLNESS',
-    points: 10,
-    description: 'Premium quality yoga mat for fitness and wellness with laser-etched sacred alignment lines, dual-sided non-slip grip, and durable cushioning for joint support.',
-    image: '/assets/yoga-mat.svg',
-    images: [
-      '/assets/yoga-mat.svg',
-      '/assets/yoga-mat-rolled.svg',
-      '/assets/yoga-mat-detail.svg'
-    ],
-    options: {
-      type: 'Color',
-      choices: ['Forest Green', 'Ocean Navy', 'Ash Grey']
-    },
-    inStock: true,
-    pickupLocation: 'Campus Sports Center · Desk A',
-    specifications: 'High-density eco foam · Dual-sided non-slip grip · Sacred mandala alignment guide'
-  },
-  {
-    id: 'rew-2',
-    title: 'Decathlon Mesh Swim Cap for Adults (56-59 cm) - Black',
-    category: 'wellness',
-    categoryLabel: 'WELLNESS',
-    points: 32,
-    description: 'So that putting on a hat is no longer a headache, this fabric model is easy to put on and remove with chlorine-resistant elastic blend.',
-    image: '/assets/swim-cap.svg',
-    images: [
-      '/assets/swim-cap.svg',
-      '/assets/swim-cap-detail.svg',
-      '/assets/swim-cap-pack.svg'
-    ],
-    options: {
-      type: 'Size',
-      choices: ['Medium (56-59 cm)', 'Large (59-62 cm)']
-    },
-    inStock: true,
-    pickupLocation: 'Campus Aquatic Complex · Reception',
-    specifications: 'Elastic mesh fabric · Water-repellent coating · Chlorine resistant'
-  },
-  {
-    id: 'rew-3',
-    title: 'NABAIJI Microfibre Towel Basic Small Lightweight & Absorbent',
-    category: 'wellness',
-    categoryLabel: 'WELLNESS',
-    points: 33,
-    description: 'For swimmers and other athletes wanting to dry themselves effectively. A very handy, ultra-compact quick-drying waffle towel.',
-    image: '/assets/microfibre-towel.svg',
-    images: [
-      '/assets/microfibre-towel.svg',
-      '/assets/microfibre-towel-rolled.svg',
-      '/assets/microfibre-towel-detail.svg'
-    ],
-    options: {
-      type: 'Size',
-      choices: ['Small (42 x 55 cm)', 'Medium (65 x 90 cm)']
-    },
-    inStock: true,
-    pickupLocation: 'Campus Sports Center · Desk A',
-    specifications: 'Ultra-compact fold · Quick dry 15 mins · Microfiber waffle weave'
-  },
-  {
-    id: 'rew-4',
-    title: 'Domyos Gym Headband Black Print',
-    category: 'wellness',
-    categoryLabel: 'WELLNESS',
-    points: 50,
-    description: 'We are passionate about fitness, and have designed this product for people like you to stay focused with dual silicone anti-slip inlays.',
-    image: '/assets/gym-headband.svg',
-    images: [
-      '/assets/gym-headband.svg',
-      '/assets/gym-headband-grip.svg',
-      '/assets/gym-headband-stretch.svg'
-    ],
-    options: {
-      type: 'Style',
-      choices: ['Black Print', 'Stealth Navy', 'Minimal Slate']
-    },
-    inStock: true,
-    pickupLocation: 'Campus Sports Center · Desk B',
-    specifications: 'Moisture-wicking elastane blend · Anti-slip silicone grip'
-  },
-  {
-    id: 'rew-5',
-    title: 'Latest Bounty Fridge Magnet | One Piece Anime Collectible Magnets',
-    category: 'fantasy',
-    categoryLabel: 'FANTASY',
-    points: 50,
-    description: 'Decorate your refrigerator or study desk with high-gloss acrylic collectible magnets of the legendary Straw Hat crew with N52 rare-earth backing.',
-    image: '/assets/fridge-magnet.svg',
-    images: [
-      '/assets/fridge-magnet.svg',
-      '/assets/fridge-magnet-back.svg',
-      '/assets/fridge-magnet-detail.svg'
-    ],
-    options: {
-      type: 'Character',
-      choices: ['Monkey D. Luffy', 'Roronoa Zoro', 'Full Straw Hat Crew']
-    },
-    inStock: true,
-    pickupLocation: 'Student Union Lounge · Locker 08',
-    specifications: 'High-gloss acrylic finish · Strong neodymium magnetic backing'
-  },
-  {
-    id: 'rew-6',
-    title: 'Rocket Health Single Session',
-    category: 'wellness',
-    categoryLabel: 'WELLNESS',
-    points: 53,
-    description: '45 minute private audio or video session with clinical psychologist for academic focus, exam de-stressing, and mental well-being.',
-    image: '/assets/rocket-health.svg',
-    images: [
-      '/assets/rocket-health.svg',
-      '/assets/rocket-health-audio.svg',
-      '/assets/rocket-health-cal.svg'
-    ],
-    options: {
-      type: 'Format',
-      choices: ['Private Video Call', 'Confidential Audio Call']
-    },
-    inStock: true,
-    pickupLocation: 'Digital Access · Instant Calendar Link',
-    specifications: 'Licensed clinical psychologist · 100% confidential · Flexible booking'
-  },
-  {
-    id: 'rew-7',
-    title: 'Fujifilm Instax Mini Classic Camera',
-    category: 'trend',
-    categoryLabel: 'TREND',
-    points: 90,
-    description: 'Capture your memorable campus milestones instantly with automatic exposure, built-in selfie mirror, and instant optical prints.',
-    image: '/assets/instax-camera.svg',
-    images: [
-      '/assets/instax-camera.svg',
-      '/assets/instax-camera-top.svg',
-      '/assets/instax-camera-back.svg'
-    ],
-    options: {
-      type: 'Edition',
-      choices: ['Navy & White Edition', 'Charcoal Slate']
-    },
-    inStock: true,
-    pickupLocation: 'Media Lab Equipment Desk · Hall C',
-    specifications: 'Instant credit card sized prints · Built-in flash · Film included'
-  },
-  {
-    id: 'rew-8',
-    title: 'TrueSights Executive Hardbound Journal & Pen Set',
-    category: 'apparel',
-    categoryLabel: 'APPAREL',
-    points: 45,
-    description: 'Hardbound lay-flat engineering diary with archival-grade 100 GSM cream pages, bookmark ribbon, and solid brass ballpoint pen.',
-    image: '/assets/executive-journal.svg',
-    images: [
-      '/assets/executive-journal.svg',
-      '/assets/executive-journal-open.svg',
-      '/assets/executive-journal-detail.svg'
-    ],
-    options: {
-      type: 'Ruling',
-      choices: ['Dotted Grid', 'Lined Ruled', 'Blank Unruled']
-    },
-    inStock: true,
-    pickupLocation: 'Academic Affairs Book Depot · Desk 2',
-    specifications: '192 numbered pages · Ribbon bookmark · Expandable inner pocket'
-  },
-  {
-    id: 'rew-9',
-    title: 'TrueSights Campus Bookstore E-Voucher (500 INR)',
-    category: 'trend',
-    categoryLabel: 'TREND',
-    points: 60,
-    description: 'Valid across campus bookstore for reference textbooks, scientific calculators, and drafting equipment with zero minimum purchase.',
-    image: '/assets/bookstore-voucher.svg',
-    images: [
-      '/assets/bookstore-voucher.svg',
-      '/assets/bookstore-voucher-back.svg',
-      '/assets/bookstore-voucher-detail.svg'
-    ],
-    options: {
-      type: 'Department',
-      choices: ['Engineering & Science', 'General Literature', 'Stationery & Kits']
-    },
-    inStock: true,
-    pickupLocation: 'Instant E-Code via TrueSights Portal',
-    specifications: 'Valid for 12 months · No minimum purchase · Transferable'
-  }
-];
+const PLACEHOLDER_IMAGE = '/assets/Product visual.png';
+const KNOWN_ICONS = new Set(['wellness', 'apparel', 'fantasy', 'trend']);
 
-const CATEGORIES = [
-  { id: 'all', label: 'All Vaults', icon: 'vault' },
-  { id: 'wellness', label: 'Wellness', icon: 'wellness' },
-  { id: 'apparel', label: 'Apparel', icon: 'apparel' },
-  { id: 'fantasy', label: 'Fantasy', icon: 'fantasy' },
-  { id: 'trend', label: 'Trend', icon: 'trend' }
-];
+const specText = (specs) =>
+  Array.isArray(specs)
+    ? specs.map((sp) => (typeof sp === 'string' ? sp : [sp.label || sp.name || sp.key, sp.value].filter(Boolean).join(': '))).filter(Boolean).join(' · ')
+    : '';
 
-export default function RewardsPage({
-  pointsWallet = 161,
-  onDeductPoints,
-  onBackToDashboard,
-  onEarnMore
-}) {
-  // Page Mode: 'catalog' | 'product' | 'checkout' | 'dispatch' | 'orders' | 'wishlist'
-  const [pageMode, setPageMode] = useState('catalog');
+/** A shop reward (catalog summary or full detail) in the shape the store screens render. */
+const toProduct = (r) => {
+  const images = Array.isArray(r.images) && r.images.length ? r.images : r.imageUrl ? [r.imageUrl] : [];
+  const options = Array.isArray(r.options) && r.options.length ? { type: r.optionLabel || 'Option', choices: r.options } : null;
+  return {
+    id: r.id,
+    title: r.name,
+    category: r.category || 'other',
+    categoryLabel: (r.category || 'other').toUpperCase(),
+    points: r.pointsRequired,
+    description: r.description || r.summary || '',
+    image: r.imageUrl || PLACEHOLDER_IMAGE,
+    images,
+    options,
+    hasOptions: Boolean(options) || Boolean(r.hasOptions),
+    inStock: r.stock !== 0,
+    pickupLocation: r.type === 'digital' ? 'Delivered digitally to your email' : 'Home delivery or campus pickup',
+    specifications: specText(r.specifications) || (r.brand ? `Brand: ${r.brand}` : 'See description')
+  };
+};
+
+const STAGE_LABEL = {
+  placed: 'Placed',
+  confirmed: 'Confirmed',
+  packed: 'Packed',
+  shipped: 'Shipped',
+  out_for_delivery: 'Out for delivery',
+  delivered: 'Delivered',
+  ready_for_pickup: 'Ready for pickup',
+  collected: 'Collected',
+  cancelled: 'Cancelled'
+};
+
+const shortDay = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+/** A /api/v2/shop/orders order in the shape the tracker and dispatch screens render. */
+const toOrder = (o) => {
+  const first = o.items?.[0] || {};
+  const stages = o.stages || [];
+  const idx = Math.max(0, stages.indexOf(o.status));
+  const done = o.status === 'delivered' || o.status === 'collected';
+  return {
+    id: o.orderNumber,
+    raw: o,
+    productId: first.rewardId,
+    title: o.items?.length > 1 ? `${first.name} + ${o.items.length - 1} more` : first.name || 'Reward',
+    category: '',
+    categoryLabel: o.fulfilment === 'pickup' ? 'CAMPUS PICKUP' : 'HOME DELIVERY',
+    image: first.imageUrl || PLACEHOLDER_IMAGE,
+    points: o.total,
+    option: first.option || (o.items?.length > 1 ? `${o.items.length} items` : 'Standard'),
+    shipping: { fullName: '', email: o.email || '', phone: o.phone || '', deliveryAddress: o.address || '', city: '', zipCode: '' },
+    date: o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+    status: done ? 'Delivered' : o.status === 'cancelled' ? 'Cancelled' : 'In Transit',
+    stageLabel: STAGE_LABEL[o.status] || o.status,
+    progressPct: o.status === 'cancelled' ? 0 : done ? 100 : Math.round((idx / Math.max(1, stages.length - 1)) * 100),
+    eta: o.estimatedDelivery ? `Expected by ${shortDay(o.estimatedDelivery)}` : o.fulfilment === 'pickup' ? 'Ready in about 3 days' : 'Arrives in about a week',
+    expectedLabel: o.estimatedDelivery ? `Expected ${shortDay(o.estimatedDelivery)}` : 'On its way',
+    fulfilment: o.fulfilment,
+    cancellable: !o.legacy && ['placed', 'confirmed'].includes(o.status)
+  };
+};
+
+export default function RewardsPage() {
+  const { '*': subPath = '' } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { points: pointsWallet } = useTS();
+
+  const catalogQuery = useQuery(keys.rewards(), api.rewards);
+  const wishlistQuery = useQuery(keys.wishlist(), api.wishlist);
+  const ordersQuery = useQuery(keys.orders(), api.orders);
+
+  const REWARDS_CATALOG = useMemo(() => (catalogQuery.data?.rewards || []).map(toProduct), [catalogQuery.data]);
+  const CATEGORIES = useMemo(
+    () => [
+      { id: 'all', label: 'All Vaults', icon: 'vault' },
+      ...Object.keys(catalogQuery.data?.categories || {})
+        .sort()
+        .map((c) => ({ id: c, label: c.charAt(0).toUpperCase() + c.slice(1), icon: KNOWN_ICONS.has(c) ? c : 'vault' }))
+    ],
+    [catalogQuery.data]
+  );
+  const wishlist = wishlistQuery.data?.rewardIds || [];
+  const orders = useMemo(() => (ordersQuery.data || []).map(toOrder), [ordersQuery.data]);
+
+  // URL -> screen: /rewards, /rewards/:id, /rewards/orders, /rewards/cart
+  const routeMode = subPath === 'orders' ? 'orders' : subPath === 'cart' || subPath === 'wishlist' ? 'wishlist' : subPath ? 'product' : 'catalog';
+  const routeProductId = routeMode === 'product' ? subPath : null;
+  const detailQuery = useQuery(routeProductId ? keys.reward(routeProductId) : null, () => api.reward(routeProductId));
+  const selectedProduct = useMemo(() => {
+    if (!routeProductId) return null;
+    if (detailQuery.data?.reward) return toProduct(detailQuery.data.reward);
+    return REWARDS_CATALOG.find((r) => r.id === routeProductId) || null;
+  }, [routeProductId, detailQuery.data, REWARDS_CATALOG]);
+
+  // Checkout and the dispatch animation sit on top of the route.
+  const [flow, setFlow] = useState(null); // { mode: 'checkout', product, choice } | { mode: 'dispatch', order }
+  useEffect(() => setFlow(null), [subPath]);
+  const pageMode = flow?.mode || routeMode;
+  const setPageMode = (mode) => {
+    setFlow(null);
+    if (mode === 'catalog') navigate(pathFor('rewards'));
+    else if (mode === 'orders') navigate(pathFor('orders'));
+    else if (mode === 'wishlist') navigate(pathFor('cart'));
+  };
+  const selectedChoice = flow?.choice ?? null;
+  const activeOrder = flow?.mode === 'dispatch' ? flow.order : null;
+
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [selectedChoice, setSelectedChoice] = useState('Standard');
-  const [activeOrder, setActiveOrder] = useState(null);
-  const [wishlist, setWishlist] = useState(['rew-1', 'rew-5']);
+  const [placing, setPlacing] = useState(false);
+  const [cancellingId, setCancellingId] = useState(null);
   const [toast, setToast] = useState(null);
   const toastTimeoutRef = useRef(null);
   const [isMobile, setIsMobile] = useState(
@@ -235,34 +145,32 @@ export default function RewardsPage({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleToggleWishlist = (productId, e) => {
+  const handleToggleWishlist = async (productId, e) => {
     if (e && e.stopPropagation) e.stopPropagation();
 
-    const targetProduct = REWARDS_CATALOG.find((item) => item.id === productId);
+    const targetProduct = REWARDS_CATALOG.find((item) => item.id === productId) || selectedProduct;
     const productTitle = targetProduct?.title || 'Reward Item';
+    const isCurrentlyWished = wishlist.includes(productId);
 
-    setWishlist((prev) => {
-      const isCurrentlyWished = prev.includes(productId);
-      const nextList = isCurrentlyWished
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId];
-
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current);
-      }
-
-      setToast({
-        type: isCurrentlyWished ? 'remove' : 'add',
-        message: isCurrentlyWished ? 'Removed from Wishlist Cart' : 'Added to Wishlist Cart',
-        title: productTitle
-      });
-
-      toastTimeoutRef.current = setTimeout(() => {
-        setToast(null);
-      }, 3500);
-
-      return nextList;
+    setQueryData(keys.wishlist(), (d) => ({
+      ...(d || {}),
+      rewardIds: isCurrentlyWished ? (d?.rewardIds || []).filter((id) => id !== productId) : [...(d?.rewardIds || []), productId]
+    }));
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast({
+      type: isCurrentlyWished ? 'remove' : 'add',
+      message: isCurrentlyWished ? 'Removed from Wishlist Cart' : 'Added to Wishlist Cart',
+      title: productTitle
     });
+    toastTimeoutRef.current = setTimeout(() => setToast(null), 3500);
+
+    try {
+      await (isCurrentlyWished ? api.unwish(productId) : api.wish(productId));
+      invalidate(keys.wishlist(), keys.bootstrap(), keys.dashboard());
+    } catch (err) {
+      notify.error(err.message);
+      invalidate(keys.wishlist());
+    }
   };
 
   useEffect(() => {
@@ -272,30 +180,6 @@ export default function RewardsPage({
       }
     };
   }, []);
-
-  const [orders, setOrders] = useState([
-    {
-      id: 'TS-ORD-482019',
-      productId: 'rew-4',
-      title: 'Domyos Gym Headband Black Print',
-      category: 'wellness',
-      categoryLabel: 'WELLNESS',
-      image: '/assets/gym-headband.svg',
-      points: 50,
-      option: 'Black Print',
-      shipping: {
-        fullName: 'Yadu Test Student',
-        email: 'yadu.student@truesights.edu',
-        phone: '+91 98765 43210',
-        deliveryAddress: 'Hostel 4, Room 302, North Campus',
-        city: 'Hyderabad',
-        zipCode: '500032'
-      },
-      date: '02 Oct 2026',
-      status: 'Delivered',
-      currentStage: 4
-    }
-  ]);
 
   // Filter rewards
   const filteredRewards = useMemo(() => {
@@ -314,46 +198,57 @@ export default function RewardsPage({
       }
       return true;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [REWARDS_CATALOG, selectedCategory, searchQuery]);
 
-  const handleOpenProduct = (item) => {
-    setSelectedProduct(item);
-    setSelectedChoice(item.options?.choices?.[0] || 'Standard');
-    setPageMode('product');
-  };
+  const handleOpenProduct = (item) => navigate(pathFor('rewards', item.id));
 
   const handleProceedToRedeem = (item, choice) => {
-    setSelectedProduct(item);
-    setSelectedChoice(choice);
-    setPageMode('checkout');
-  };
-
-  const handleConfirmAcquisition = ({ product, selectedChoice, finalPoints, shippingForm }) => {
-    if (onDeductPoints) {
-      onDeductPoints(finalPoints);
+    // Items with options need a choice from the product page first.
+    if (item.hasOptions && !item.options) {
+      handleOpenProduct(item);
+      return;
     }
-
-    const orderId = `TS-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
-    const newOrder = {
-      id: orderId,
-      productId: product.id,
-      title: product.title,
-      category: product.category,
-      categoryLabel: product.categoryLabel,
-      image: product.image,
-      points: finalPoints,
-      option: selectedChoice,
-      shipping: { ...shippingForm },
-      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      status: 'In Transit',
-      currentStage: 3,
-      eta: '3 to 4 Working Days'
-    };
-
-    setOrders((prev) => [newOrder, ...prev]);
-    setActiveOrder(newOrder);
-    setPageMode('dispatch');
+    setFlow({ mode: 'checkout', product: item, choice: item.options ? choice : null });
   };
+
+  const handleConfirmAcquisition = async ({ product, selectedChoice: choice, address, shippingForm, appliedCoupon }) => {
+    setPlacing(true);
+    try {
+      const { order, remainingPoints } = await api.placeOrder({
+        items: [{ rewardId: product.id, qty: 1, option: product.options ? choice : null }],
+        fulfilment: 'delivery',
+        address,
+        phone: shippingForm.phone.trim(),
+        email: shippingForm.email || undefined,
+        couponCode: appliedCoupon?.code || undefined
+      });
+      setQueryData(keys.orders(), (d) => (d ? [order, ...d] : d));
+      setQueryData(keys.bootstrap(), (d) => d && { ...d, profile: { ...d.profile, points: remainingPoints } });
+      invalidate(keys.orders(), keys.bootstrap(), keys.dashboard(), keys.rewards());
+      notify.success(`Order ${order.orderNumber} confirmed!`);
+      setFlow({ mode: 'dispatch', order: toOrder(order) });
+    } catch (err) {
+      notify.error(err.message);
+    } finally {
+      setPlacing(false);
+    }
+  };
+
+  const handleCancelOrder = async (ord) => {
+    setCancellingId(ord.raw.id);
+    try {
+      const { order } = await api.cancelOrder(ord.raw.id);
+      setQueryData(keys.orders(), (d) => d && d.map((o) => (o.id === order.id ? order : o)));
+      invalidate(keys.bootstrap(), keys.dashboard(), keys.rewards());
+      notify.success(`Order ${order.orderNumber} cancelled - ${order.total} points refunded.`);
+    } catch (err) {
+      notify.error(err.message);
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const highlightOrderId = new URLSearchParams(location.search).get('highlight') || location.state?.highlight || null;
 
   // =========================================================================
   // VIEW ROUTING: PAGE-BASED INSTEAD OF POP-UPS (Zero Modals!)
@@ -361,7 +256,26 @@ export default function RewardsPage({
 
   // 1. Dedicated Full-Page Product Detail View
   let pageContent = null;
-  if (pageMode === 'product' && selectedProduct) {
+  if (pageMode === 'product' && !selectedProduct) {
+    pageContent = (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+        {detailQuery.error || (catalogQuery.data && !detailQuery.isLoading) ? (
+          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '32px', textAlign: 'center' }}>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: '#0B1A2B', marginBottom: '6px' }}>Reward not found</div>
+            <div style={{ fontSize: '13px', color: '#64748B', marginBottom: '16px' }}>It may no longer be available in the store.</div>
+            <button type="button" onClick={() => setPageMode('catalog')} style={{ background: '#0B3A6F', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+              Back to rewards
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="skeleton-shimmer" style={{ height: '60px', borderRadius: '14px' }} />
+            <div className="skeleton-shimmer" style={{ height: '420px', borderRadius: '14px' }} />
+          </>
+        )}
+      </div>
+    );
+  } else if (pageMode === 'product' && selectedProduct) {
     pageContent = (
       <ProductDetailPage
         product={selectedProduct}
@@ -371,18 +285,20 @@ export default function RewardsPage({
         ordersCount={orders.length}
         onOpenOrders={() => setPageMode('orders')}
         wishlistIds={wishlist}
+        key={selectedProduct.id + (selectedProduct.options ? ':detail' : '')}
         onToggleWishlist={handleToggleWishlist}
         onOpenWishlist={() => setPageMode('wishlist')}
         isMobile={isMobile}
       />
     );
-  } else if (pageMode === 'checkout' && selectedProduct) {
+  } else if (pageMode === 'checkout' && flow?.product) {
     pageContent = (
       <CheckoutPage
-        product={selectedProduct}
+        product={flow.product}
         selectedChoice={selectedChoice}
         pointsWallet={pointsWallet}
-        onBackToProduct={() => setPageMode('product')}
+        submitting={placing}
+        onBackToProduct={() => setFlow(null)}
         onConfirmAcquisition={handleConfirmAcquisition}
         onOpenOrders={() => setPageMode('orders')}
         ordersCount={orders.length}
@@ -402,6 +318,9 @@ export default function RewardsPage({
     pageContent = (
       <OrdersTrackerPage
         orders={orders}
+        onCancelOrder={handleCancelOrder}
+        cancellingId={cancellingId}
+        highlightId={highlightOrderId}
         pointsWallet={pointsWallet}
         onBackToCatalog={() => setPageMode('catalog')}
         isMobile={isMobile}
@@ -1399,8 +1318,18 @@ export default function RewardsPage({
               alignContent: 'start'
             }}
           >
+            {catalogQuery.isLoading && [0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="skeleton-shimmer" style={{ height: '340px', borderRadius: '12px' }} />)}
+            {catalogQuery.error && !catalogQuery.data && (
+              <div style={{ gridColumn: '1 / -1', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '12px', padding: '14px 16px', color: '#DC2626', fontSize: '13px', fontWeight: 600 }}>
+                Couldn't load the rewards store: {catalogQuery.error.message}
+              </div>
+            )}
+            {catalogQuery.data && !filteredRewards.length && (
+              <div style={{ gridColumn: '1 / -1', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '32px', textAlign: 'center', fontSize: '13px', color: '#64748B' }}>
+                No rewards match your search.
+              </div>
+            )}
             {filteredRewards.map((reward) => {
-              const canAfford = pointsWallet >= reward.points;
               const isWished = wishlist.includes(reward.id);
 
               return (

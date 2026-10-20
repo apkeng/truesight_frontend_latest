@@ -1,9 +1,34 @@
 import React, { useState } from 'react';
 
+const CancelButton = ({ ord, onCancelOrder, cancellingId }) =>
+  ord.cancellable && onCancelOrder ? (
+    <button
+      type="button"
+      onClick={() => onCancelOrder(ord)}
+      disabled={cancellingId === ord.raw.id}
+      style={{
+        background: '#FFFFFF',
+        border: '1px solid #FECACA',
+        borderRadius: '6px',
+        padding: '4px 10px',
+        fontSize: '11px',
+        fontWeight: 700,
+        color: '#DC2626',
+        cursor: 'pointer',
+        transition: 'all 0.15s ease'
+      }}
+    >
+      {cancellingId === ord.raw.id ? 'Cancelling…' : 'Cancel order'}
+    </button>
+  ) : null;
+
 export default function OrdersTrackerPage({
   orders = [],
   onBackToCatalog,
-  pointsWallet = 161,
+  onCancelOrder,
+  cancellingId = null,
+  highlightId = null,
+  pointsWallet = 0,
   isMobile: propIsMobile
 }) {
   const [internalIsMobile, setInternalIsMobile] = useState(
@@ -18,8 +43,7 @@ export default function OrdersTrackerPage({
 
   const isMobile = propIsMobile !== undefined ? propIsMobile : internalIsMobile;
 
-  const activeOrdersCount = orders.filter((o) => o.status !== 'Delivered').length;
-  const deliveredOrdersCount = orders.filter((o) => o.status === 'Delivered').length;
+  const activeOrdersCount = orders.filter((o) => o.status !== 'Delivered' && o.status !== 'Cancelled').length;
 
   if (isMobile) {
     return (
@@ -167,14 +191,15 @@ export default function OrdersTrackerPage({
         ) : (
           orders.map((ord) => {
             const isDelivered = ord.status === 'Delivered';
-            const isInProgress = !isDelivered;
+            const isCancelled = ord.status === 'Cancelled';
+            const isInProgress = !isDelivered && !isCancelled;
 
             return (
               <div
                 key={ord.id}
                 style={{
                   background: '#FFFFFF',
-                  border: isInProgress ? '1.5px solid #93C5FD' : '1px solid #E2E8F0',
+                  border: highlightId && ord.raw.id === highlightId ? '2px solid #FEE047' : isInProgress ? '1.5px solid #93C5FD' : '1px solid #E2E8F0',
                   borderRadius: '12px',
                   padding: '12px',
                   display: 'flex',
@@ -223,21 +248,21 @@ export default function OrdersTrackerPage({
                             fontWeight: 800
                           }}
                         >
-                          In Transit
+                          {ord.stageLabel}
                         </span>
                       ) : (
                         <span
                           style={{
-                            background: '#ECFDF5',
-                            color: '#059669',
-                            border: '1px solid #A7F3D0',
+                            background: isCancelled ? '#FEF2F2' : '#ECFDF5',
+                            color: isCancelled ? '#DC2626' : '#059669',
+                            border: isCancelled ? '1px solid #FECACA' : '1px solid #A7F3D0',
                             borderRadius: '4px',
                             padding: '2px 6px',
                             fontSize: '10px',
                             fontWeight: 800
                           }}
                         >
-                          Delivered
+                          {isCancelled ? 'Cancelled' : 'Delivered'}
                         </span>
                       )}
                     </div>
@@ -278,7 +303,7 @@ export default function OrdersTrackerPage({
                       CAMPUS DISPATCH
                     </span>
                     <span style={{ fontWeight: 700, color: isInProgress ? '#2563EB' : '#10B981' }}>
-                      {isInProgress ? 'ETA: 3–4 Days' : 'Delivered with OTP'}
+                      {isInProgress ? ord.eta : isCancelled ? 'Points refunded' : 'Delivered'}
                     </span>
                   </div>
 
@@ -299,7 +324,7 @@ export default function OrdersTrackerPage({
                         style={{
                           height: '100%',
                           background: isInProgress ? '#2563EB' : '#10B981',
-                          width: isInProgress ? '66%' : '100%'
+                          width: `${ord.progressPct}%`
                         }}
                       />
                     </div>
@@ -357,7 +382,10 @@ export default function OrdersTrackerPage({
                 {/* Recipient info & Tracking ID footer */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px', color: '#64748B', paddingTop: '2px' }}>
                   <span>ID: <strong style={{ color: '#20346B' }}>{ord.id}</strong></span>
-                  <span>{ord.shipping?.deliveryAddress ? ord.shipping.deliveryAddress.substring(0, 24) + '...' : 'Room 302, Hostel 4'}</span>
+                  <span>{ord.shipping?.deliveryAddress ? ord.shipping.deliveryAddress.substring(0, 24) + '...' : 'Campus pickup'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <CancelButton ord={ord} onCancelOrder={onCancelOrder} cancellingId={cancellingId} />
                 </div>
               </div>
             );
@@ -581,14 +609,15 @@ export default function OrdersTrackerPage({
         ) : (
           orders.map((ord) => {
             const isDelivered = ord.status === 'Delivered';
-            const isInProgress = !isDelivered;
+            const isCancelled = ord.status === 'Cancelled';
+            const isInProgress = !isDelivered && !isCancelled;
 
             return (
               <div
                 key={ord.id}
                 style={{
                   background: '#FFFFFF',
-                  border: isInProgress ? '1.5px solid #93C5FD' : '1px solid #E2E8F0',
+                  border: highlightId && ord.raw.id === highlightId ? '2px solid #FEE047' : isInProgress ? '1.5px solid #93C5FD' : '1px solid #E2E8F0',
                   borderRadius: '12px',
                   padding: '18px 20px',
                   boxShadow: isInProgress ? '0 4px 14px rgba(37, 99, 235, 0.08)' : '0 2px 8px rgba(0, 0, 0, 0.03)',
@@ -677,14 +706,14 @@ export default function OrdersTrackerPage({
                         }}
                       >
                         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#2563EB', animation: 'pulseDot 1.2s infinite' }}></span>
-                        <span>In Transit · 3–4 Days</span>
+                        <span>{ord.stageLabel} · {ord.eta}</span>
                       </span>
                     ) : (
                       <span
                         style={{
-                          background: '#ECFDF5',
-                          color: '#059669',
-                          border: '1.5px solid #A7F3D0',
+                          background: isCancelled ? '#FEF2F2' : '#ECFDF5',
+                          color: isCancelled ? '#DC2626' : '#059669',
+                          border: isCancelled ? '1.5px solid #FECACA' : '1.5px solid #A7F3D0',
                           borderRadius: '6px',
                           padding: '6px 12px',
                           fontSize: '12px',
@@ -694,10 +723,7 @@ export default function OrdersTrackerPage({
                           gap: '5px'
                         }}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        <span>Delivered</span>
+                        <span>{isCancelled ? 'Cancelled · points refunded' : 'Delivered'}</span>
                       </span>
                     )}
                   </div>
@@ -719,7 +745,7 @@ export default function OrdersTrackerPage({
                       CAMPUS DISPATCH TIMELINE
                     </span>
                     <span style={{ fontSize: '11px', fontWeight: 700, color: isInProgress ? '#2563EB' : '#10B981' }}>
-                      {isInProgress ? 'Estimated Arrival: 3 to 4 Working Days' : 'Delivered & Handed Over with OTP'}
+                      {isInProgress ? `${ord.stageLabel} · ${ord.eta}` : isCancelled ? 'Cancelled - points refunded' : 'Delivered'}
                     </span>
                   </div>
 
@@ -740,7 +766,7 @@ export default function OrdersTrackerPage({
                         style={{
                           height: '100%',
                           background: isInProgress ? 'linear-gradient(90deg, #10B981 0%, #2563EB 100%)' : '#10B981',
-                          width: isInProgress ? '62%' : '100%',
+                          width: `${ord.progressPct}%`,
                           transition: 'width 0.4s ease'
                         }}
                       />
@@ -790,7 +816,7 @@ export default function OrdersTrackerPage({
                         )}
                       </div>
                       <span style={{ fontSize: '11px', fontWeight: isInProgress ? 900 : 700, color: isInProgress ? '#2563EB' : '#101D3B' }}>
-                        {isInProgress ? 'In Transit (3-4 Days)' : 'Courier Dispatched'}
+                        {isInProgress ? ord.stageLabel : isCancelled ? 'Cancelled' : 'Dispatched'}
                       </span>
                     </div>
 
@@ -816,7 +842,7 @@ export default function OrdersTrackerPage({
                         )}
                       </div>
                       <span style={{ fontSize: '11px', fontWeight: isDelivered ? 800 : 500, color: isDelivered ? '#101D3B' : '#94A3B8' }}>
-                        {isDelivered ? 'Delivered' : 'Expected Oct 9'}
+                        {isDelivered ? 'Delivered' : ord.expectedLabel}
                       </span>
                     </div>
                   </div>
@@ -825,13 +851,14 @@ export default function OrdersTrackerPage({
                 {/* Delivery Footnote */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#64748B' }}>
                   <div>
-                    Recipient Destination: <strong style={{ color: '#101D3B' }}>{ord.shipping?.fullName || 'Yadu Student'} · {ord.shipping?.deliveryAddress || 'Hostel 4'}, {ord.shipping?.city || 'Hyderabad'}</strong>
+                    {ord.fulfilment === 'pickup' ? 'Collect at: ' : 'Recipient Destination: '}<strong style={{ color: '#101D3B' }}>{ord.shipping?.deliveryAddress || 'Campus pickup at your institute'}</strong>
                   </div>
                   <div style={{ color: isInProgress ? '#2563EB' : '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                     </svg>
-                    <span>{isInProgress ? 'In Progress · Handover in 3–4 Days' : 'Completed · Verified Handover'}</span>
+                    <span>{isInProgress ? `In progress · ${ord.eta}` : isCancelled ? 'Cancelled' : 'Completed'}</span>
+                    <CancelButton ord={ord} onCancelOrder={onCancelOrder} cancellingId={cancellingId} />
                   </div>
                 </div>
               </div>

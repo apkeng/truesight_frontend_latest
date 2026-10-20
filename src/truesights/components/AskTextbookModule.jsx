@@ -1,116 +1,95 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import Cookies from 'js-cookie';
+import { toast as notify } from 'react-toastify';
 import Icon from '../design-system/icons';
 import ModalPortal from './ModalPortal';
+import { api, invalidate, keys, setQueryData, useQuery } from '../data';
+import { pathFor, useTS } from '../session';
+import { uidKey } from '../../revamp/lib/api';
+import { timeAgo } from '../../revamp/lib/format';
+import AnswerMarkdown from '../../pages/shared/components/AnswerMarkdown';
+import { askTextbook, fetchTextbookFile, isSessionExpired, listTextbooks, uploadTextbook } from '../../utils/textbookServiceClient';
 
-// Pre-loaded realistic textbooks for recent books history
-// Default book matches the user's reference screenshot: Solid State Physics Lecture Notes by E. Kogan (77 pages)
-const PRESET_TEXTBOOKS = [
-  {
-    id: 'tb-solid',
-    title: 'Solid State Physics Lecture Notes',
-    author: 'E. Kogan',
-    totalPages: 77,
-    fileUrl: '/assets/solid-state-physics.pdf',
-    category: 'Condensed Matter Physics',
-    uploadDate: 'Pre-indexed',
-    chapters: [
-      { page: 1, title: 'Contents & Course Overview' },
-      { page: 2, title: 'Chapter I: About Condensed-Matter Physics' },
-      { page: 2, title: 'Chapter II: Heat Capacity of Solids' },
-      { page: 7, title: 'Chapter III: One-Dimensional Chain' },
-      { page: 10, title: 'Chapter IV: Electrons in Metals: Drude Theory' },
-      { page: 13, title: 'Chapter V: Sommerfeld (Free Electrons) Theory' },
-      { page: 16, title: 'Chapter VI: Crystals & Bravais Lattices' },
-      { page: 20, title: 'Chapter VII: Chemical Elements' },
-      { page: 24, title: 'Chapter VIII: Chemical Bond. I' },
-      { page: 33, title: 'Chapter X: Wave Scattering by Crystals' },
-      { page: 42, title: 'Chapter XII: Bloch (Electrons in Periodic Potential) Theory' },
-      { page: 48, title: 'Chapter XIII: Electron Dynamics' },
-      { page: 50, title: 'Chapter XIV: Semiconductors' }
-    ],
-    initialChat: [
-      {
-        id: 'c-init-solid',
-        sender: 'ai',
-        time: '10:00 AM',
-        text: 'Connected to "Solid State Physics Lecture Notes" by E. Kogan (77 pages). Ask anything regarding crystal lattices, phonons, Sommerfeld theory, or Bloch states.'
-      },
-      {
-        id: 'c-u-solid',
-        sender: 'user',
-        time: '10:02 AM',
-        text: 'Can you summarize the Dulong-Petit Law and Einstein\'s calculation for heat capacity from Chapter II?'
-      },
-      {
-        id: 'c-ai-solid',
-        sender: 'ai',
-        time: '10:02 AM',
-        text: 'From Chapter II (Heat Capacity of Solids), pages 2–4:\n\n1. Dulong–Petit Law (Section A, Page 2):\nClassic theory predicts that the molar heat capacity at high temperatures approaches a constant value:\nC_v = 3R ≈ 25 J/(mol·K)\nThis arises from treating atoms as classical harmonic oscillators with 3 degrees of freedom having energy k_B*T each.\n\n2. Einstein’s Calculation (Section C, Page 4):\nAt low temperatures, classical theory fails as C_v drops exponentially toward zero. Einstein quantized vibrations assuming all N oscillators share the same characteristic frequency ω_E. The quantized energy yields:\n\nC_v = 3R * (ħω_E / k_B*T)^2 * [e^(ħω_E / k_B*T) / (e^(ħω_E / k_B*T) - 1)^2]\n\nThis explains the cryogenic freeze-out of vibrational modes.',
-        citations: ['Page 2 · Section II.A', 'Page 4 · Section II.C'],
-        formula: 'C_v = 3R * (x)^2 * [e^x / (e^x - 1)^2], where x = ħω_E / (k_B*T)'
-      }
-    ]
-  },
-  {
-    id: 'tb-marine',
-    title: 'Marine Auxiliary Machinery',
-    author: 'H.D. McGeorge (6th Ed)',
-    totalPages: 482,
-    fileUrl: '/assets/solid-state-physics.pdf',
-    category: 'Marine Engineering',
-    uploadDate: '3 days ago',
-    chapters: [
-      { page: 1, title: 'Chapter 1: Engine Room Layout & Systems' },
-      { page: 42, title: 'Chapter 3: Diesel Indicator Diagrams & Scavenging' },
-      { page: 88, title: 'Chapter 5: Centrifugal Pumps & Cavitation' },
-      { page: 114, title: 'Chapter 7: Heat Exchangers & Plate Coolers' }
-    ],
-    initialChat: [
-      {
-        id: 'c1',
-        sender: 'ai',
-        time: '10:14 AM',
-        text: 'Connected to "Marine Auxiliary Machinery" (482 pages). All responses are strictly grounded in this textbook with verbatim citations and equations.',
-        citations: ['Page 42 · Section 3.1']
-      }
-    ]
-  },
-  {
-    id: 'tb-thermo',
-    title: 'Applied Thermodynamics & Heat Engines',
-    author: 'T.D. Eastop & A. McConkey',
-    totalPages: 320,
-    fileUrl: '/assets/solid-state-physics.pdf',
-    category: 'Thermal Engineering',
-    uploadDate: '1 week ago',
-    chapters: [
-      { page: 1, title: 'Chapter 1: First & Second Laws of Thermodynamics' },
-      { page: 65, title: 'Chapter 3: Reversible Carnot Cycle Limits' },
-      { page: 102, title: 'Chapter 5: Rankine Steam Power Cycles' }
-    ],
-    initialChat: [
-      {
-        id: 'ct1',
-        sender: 'ai',
-        time: 'Yesterday',
-        text: 'Connected to "Applied Thermodynamics & Heat Engines" (320 pages). Ask any conceptual question regarding cycle efficiencies and steam plant thermodynamics.',
-        citations: ['Page 65 · Section 3.1']
-      }
-    ]
-  }
+const booksKey = () => uidKey('assistant:books');
+const trashedKey = () => uidKey('assistant:trashed-books');
+
+const clock = (iso) => (iso ? new Date(iso) : new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+/** A textbook-service book in the shape the library lists render. */
+const toBook = (b) => ({
+  id: b.book_id,
+  title: b.title,
+  status: b.status,
+  error: b.error || null,
+  hasOriginal: Boolean(b.has_original),
+  sizeLabel: b.status === 'ready' ? `${b.chunk_count || 0} sections` : b.status === 'processing' ? 'Processing…' : 'Failed',
+  author: b.status === 'ready' ? 'Ready to ask' : b.status === 'processing' ? 'Indexing your PDF' : 'Upload failed',
+  category: 'Your library',
+  uploadDate: b.created_at ? timeAgo(b.created_at) : '',
+  raw: b
+});
+
+/** A saved chat message in the shape the conversation renders. */
+const toMessage = (m, i, chatId) => ({
+  id: `${chatId || 'new'}-${i}`,
+  sender: m.role === 'user' ? 'user' : 'ai',
+  time: m.at ? clock(m.at) : '',
+  text: m.content || '',
+  voice: m.voice,
+  foundInBook: m.foundInBook,
+  citations: m.citations || []
+});
+
+const suggestionsFor = (title) => [
+  `Summarize the key ideas of "${title}"`,
+  `Explain the most important formula in ${title}`,
+  `Give me 3 practice questions from ${title}`
 ];
 
-// Rich Formatted AI Response with high typographic hierarchy, equation blocks, source pills, and voice/copy actions
+// Grounded answer: Markdown (with KaTeX) and numbered citations that open the cited page.
 function FormattedAiMessage({
   msg,
-  currentBook,
   onJumpToCitation,
   speakingMessageId,
   onReadAloud,
   copiedMessageId,
-  onCopyMessage
+  onCopyMessage,
+  onRetry
 }) {
-  const blocks = (msg.text || '').split('\n\n').filter((b) => b.trim().length > 0);
+  if (msg.pending) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', padding: '6px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src="/assets/Rectangle 4.png" alt="" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#1B2A4A' }}>TrueSight AI</span>
+        </div>
+        {[92, 76, 84].map((w) => (
+          <div key={w} className="skeleton-shimmer" style={{ height: '10px', width: `${w}%`, borderRadius: '999px' }} />
+        ))}
+        <span style={{ fontSize: '11px', color: '#94A3B8' }}>Searching your textbook…</span>
+      </div>
+    );
+  }
+  if (msg.error) {
+    return (
+      <div style={{ width: '100%', padding: '12px 14px', border: '1px solid #FECACA', background: '#FEF2F2', borderRadius: '10px' }}>
+        <div style={{ fontSize: '13px', fontWeight: 700, color: '#B91C1C' }}>Couldn't answer that</div>
+        <div style={{ fontSize: '12px', color: '#DC2626', marginTop: '2px' }}>{msg.error}</div>
+        {msg.question && (
+          <button
+            type="button"
+            onClick={onRetry}
+            style={{ marginTop: '8px', background: '#FFFFFF', border: '1px solid #FECACA', borderRadius: '6px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 700, color: '#B91C1C', cursor: 'pointer' }}
+          >
+            Try again
+          </button>
+        )}
+      </div>
+    );
+  }
+  const cites = msg.citations || [];
+  const grounded = msg.foundInBook !== false;
 
   return (
     <div
@@ -146,15 +125,15 @@ function FormattedAiMessage({
             style={{
               fontSize: '10.5px',
               fontWeight: 600,
-              color: '#059669',
-              backgroundColor: '#ECFDF5',
-              border: '1px solid #A7F3D0',
+              color: grounded ? '#059669' : '#D97706',
+              backgroundColor: grounded ? '#ECFDF5' : '#FFFBEB',
+              border: `1px solid ${grounded ? '#A7F3D0' : '#FDE68A'}`,
               padding: '1px 8px',
               borderRadius: '9999px',
               letterSpacing: '0.02em'
             }}
           >
-            Verified Grounding
+            {grounded ? 'Verified Grounding' : 'Not found in book'}
           </span>
         </div>
         <span style={{ fontSize: '11px', color: '#94A3B8' }}>
@@ -162,190 +141,13 @@ function FormattedAiMessage({
         </span>
       </div>
 
-      {/* Structured Content Stream */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          width: '100%'
-        }}
-      >
-        {blocks.map((block, idx) => {
-          const trimmed = block.trim();
-
-          // Check if this block is a numbered section: e.g. "1. Dulong–Petit Law (Section A, Page 2):"
-          const numberedMatch = trimmed.match(/^(\d+)\.\s+([^:\n]+)[:\n]?([\s\S]*)$/);
-          if (numberedMatch) {
-            const num = numberedMatch[1];
-            const heading = numberedMatch[2].replace(/:$/, '').trim();
-            const rest = numberedMatch[3] ? numberedMatch[3].trim() : '';
-            const lines = rest.split('\n').filter(Boolean);
-
-            return (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  padding: '12px 14px',
-                  borderRadius: '10px',
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  marginTop: '2px'
-                }}
-              >
-                {/* Section Title with Distinct Number Badge */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '5px',
-                      backgroundColor: '#EFF6FF',
-                      border: '1px solid #BFDBFE',
-                      color: '#1D4ED8',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}
-                  >
-                    {num}
-                  </div>
-                  <h4
-                    style={{
-                      margin: 0,
-                      fontSize: '13.5px',
-                      fontWeight: 700,
-                      color: '#0F172A',
-                      letterSpacing: '-0.01em'
-                    }}
-                  >
-                    {heading}
-                  </h4>
-                </div>
-
-                {/* Section Body with Highlighted Equations */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {lines.map((line, lIdx) => {
-                    const isFormulaLine =
-                      /(=|≈|ħ|\^|C_v|σ\s*=|ψ_k)/.test(line) &&
-                      line.length < 90 &&
-                      !line.startsWith('Classic') &&
-                      !line.startsWith('At ') &&
-                      !line.startsWith('This ') &&
-                      !line.startsWith('Accounts');
-
-                    if (isFormulaLine) {
-                      return (
-                        <div
-                          key={lIdx}
-                          style={{
-                            margin: '4px 0',
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            backgroundColor: '#FFFFFF',
-                            border: '1px solid #CBD5E1',
-                            borderLeft: '3px solid #2563EB',
-                            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                            fontSize: '12.5px',
-                            fontWeight: 600,
-                            color: '#1E3A8A'
-                          }}
-                        >
-                          {line}
-                        </div>
-                      );
-                    }
-                    return (
-                      <p
-                        key={lIdx}
-                        style={{
-                          margin: 0,
-                          fontSize: '13px',
-                          lineHeight: '1.68',
-                          color: '#334155'
-                        }}
-                      >
-                        {line}
-                      </p>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          }
-
-          // Check if block is an introductory summary line
-          const isIntroLead = /^(From|Based on|According to|Retrieved from|Connected to|Regarding)/i.test(trimmed);
-
-          return (
-            <p
-              key={idx}
-              style={{
-                margin: 0,
-                fontSize: '13px',
-                fontWeight: isIntroLead ? 600 : 400,
-                color: isIntroLead ? '#475569' : '#1E2538',
-                lineHeight: '1.68',
-                whiteSpace: 'pre-line'
-              }}
-            >
-              {trimmed}
-            </p>
-          );
-        })}
+      {/* Answer body */}
+      <div style={{ width: '100%', fontSize: '13px', lineHeight: '1.68', color: '#1E2538' }}>
+        <AnswerMarkdown text={msg.text} citations={cites} onCite={(index) => onJumpToCitation && onJumpToCitation(cites[index])} />
       </div>
 
-      {/* Featured Key Formula Card */}
-      {msg.formula && (
-        <div
-          style={{
-            width: '100%',
-            marginTop: '2px',
-            background: 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)',
-            border: '1px solid #BFDBFE',
-            borderLeft: '4px solid #2563EB',
-            borderRadius: '8px',
-            padding: '10px 14px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '4px',
-            boxSizing: 'border-box'
-          }}
-        >
-          <div
-            style={{
-              fontSize: '10px',
-              fontWeight: 700,
-              color: '#2563EB',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}
-          >
-            Key Mathematical Formulation
-          </div>
-          <div
-            style={{
-              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              color: '#1E3A8A',
-              lineHeight: '1.6',
-              wordBreak: 'break-word'
-            }}
-          >
-            {msg.formula}
-          </div>
-        </div>
-      )}
-
       {/* Grounding Source Citations (Clickable buttons that jump straight to that textbook page) */}
-      {msg.citations && msg.citations.length > 0 && (
+      {cites.length > 0 && (
         <div style={{ marginTop: '2px', display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
           <div
             style={{
@@ -359,12 +161,12 @@ function FormattedAiMessage({
             Verified Sources (Click to inspect page)
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {msg.citations.map((c, idx) => (
+            {cites.map((c, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => onJumpToCitation && onJumpToCitation(c)}
-                title={`Jump to ${c} in textbook`}
+                title={c.quote || ''}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -389,7 +191,7 @@ function FormattedAiMessage({
                 }}
               >
                 <Icon name="docUpload" size={13} color="#2563EB" />
-                <span>{c}</span>
+                <span>[{idx + 1}] {c.page ? `Page ${c.page}` : 'Excerpt'}</span>
                 <span style={{ fontSize: '10px', color: '#3B82F6', fontWeight: 700 }}>→</span>
               </button>
             ))}
@@ -402,7 +204,7 @@ function FormattedAiMessage({
         <button
           type="button"
           onClick={() => onReadAloud(msg.id, msg.text)}
-          title={speakingMessageId === msg.id ? "Stop voice explanation" : "Listen to explanation"}
+          title={speakingMessageId === msg.id ? 'Stop voice explanation' : 'Listen to explanation'}
           style={{
             background: speakingMessageId === msg.id ? '#DCFCE7' : '#F8FAFC',
             border: `1px solid ${speakingMessageId === msg.id ? '#86EFAC' : '#E2E8F0'}`,
@@ -416,12 +218,6 @@ function FormattedAiMessage({
             alignItems: 'center',
             gap: '5px',
             transition: 'all 140ms ease'
-          }}
-          onMouseEnter={(e) => {
-            if (speakingMessageId !== msg.id) e.currentTarget.style.background = '#F1F5F9';
-          }}
-          onMouseLeave={(e) => {
-            if (speakingMessageId !== msg.id) e.currentTarget.style.background = '#F8FAFC';
           }}
         >
           <Icon name="microphone" size={13} color="currentColor" />
@@ -446,14 +242,8 @@ function FormattedAiMessage({
             gap: '5px',
             transition: 'all 140ms ease'
           }}
-          onMouseEnter={(e) => {
-            if (copiedMessageId !== msg.id) e.currentTarget.style.background = '#F1F5F9';
-          }}
-          onMouseLeave={(e) => {
-            if (copiedMessageId !== msg.id) e.currentTarget.style.background = '#F8FAFC';
-          }}
         >
-          <Icon name={copiedMessageId === msg.id ? "check" : "copy"} size={13} color="currentColor" />
+          <Icon name={copiedMessageId === msg.id ? 'check' : 'copy'} size={13} color="currentColor" />
           <span>{copiedMessageId === msg.id ? 'Copied' : 'Copy Text'}</span>
         </button>
       </div>
@@ -461,7 +251,18 @@ function FormattedAiMessage({
   );
 }
 
-export default function AskTextbookModule({ onBackToDashboard }) {
+/**
+ * Ask a Textbook (/ask-a-textbook[/:bookId[/:chatId]]): the student's own
+ * uploaded books from the textbook service, grounded answers with page
+ * citations, saved conversations (/api/v2/chats) and the PDF beside the chat.
+ */
+export default function AskTextbookModule() {
+  const { bookId, chatId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { go } = useTS();
+  const onBackToDashboard = () => go('dashboard');
+
   // Sidebar expanded/collapsed state (Image 1 vs Image 2)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(
@@ -480,15 +281,26 @@ export default function AskTextbookModule({ onBackToDashboard }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Active mode: 'landing' (Matches reference screenshots) or 'workspace' (Split view studio)
-  const [viewMode, setViewMode] = useState('landing');
+  // Library + saved conversations
+  const books = useQuery(booksKey(), listTextbooks, { staleMs: 30_000 });
+  const trashed = useQuery(trashedKey(), api.trashedTextbookIds, { staleMs: 60_000 });
+  const chats = useQuery(keys.chats(), () => api.chats(), { staleMs: 30_000 });
+  const textbooks = useMemo(() => {
+    const hidden = new Set(trashed.data || []);
+    return (books.data || []).filter((b) => !hidden.has(b.book_id)).map(toBook);
+  }, [books.data, trashed.data]);
 
-  // Textbooks library & active book
-  const [textbooks, setTextbooks] = useState(PRESET_TEXTBOOKS);
-  const [activeBookId, setActiveBookId] = useState('tb-solid');
+  // Active mode: 'landing' (no book open) or 'workspace' (split view studio)
+  const viewMode = bookId ? 'workspace' : 'landing';
+  const setViewMode = (mode) => {
+    if (mode === 'landing') navigate(pathFor('ask-textbook'));
+  };
+  const activeBookId = bookId || null;
+  const setActiveBookId = (id) => navigate(pathFor('ask-textbook', id));
   const [activePage, setActivePage] = useState(1);
+  useEffect(() => setActivePage(1), [bookId]);
 
-  // Search Popup Modal state ("when I click search, open a popup and show search bar, below show already generated files")
+  // Search Popup Modal state
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchBookQuery, setSearchBookQuery] = useState('');
 
@@ -496,14 +308,11 @@ export default function AskTextbookModule({ onBackToDashboard }) {
   const [isNewChatHovered, setIsNewChatHovered] = useState(false);
   const [hoveredBookId, setHoveredBookId] = useState(null);
 
-  // Split view document visibility toggle (user can hide and open textbook whenever they want)
+  // Split view document visibility toggle
   const [isTextbookHidden, setIsTextbookHidden] = useState(false);
 
-  // PDF Viewer Controls
+  // PDF Viewer Controls (Chrome's PDF viewer reads #page= and #zoom=)
   const [pdfZoom, setPdfZoom] = useState(100);
-  const [pdfRotation, setPdfRotation] = useState(0);
-  const [viewerTab, setViewerTab] = useState('pdf'); // 'pdf' (iframe) or 'contents' (replica)
-  const [activeTool, setActiveTool] = useState('cursor'); // 'cursor', 'pen'
 
   // Landing center input prompt
   const [landingInput, setLandingInput] = useState('');
@@ -512,148 +321,221 @@ export default function AskTextbookModule({ onBackToDashboard }) {
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
-  const [toast, setToast] = useState(null);
 
   // Real file input reference
   const fileInputRef = useRef(null);
 
-  // Chats state per textbook
-  const [chatHistory, setChatHistory] = useState({
-    'tb-solid': PRESET_TEXTBOOKS[0].initialChat,
-    'tb-marine': PRESET_TEXTBOOKS[1].initialChat,
-    'tb-thermo': PRESET_TEXTBOOKS[2].initialChat
-  });
+  // Current conversation
+  const [messages, setMessages] = useState([]);
+  const [loadingChat, setLoadingChat] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const chatBottomRef = useRef(null);
+  const chatRef = useRef(chatId || null);
+  const sentInitial = useRef(false);
 
-  const currentBook = textbooks.find((b) => b.id === activeBookId) || textbooks[0];
-
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
+  const currentBook = textbooks.find((b) => b.id === activeBookId) || {
+    id: activeBookId,
+    title: books.isLoading ? 'Loading…' : 'Textbook not found',
+    status: books.isLoading ? 'processing' : 'missing',
+    hasOriginal: false,
+    sizeLabel: '',
+    author: '',
+    category: '',
+    raw: null
   };
+  const bookReady = currentBook.status === 'ready';
 
-  // Real file upload handler: creates object URL and loads the real file immediately into the viewer
-  const handleRealFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const showToast = (msg) => notify.info(msg);
 
-    const fileUrl = URL.createObjectURL(file);
-    const fileNameClean = file.name.replace(/\.[^/.]+$/, '');
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  const reportError = useCallback(
+    (error) => {
+      notify.error(error.message);
+      if (isSessionExpired(error)) {
+        ['authToken', 'uid', 'sessionId', 'isAuthenticated'].forEach((c) => Cookies.remove(c));
+        navigate('/login');
+      }
+    },
+    [navigate]
+  );
 
-    const newBook = {
-      id: `tb-${Date.now()}`,
-      title: fileNameClean,
-      author: 'Uploaded Document',
-      totalPages: isPdf ? 77 : 1,
-      fileUrl: fileUrl,
-      fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-      uploadDate: 'Uploaded just now',
-      category: 'Uploaded Course Materials',
-      chapters: [
-        { page: 1, title: 'Document Start' }
-      ],
-      initialChat: [
-        {
-          id: `ai-init-${Date.now()}`,
-          sender: 'ai',
-          time: 'Just now',
-          text: `I've analyzed and indexed "${file.name}". You can now ask questions, request formula breakdowns, or explore concepts directly from this textbook.`
-        }
-      ]
+  // Keep polling while a book is still being indexed.
+  const { refetch: refetchBooks } = books;
+  useEffect(() => {
+    if (!textbooks.some((b) => b.status === 'processing')) return undefined;
+    const t = setTimeout(() => refetchBooks().catch(() => {}), 4000);
+    return () => clearTimeout(t);
+  }, [textbooks, refetchBooks]);
+
+  // Load a saved conversation (skip one we just created ourselves).
+  useEffect(() => {
+    if (!chatId) {
+      chatRef.current = null;
+      setMessages([]);
+      setLoadingChat(false);
+      return undefined;
+    }
+    if (chatRef.current === chatId && messages.length) return undefined;
+    let alive = true;
+    setLoadingChat(true);
+    api
+      .chat(chatId)
+      .then((chat) => {
+        if (!alive) return;
+        chatRef.current = chat.id;
+        setMessages(chat.messages.map((m, i) => toMessage(m, i, chat.id)));
+      })
+      .catch((e) => alive && notify.error(e.message))
+      .finally(() => alive && setLoadingChat(false));
+    return () => {
+      alive = false;
     };
+    // only react to the route
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId, bookId]);
 
-    setTextbooks((prev) => [newBook, ...prev]);
-    setActiveBookId(newBook.id);
-    setActivePage(1);
-    setChatHistory((prev) => ({
-      ...prev,
-      [newBook.id]: newBook.initialChat
-    }));
-    setViewMode('workspace');
-    showToast(`Loaded "${file.name}"`);
+  // PDF beside the chat: fetched with the auth header, shown from an object URL.
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfError, setPdfError] = useState(null);
+  const pdfVisible = viewMode === 'workspace' && currentBook.hasOriginal && (isMobile ? mobileStudioTab === 'pdf' : !isTextbookHidden);
+  useEffect(() => {
+    if (!pdfVisible || !activeBookId) return undefined;
+    let cancelled = false;
+    let objectUrl = null;
+    setPdfUrl(null);
+    setPdfError(null);
+    fetchTextbookFile(activeBookId)
+      .then((u) => {
+        objectUrl = u;
+        if (cancelled) URL.revokeObjectURL(u);
+        else setPdfUrl(u);
+      })
+      .catch((e) => !cancelled && setPdfError(e.message));
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [pdfVisible, activeBookId]);
 
-    // Reset input so re-selecting same file triggers change
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  // Upload a PDF to the library; it can be asked once indexed.
+  const handleRealFileUpload = async (eOrFile) => {
+    const file = eOrFile?.target ? eOrFile.target.files?.[0] : eOrFile;
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    if (!(file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
+      notify.error('Please choose a PDF.');
+      return;
+    }
+    try {
+      const created = await uploadTextbook(file, file.name.replace(/\.[^/.]+$/, ''));
+      notify.success(`"${created.title}" is processing - you can ask questions as soon as it's ready.`);
+      setQueryData(booksKey(), (d) => [{ ...created, status: created.status || 'processing' }, ...(d || [])]);
+      invalidate(booksKey());
+      navigate(pathFor('ask-textbook', created.book_id));
+    } catch (e) {
+      reportError(e);
     }
   };
+
+  // Arriving from the dashboard card with a question or a PDF.
+  const incoming = useRef(location.state);
+  useEffect(() => {
+    const st = incoming.current;
+    if (!st) return;
+    if (st.uploadFile) {
+      incoming.current = null;
+      handleRealFileUpload(st.uploadFile);
+      return;
+    }
+    if (!st.prompt || bookId || !books.data) return;
+    const ready = textbooks.find((b) => b.status === 'ready');
+    if (ready) navigate(pathFor('ask-textbook', ready.id), { replace: true, state: { prompt: st.prompt } });
+    else {
+      setLandingInput(st.prompt);
+      notify.info('Upload a textbook first - then ask your question.');
+    }
+    incoming.current = null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [books.data, textbooks, bookId]);
 
   // Auto-scroll chat in workspace
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory, isThinking, activeBookId, viewMode]);
+  }, [messages, isThinking, activeBookId, viewMode]);
+
+  const persist = async (pair) => {
+    try {
+      if (!chatRef.current) {
+        const chat = await api.createChat({ bookId: currentBook.id, bookTitle: currentBook.title, title: pair[0].content.slice(0, 80), messages: pair });
+        chatRef.current = chat.id;
+        navigate(`${pathFor('ask-textbook', currentBook.id)}/${chat.id}`, { replace: true });
+      } else {
+        await api.appendChat(chatRef.current, pair);
+      }
+      invalidate(keys.chats());
+    } catch (e) {
+      // Saving history is best-effort; the answer is already on screen.
+      console.warn("Couldn't save conversation:", e.message);
+    }
+  };
 
   // Send message in chat
-  const handleSendChat = (textToSend) => {
+  const handleSendChat = async (textToSend, { voice = false } = {}) => {
     const query = typeof textToSend === 'string' ? textToSend : chatInput || landingInput;
-    if (!query.trim()) return;
+    if (!query.trim() || isThinking) return;
 
-    // Switch to workspace view if currently on landing
+    // From the landing screen: ask the most recent ready book.
     if (viewMode === 'landing') {
-      setViewMode('workspace');
+      const ready = textbooks.find((b) => b.status === 'ready');
+      if (!ready) {
+        notify.info('Upload a textbook first - then ask your question.');
+        return;
+      }
+      setLandingInput('');
+      navigate(pathFor('ask-textbook', ready.id), { state: { prompt: query.trim() } });
+      return;
+    }
+    if (!bookReady) {
+      notify.info('This book is still processing - questions unlock when it is ready.');
+      return;
     }
 
-    const userMsg = {
-      id: `u-${Date.now()}`,
-      sender: 'user',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: query.trim()
-    };
-
-    setChatHistory((prev) => ({
-      ...prev,
-      [activeBookId]: [...(prev[activeBookId] || []), userMsg]
-    }));
+    window.speechSynthesis?.cancel();
+    const id = `${Date.now()}`;
+    const now = new Date().toISOString();
+    const userMsg = { id: `${id}-u`, sender: 'user', time: clock(now), text: query.trim(), voice };
+    setMessages((m) => [...m, userMsg, { id: `${id}-a`, sender: 'ai', pending: true }]);
     setChatInput('');
-    setLandingInput('');
     setIsThinking(true);
-
-    setTimeout(() => {
-      let replyText = '';
-      let citations = [`Page ${activePage} · ${currentBook.title}`];
-      let formula = '';
-
-      const lower = query.toLowerCase();
-      if (lower.includes('dulong') || lower.includes('heat capacity') || lower.includes('einstein') || lower.includes('debye')) {
-        replyText = `Based on Chapter II (Heat Capacity of Solids), pages 2–4 of "${currentBook.title}":\n\n1. Dulong–Petit Law (Section II.A, Page 2):\nClassic equipartition predicts that molar heat capacity approaches a constant value at high temperatures:\nC_v = 3R ≈ 25 J/(mol·K)\nThis holds because atoms behave as classical harmonic oscillators in 3 dimensions.\n\n2. Einstein’s Calculation (Section II.C, Page 4):\nAt cryogenic temperatures, classical physics fails as vibrational modes freeze out. Assuming a single characteristic frequency ω_E:\nC_v = 3R * (x)^2 * [e^x / (e^x - 1)^2], where x = ħω_E / (k_B*T)\n\n3. Debye Model (Section II.D, Page 4):\nAccounts for acoustic dispersion at low temperatures, accurately recovering the experimental T^3 temperature dependence.`;
-        citations = ['Page 2 · Section II.A', 'Page 4 · Section II.C'];
-        formula = 'C_v = 3R * (x)^2 * [e^x / (e^x - 1)^2]';
-      } else if (lower.includes('drude') || lower.includes('electron') || lower.includes('conductivity') || lower.includes('sommerfeld')) {
-        replyText = `Retrieved from Chapter IV & V (Electrons in Metals), pages 10–15 of "${currentBook.title}":\n\n1. Drude Model (Page 10–12):\nModels conduction electrons as an ideal gas colliding with stationary ion cores with collision relaxation time τ. Electrical conductivity is derived as σ = (n * e^2 * τ) / m.\n\n2. Sommerfeld Quantum Correction (Page 13–15):\nReplaces Maxwell-Boltzmann statistics with Fermi-Dirac statistics to satisfy Pauli exclusion. Only electrons within k_B*T of the Fermi energy E_F contribute to thermal and electrical transport, explaining the small electronic heat capacity.`;
-        citations = ['Page 10 · Section IV.A', 'Page 13 · Section V.A'];
-        formula = 'σ = (n * e^2 * τ) / m';
-      } else if (lower.includes('bloch') || lower.includes('band') || lower.includes('periodic') || lower.includes('brillouin')) {
-        replyText = `According to Chapter XII (Bloch Theory), pages 42–47 of "${currentBook.title}":\n\nBloch’s theorem states that the wave function of an electron moving in a spatially periodic potential V(r + R) = V(r) takes the form:\n\nψ_k(r) = e^(i * k · r) * u_k(r)\n\nWhere u_k(r) has the same periodicity as the crystal lattice. This leads to the emergence of energy bands and forbidden energy gaps (bandgaps) at the Brillouin zone boundaries.`;
-        citations = ['Page 42 · Section XII.A (Bloch Theorem)'];
-        formula = 'ψ_k(r) = e^(i * k · r) * u_k(r)';
-      } else if (lower.includes('semiconductor') || lower.includes('effective mass') || lower.includes('hole')) {
-        replyText = `From Chapter XIV (Semiconductors), pages 50–52 of "${currentBook.title}":\n\n1. Band Gap: Direct and indirect optical transitions dictate carrier excitation from the valence band to the conduction band.\n2. Effective Mass: The dynamic response of electrons near band extrema is governed by curvature: 1 / m* = (1 / ħ^2) * (d^2 E / dk^2).\n3. Holes: Missing electrons at the top of the valence band act as positive charge carriers with positive effective mass.`;
-        citations = ['Page 50 · Section XIV.A', 'Page 52 · Section XIV.C'];
-        formula = '1 / m* = (1 / ħ^2) * (d^2 E / dk^2)';
-      } else {
-        replyText = `Answer grounded in "${currentBook.title}" (Page ${activePage}):\n\nRegarding your question: "${query}"\n\nThe text confirms that the underlying physical mechanisms adhere to quantum condensed-matter and thermodynamic principles. All equations and citations are indexed directly from the verified course lecture notes.`;
-        citations = [`Page ${activePage} · ${currentBook.title}`];
-        formula = 'F = m * a';
-      }
-
-      const aiMsg = {
-        id: `ai-${Date.now()}`,
-        sender: 'ai',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: replyText,
-        citations,
-        formula
-      };
-
-      setChatHistory((prev) => ({
-        ...prev,
-        [activeBookId]: [...(prev[activeBookId] || []), aiMsg]
-      }));
+    try {
+      const res = await askTextbook(currentBook.id, query.trim());
+      const answer = { id: `${id}-a`, sender: 'ai', time: clock(), text: res.answer, foundInBook: res.foundInBook, citations: res.citations };
+      setMessages((m) => m.map((x) => (x.id === answer.id ? answer : x)));
+      persist([
+        { role: 'user', content: userMsg.text, voice },
+        { role: 'assistant', content: res.answer, foundInBook: res.foundInBook, citations: res.citations }
+      ]);
+    } catch (e) {
+      setMessages((m) => m.map((x) => (x.id === `${id}-a` ? { ...x, pending: false, error: e.message, question: userMsg.text } : x)));
+      if (isSessionExpired(e)) reportError(e);
+    } finally {
       setIsThinking(false);
-    }, 600);
+    }
+  };
+
+  // Ask the question handed over from the dashboard once the book is open.
+  useEffect(() => {
+    const prompt = location.state?.prompt;
+    if (prompt && !sentInitial.current && !chatId && bookReady) {
+      sentInitial.current = true;
+      handleSendChat(prompt);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, chatId, bookReady]);
+
+  const retry = (msg) => {
+    setMessages((list) => list.filter((x) => x.id !== msg.id && x.id !== msg.id.replace(/-a$/, '-u')));
+    handleSendChat(msg.question);
   };
 
   // Speech recognition ref
@@ -661,56 +543,54 @@ export default function AskTextbookModule({ onBackToDashboard }) {
 
   // Open interactive voice prompt modal
   const openVoicePrompt = () => {
+    const SpeechRec = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+    if (!SpeechRec) {
+      notify.info("Voice input isn't supported in this browser.");
+      return;
+    }
     setShowVoicePrompt(true);
     setIsListening(true);
     setVoiceTranscript('');
+    try {
+      const recognition = new SpeechRec();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
 
-    const SpeechRec = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
-    if (SpeechRec) {
-      try {
-        const recognition = new SpeechRec();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
+      recognition.onresult = (e) => {
+        let current = '';
+        for (let i = 0; i < e.results.length; i++) {
+          current += e.results[i][0].transcript + ' ';
+        }
+        setVoiceTranscript(current.trim());
+      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
 
-        recognition.onresult = (e) => {
-          let current = '';
-          for (let i = 0; i < e.results.length; i++) {
-            current += e.results[i][0].transcript + ' ';
-          }
-          setVoiceTranscript(current.trim());
-        };
-
-        recognition.onerror = () => {
-          if (!voiceTranscript) {
-            setVoiceTranscript("Explain Dulong-Petit Law from Chapter II");
-          }
-        };
-
-        recognition.start();
-        recognitionRef.current = recognition;
-      } catch (err) {
-        setVoiceTranscript("Explain Bloch theorem and energy bands");
-      }
-    } else {
-      setTimeout(() => {
-        setVoiceTranscript("Explain Bloch theorem and energy bands");
-      }, 1000);
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch (err) {
+      setIsListening(false);
+      notify.error("Couldn't start the microphone.");
     }
   };
 
   const closeVoicePrompt = () => {
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) {}
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // already stopped
+      }
     }
     setShowVoicePrompt(false);
     setIsListening(false);
   };
 
   const handleSubmitVoicePrompt = (textToSubmit) => {
-    const q = textToSubmit || voiceTranscript || "Explain Bloch theorem and energy bands";
+    const q = textToSubmit || voiceTranscript;
     closeVoicePrompt();
-    handleSendChat(q);
+    if (q) handleSendChat(q, { voice: true });
   };
 
   // Voice Read Aloud using Web Speech Synthesis
@@ -722,61 +602,55 @@ export default function AskTextbookModule({ onBackToDashboard }) {
     if (speakingMessageId === msgId) {
       window.speechSynthesis.cancel();
       setSpeakingMessageId(null);
-      showToast('Audio paused');
       return;
     }
 
     window.speechSynthesis.cancel();
     setSpeakingMessageId(msgId);
-    showToast('Reading response aloud...');
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    // Read the words, not the Markdown/LaTeX markup or citation markers.
+    const plain = text.replace(/\[\d+\]/g, '').replace(/[#*_`$\\]/g, '');
+    const utterance = new SpeechSynthesisUtterance(plain);
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
-
-    utterance.onend = () => {
-      setSpeakingMessageId(null);
-    };
-    utterance.onerror = () => {
-      setSpeakingMessageId(null);
-    };
-
+    utterance.onend = () => setSpeakingMessageId(null);
+    utterance.onerror = () => setSpeakingMessageId(null);
     window.speechSynthesis.speak(utterance);
   };
 
+  useEffect(() => () => window.speechSynthesis?.cancel(), []);
+
   // Copy AI response to clipboard with user feedback
-  const handleCopyMessage = (msgId, text) => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text);
+  const handleCopyMessage = async (msgId, text) => {
+    try {
+      await navigator.clipboard.writeText(text);
       setCopiedMessageId(msgId);
-      showToast('Copied answer to clipboard');
       setTimeout(() => setCopiedMessageId(null), 2200);
+    } catch {
+      notify.error("Couldn't copy to the clipboard.");
     }
   };
 
-  // Jump to specific textbook citation page
-  const handleJumpToCitation = (citationText) => {
-    const match = citationText.match(/Page\s+(\d+)/i);
-    if (match) {
-      const pageNum = parseInt(match[1], 10);
-      if (!isNaN(pageNum)) {
-        setActivePage(pageNum);
-        if (isTextbookHidden) {
-          setIsTextbookHidden(false);
-        }
-        showToast(`Jumped to Page ${pageNum} in ${currentBook.title}`);
-        return;
-      }
+  // Jump to a cited page in the PDF beside the chat
+  const handleJumpToCitation = (citation) => {
+    const pageNum = citation?.page;
+    if (!currentBook.hasOriginal) {
+      showToast("The original PDF wasn't kept for this book, so its pages can't be shown.");
+      return;
     }
-    showToast(`Referenced source: ${citationText}`);
+    if (pageNum) {
+      setActivePage(pageNum);
+      setIsTextbookHidden(false);
+      if (isMobile) setMobileStudioTab('pdf');
+    }
   };
 
   // Filtered books for search popup
-  const filteredBooks = textbooks.filter((b) =>
-    b.title.toLowerCase().includes(searchBookQuery.toLowerCase()) ||
-    b.author.toLowerCase().includes(searchBookQuery.toLowerCase()) ||
-    b.category.toLowerCase().includes(searchBookQuery.toLowerCase())
-  );
+  const filteredBooks = textbooks.filter((b) => b.title.toLowerCase().includes(searchBookQuery.toLowerCase()));
+
+  // Saved conversations: those of the open book, else the most recent ones
+  const visibleChats = (chats.data || []).filter((c) => !activeBookId || c.bookId === activeBookId);
+  const suggestions = suggestionsFor(currentBook.title);
 
   return (
     <div
@@ -795,7 +669,7 @@ export default function AskTextbookModule({ onBackToDashboard }) {
       <input
         type="file"
         ref={fileInputRef}
-        accept=".pdf,.doc,.docx,.txt"
+        accept="application/pdf"
         onChange={handleRealFileUpload}
         style={{ display: 'none' }}
       />
@@ -1080,9 +954,6 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                       key={book.id}
                       onClick={() => {
                         setActiveBookId(book.id);
-                        setActivePage(1);
-                        setViewMode('workspace');
-                        showToast(`Opened "${book.title}"`);
                       }}
                       onMouseEnter={() => setHoveredBookId(book.id)}
                       onMouseLeave={() => setHoveredBookId(null)}
@@ -1133,13 +1004,50 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                             : 'rgba(255, 255, 255, 0.6)'
                         }}
                       >
-                        {book.totalPages} pages
+                        {book.sizeLabel}
                       </span>
                     </div>
                   );
                 })}
+                {!textbooks.length && (
+                  <span style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.55)', padding: '4px' }}>
+                    {books.isLoading ? 'Loading your library…' : 'No textbooks yet'}
+                  </span>
+                )}
               </div>
             </div>
+
+            {visibleChats.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '14px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.65)', padding: '2px 4px 6px 4px' }}>
+                  {activeBookId ? 'Chats in this book' : 'Recent chats'}
+                </span>
+                {visibleChats.slice(0, 12).map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => navigate(`${pathFor('ask-textbook', c.bookId)}/${c.id}`)}
+                    style={{
+                      padding: '7px 10px',
+                      borderRadius: '8px',
+                      backgroundColor: c.id === chatId ? 'rgba(255, 255, 255, 0.18)' : 'transparent',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '1px'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (c.id !== chatId) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (c.id !== chatId) e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    <span style={{ fontSize: '12px', color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</span>
+                    <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>{timeAgo(c.updatedAt)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -1370,8 +1278,14 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                     maxWidth: '340px'
                   }}
                 >
-                  Grounded in <strong style={{ color: '#1B2A4A' }}>{currentBook.title}</strong> ({currentBook.totalPages} pages)
+                  {textbooks.length ? <>Answers come from your {textbooks.length} uploaded book{textbooks.length > 1 ? 's' : ''}.</> : 'Upload a textbook PDF to get started.'}
                 </p>
+              )}
+
+              {books.error && !books.data && (
+                <div style={{ marginBottom: '14px', padding: '10px 14px', borderRadius: '10px', background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', fontSize: '12.5px', fontWeight: 600 }}>
+                  Couldn't load your library: {books.error.message}
+                </div>
               )}
 
               {/* Central Pill Input Bar with (+) Upload, Mic, and Send */}
@@ -1559,7 +1473,7 @@ export default function AskTextbookModule({ onBackToDashboard }) {
               </span>
               {!isMobile && (
                 <span style={{ fontSize: '11px', color: '#64748B', whiteSpace: 'nowrap' }}>
-                  ({currentBook.totalPages} pages)
+                  ({currentBook.sizeLabel})
                 </span>
               )}
             </div>
@@ -1607,7 +1521,7 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                         cursor: 'pointer'
                       }}
                     >
-                      Book ({currentBook.totalPages}p)
+                      Book
                     </button>
                   </div>
 
@@ -1686,7 +1600,7 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                   overflow: 'hidden'
                 }}
               >
-                {/* Dark PDF Viewer Top Toolbar (Exact replica of media_1791279051919.png) */}
+                {/* PDF viewer toolbar: upload, page, zoom, download */}
                 <div
                   style={{
                     height: '38px',
@@ -1702,35 +1616,24 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                     userSelect: 'none'
                   }}
                 >
-                  {/* Menu Hamburger Button */}
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    title="Upload / Open Another Document"
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#F1F3F4',
-                      cursor: 'pointer',
-                      padding: '4px 6px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                    title="Upload another textbook"
+                    style={{ background: 'transparent', border: 'none', color: '#F1F3F4', cursor: 'pointer', padding: '4px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H2zm0 4h12v2H2zm0 4h12v2H2z"/></svg>
                   </button>
 
-                  {/* Page Input [ 1 ] / 77 */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
+                    <span style={{ color: '#C4C7C5', fontSize: '11.5px' }}>Page</span>
                     <input
                       type="number"
                       value={activePage}
                       min={1}
-                      max={currentBook.totalPages}
-                      onChange={(e) => setActivePage(Math.max(1, Math.min(currentBook.totalPages, parseInt(e.target.value) || 1)))}
+                      onChange={(e) => setActivePage(Math.max(1, parseInt(e.target.value, 10) || 1))}
                       style={{
-                        width: '28px',
+                        width: '40px',
                         height: '20px',
                         backgroundColor: '#1E2124',
                         border: '1px solid #4F5356',
@@ -1743,398 +1646,79 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                         padding: 0
                       }}
                     />
-                    <span style={{ color: '#C4C7C5', fontSize: '11.5px', marginRight: '6px' }}>
-                      / {currentBook.totalPages}
-                    </span>
                   </div>
 
-                  {/* Vertical Divider */}
                   <div style={{ width: '1px', height: '16px', backgroundColor: '#525659', margin: '0 4px' }} />
 
-                  {/* Zoom Controls: - and + */}
                   <button
                     type="button"
-                    onClick={() => setPdfZoom((z) => Math.max(60, z - 15))}
+                    onClick={() => setPdfZoom((z) => Math.max(50, z - 25))}
                     title="Zoom Out"
                     style={{ background: 'transparent', border: 'none', color: '#F1F3F4', cursor: 'pointer', padding: '2px 6px', fontSize: '14px', fontWeight: 700 }}
                   >
                     –
                   </button>
+                  <span style={{ color: '#C4C7C5', fontSize: '11px', minWidth: '34px', textAlign: 'center' }}>{pdfZoom}%</span>
                   <button
                     type="button"
-                    onClick={() => setPdfZoom((z) => Math.min(180, z + 15))}
+                    onClick={() => setPdfZoom((z) => Math.min(250, z + 25))}
                     title="Zoom In"
                     style={{ background: 'transparent', border: 'none', color: '#F1F3F4', cursor: 'pointer', padding: '2px 6px', fontSize: '14px', fontWeight: 700 }}
                   >
                     +
                   </button>
-
-                  {/* Vertical Divider */}
-                  <div style={{ width: '1px', height: '16px', backgroundColor: '#525659', margin: '0 4px' }} />
-
-                  {/* Fit to Height/Width (↕) */}
                   <button
                     type="button"
                     onClick={() => setPdfZoom(100)}
-                    title="Fit to Page Width"
+                    title="Reset zoom"
                     style={{ background: 'transparent', border: 'none', color: '#F1F3F4', cursor: 'pointer', padding: '2px 6px', fontSize: '13px' }}
                   >
                     ↕
                   </button>
 
-                  {/* Rotate Clockwise (↺) */}
-                  <button
-                    type="button"
-                    onClick={() => setPdfRotation((r) => (r + 90) % 360)}
-                    title="Rotate Clockwise"
-                    style={{ background: 'transparent', border: 'none', color: '#F1F3F4', cursor: 'pointer', padding: '2px 6px', fontSize: '13px' }}
-                  >
-                    ↺
-                  </button>
-
-                  {/* Vertical Divider */}
-                  <div style={{ width: '1px', height: '16px', backgroundColor: '#525659', margin: '0 4px' }} />
-
-                  {/* Text Selection Mode (TT) */}
-                  <button
-                    type="button"
-                    onClick={() => setActiveTool('cursor')}
-                    title="Text Selection Mode"
-                    style={{
-                      background: activeTool === 'cursor' ? '#4F5356' : 'transparent',
-                      border: 'none',
-                      borderRadius: '3px',
-                      color: '#F1F3F4',
-                      cursor: 'pointer',
-                      padding: '2px 6px',
-                      fontSize: '11px',
-                      fontWeight: 700
-                    }}
-                  >
-                    TT
-                  </button>
-
-                  {/* Draw / Markup Tool */}
-                  <button
-                    type="button"
-                    onClick={() => setActiveTool(activeTool === 'pen' ? 'cursor' : 'pen')}
-                    title="Pen / Annotation Tool"
-                    style={{
-                      background: activeTool === 'pen' ? '#4F5356' : 'transparent',
-                      border: 'none',
-                      borderRadius: '3px',
-                      color: activeTool === 'pen' ? '#60A5FA' : '#F1F3F4',
-                      cursor: 'pointer',
-                      padding: '2px 6px',
-                      fontSize: '12px'
-                    }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.806 2.016 2.016-.806-1.21-1.21z"/></svg>
-                  </button>
-
-                  {/* Vertical Divider */}
-                  <div style={{ width: '1px', height: '16px', backgroundColor: '#525659', margin: '0 4px' }} />
-
-                  {/* Undo / Redo */}
-                  <button
-                    type="button"
-                    onClick={() => showToast('Action undone')}
-                    title="Undo"
-                    style={{ background: 'transparent', border: 'none', color: '#F1F3F4', cursor: 'pointer', padding: '2px 4px', fontSize: '12px' }}
-                  >
-                    ↶
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => showToast('Action redone')}
-                    title="Redo"
-                    style={{ background: 'transparent', border: 'none', color: '#F1F3F4', cursor: 'pointer', padding: '2px 4px', fontSize: '12px' }}
-                  >
-                    ↷
-                  </button>
-
-                  {/* Vertical Divider */}
-                  <div style={{ width: '1px', height: '16px', backgroundColor: '#525659', margin: '0 4px' }} />
-
-                  {/* Switch between Native iframe and Rendered Contents Page */}
-                  <button
-                    type="button"
-                    onClick={() => setViewerTab(viewerTab === 'pdf' ? 'contents' : 'pdf')}
-                    title="Toggle PDF Document View"
-                    style={{
-                      background: '#4F5356',
-                      border: 'none',
-                      borderRadius: '3px',
-                      color: '#FFFFFF',
-                      fontSize: '10.5px',
-                      fontWeight: 600,
-                      padding: '2px 7px',
-                      cursor: 'pointer',
-                      marginLeft: 'auto'
-                    }}
-                  >
-                    {viewerTab === 'pdf' ? 'Table of Contents' : 'Embedded PDF'}
-                  </button>
-
-                  {/* Download PDF button */}
-                  <a
-                    href={currentBook.fileUrl || '/assets/solid-state-physics.pdf'}
-                    download={`${currentBook.title}.pdf`}
-                    title="Download Document"
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#F1F3F4',
-                      cursor: 'pointer',
-                      padding: '2px 6px',
-                      fontSize: '13px',
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >
-                    ↓
-                  </a>
-
-                  {/* Print Document */}
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    title="Print Document"
-                    style={{ background: 'transparent', border: 'none', color: '#F1F3F4', cursor: 'pointer', padding: '2px 6px', fontSize: '13px' }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2h8v3H4zm-1 4h10a2 2 0 0 1 2 2v4a1 1 0 0 1-1 1h-2v3H4v-3H2a1 1 0 0 1-1-1V8a2 2 0 0 1 2-2zm1 8h8v-2H4z"/></svg>
-                  </button>
+                  {pdfUrl && (
+                    <a
+                      href={pdfUrl}
+                      download={`${currentBook.title}.pdf`}
+                      title="Download Document"
+                      style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#F1F3F4', cursor: 'pointer', padding: '2px 6px', fontSize: '13px', textDecoration: 'none', display: 'flex', alignItems: 'center' }}
+                    >
+                      ↓
+                    </a>
+                  )}
                 </div>
 
                 {/* Document Viewport Area */}
                 <div
                   style={{
                     flex: 1,
-                    overflowY: 'auto',
-                    overflowX: 'auto',
+                    overflow: 'hidden',
                     backgroundColor: '#525659',
                     position: 'relative',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    padding: viewerTab === 'contents'
-                      ? (isMobile ? '16px 8px calc(76px + env(safe-area-inset-bottom, 0px)) 8px' : '20px 10px')
-                      : (isMobile ? '0 0 calc(72px + env(safe-area-inset-bottom, 0px)) 0' : '0')
+                    justifyContent: pdfUrl ? 'flex-start' : 'center',
+                    padding: isMobile ? '0 0 calc(72px + env(safe-area-inset-bottom, 0px)) 0' : '0'
                   }}
                 >
-                  {viewerTab === 'pdf' && currentBook.fileUrl ? (
-                    /* Real PDF loaded via browser iframe */
+                  {!currentBook.hasOriginal ? (
+                    <div style={{ color: '#E2E8F0', fontSize: '13px', textAlign: 'center', maxWidth: '320px', padding: '20px', lineHeight: 1.5 }}>
+                      The original PDF wasn't kept for this textbook. Upload it again to read it here.
+                    </div>
+                  ) : pdfError ? (
+                    <div style={{ color: '#FECACA', fontSize: '13px', textAlign: 'center', maxWidth: '320px', padding: '20px' }}>Couldn't open the PDF: {pdfError}</div>
+                  ) : !pdfUrl ? (
+                    <div style={{ color: '#CBD5E1', fontSize: '13px' }}>Loading document…</div>
+                  ) : (
+                    // Remounting on page/zoom change is what makes the #page fragment
+                    // take effect - the browser's PDF viewer only reads it on load.
                     <iframe
-                      key={currentBook.id}
-                      src={currentBook.fileUrl}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        border: 'none',
-                        backgroundColor: '#525659',
-                        transform: `scale(${pdfZoom / 100}) rotate(${pdfRotation}deg)`,
-                        transformOrigin: 'top center',
-                        transition: 'transform 180ms ease'
-                      }}
+                      key={`${activePage}-${pdfZoom}`}
+                      src={`${pdfUrl}#page=${activePage}&zoom=${pdfZoom}`}
+                      style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#525659' }}
                       title={currentBook.title}
                     />
-                  ) : (
-                    /* Exact High-Fidelity Replica of Page 1 (Screenshot: Solid State Physics Lecture Notes) */
-                    <div
-                      style={{
-                        width: isMobile ? '100%' : '620px',
-                        maxWidth: '96%',
-                        minHeight: '780px',
-                        backgroundColor: '#FFFFFF',
-                        boxShadow: '0 4px 18px rgba(0, 0, 0, 0.35)',
-                        padding: isMobile ? '20px 14px' : '38px 46px',
-                        boxSizing: 'border-box',
-                        color: '#000000',
-                        fontFamily: 'serif',
-                        transform: `scale(${pdfZoom / 100}) rotate(${pdfRotation}deg)`,
-                        transformOrigin: 'top center',
-                        transition: 'transform 180ms ease'
-                      }}
-                    >
-                      {/* Document Title Header */}
-                      <div style={{ textAlign: 'center', marginBottom: '22px' }}>
-                        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 4px 0', letterSpacing: '0.02em' }}>
-                          Solid State Physics
-                        </h2>
-                        <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 10px 0' }}>
-                          Lecture Notes
-                        </h3>
-                        <div style={{ fontSize: '12px', fontStyle: 'italic', color: '#111827' }}>
-                          E. Kogan
-                        </div>
-                        <div style={{ fontSize: '12px', fontWeight: 700, marginTop: '22px', letterSpacing: '0.05em' }}>
-                          CONTENTS
-                        </div>
-                      </div>
-
-                      {/* Two Column Table of Contents from Screenshot */}
-                      <div style={{ display: 'flex', gap: '32px', fontSize: '11px', lineHeight: '1.45' }}>
-                        {/* Left Column */}
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(2)}>I. About Condensed-Matter Physics</span>
-                            <span>2</span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(2)}>II. Heat Capacity of Solids</span>
-                            <span>2</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>A. Dulong–Petit Law</span>
-                            <span>2</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>B. Boltzmann’s Calculation</span>
-                            <span>3</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>C. Einstein’s Calculation</span>
-                            <span>4</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>D. Debye’s Calculation</span>
-                            <span>4</span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(7)}>III. ONE-DIMENSIONAL CHAIN</span>
-                            <span>7</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>A. Compressibility, Sound, and Thermal Expansion</span>
-                            <span>7</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>B. Vibrations of a One-Dimensional Chain</span>
-                            <span>8</span>
-                          </div>
-                          <div style={{ paddingLeft: '22px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>1. Monatomic basis</span>
-                            <span>8</span>
-                          </div>
-                          <div style={{ paddingLeft: '22px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>2. Diatomic basis</span>
-                            <span>9</span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(10)}>IV. ELECTRONS IN METALS: DRUDE THEORY</span>
-                            <span>10</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>A. Conductivity</span>
-                            <span>11</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>B. Thermal Transport</span>
-                            <span>12</span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(13)}>V. SOMMERFELD THEORY</span>
-                            <span>13</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(16)}>VI. CRYSTALS</span>
-                            <span>16</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(20)}>VII. CHEMICAL ELEMENTS</span>
-                            <span>20</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(24)}>VIII. CHEMICAL BOND. I</span>
-                            <span>24</span>
-                          </div>
-                        </div>
-
-                        {/* Right Column */}
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>B. Metallic Solids</span>
-                            <span>31</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>C. Crystals of Inert Gases</span>
-                            <span>31</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>D. Hydrogen Bonding</span>
-                            <span>32</span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(33)}>X. WAVE SCATTERING BY CRYSTALS</span>
-                            <span>33</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>A. The Reciprocal Lattice</span>
-                            <span>33</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>B. Lattice Planes and Miller Indices</span>
-                            <span>33</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>C. Fermi’s Golden Rule</span>
-                            <span>34</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>D. The Laue Condition</span>
-                            <span>35</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>E. The Bragg Condition</span>
-                            <span>35</span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(42)}>XII. BLOCH THEORY</span>
-                            <span>42</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>A. Brillouin Zones and Bloch Theorem</span>
-                            <span>42</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>B. Nearly Free Electron Model</span>
-                            <span>43</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>C. Tight Binding Model</span>
-                            <span>44</span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(48)}>XIII. ELECTRON DYNAMICS</span>
-                            <span>48</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#1D4ED8', cursor: 'pointer' }} onClick={() => setActivePage(50)}>XIV. SEMICONDUCTORS</span>
-                            <span>50</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>A. Optical Properties of Semiconductors</span>
-                            <span>51</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>B. Electrons and Holes</span>
-                            <span>51</span>
-                          </div>
-                          <div style={{ paddingLeft: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>C. Effective Mass</span>
-                            <span>52</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   )}
                 </div>
               </div>
@@ -2179,7 +1763,41 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                     gap: '22px'
                   }}
                 >
-                  {(chatHistory[activeBookId] || []).map((msg) => {
+                  {loadingChat && [0, 1].map((i) => <div key={i} className="skeleton-shimmer" style={{ height: '70px', borderRadius: '12px' }} />)}
+                  {!loadingChat && !messages.length && (
+                    <div style={{ border: '1px dashed #CBD5E1', borderRadius: '12px', padding: '20px', textAlign: 'center', background: '#FFFFFF' }}>
+                      <div style={{ fontSize: '13px', color: '#334155', lineHeight: 1.55 }}>
+                        {currentBook.status === 'missing'
+                          ? 'This textbook is no longer in your library - it may have been moved to trash.'
+                          : `Ask anything from "${currentBook.title}". Answers are grounded strictly in this book, with page references.`}
+                      </div>
+                      {currentBook.status === 'processing' && (
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#B45309', marginTop: '8px' }}>
+                          This book is still processing - questions unlock when it's ready.
+                        </div>
+                      )}
+                      {currentBook.status === 'failed' && (
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#DC2626', marginTop: '8px' }}>
+                          Indexing failed{currentBook.error ? `: ${currentBook.error}` : ''}. Upload the PDF again to retry.
+                        </div>
+                      )}
+                      {bookReady && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center', marginTop: '12px' }}>
+                          {suggestions.map((q) => (
+                            <button
+                              key={q}
+                              type="button"
+                              onClick={() => handleSendChat(q)}
+                              style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '999px', padding: '4px 12px', fontSize: '11.5px', color: '#334155', cursor: 'pointer' }}
+                            >
+                              “{q}”
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {messages.map((msg) => {
                     const isUser = msg.sender === 'user';
                     if (isUser) {
                       /* USER CHAT: Stays inside clean navy bubble on the right of the centered column */
@@ -2220,45 +1838,16 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                         <FormattedAiMessage
                           key={msg.id}
                           msg={msg}
-                          currentBook={currentBook}
                           onJumpToCitation={handleJumpToCitation}
                           speakingMessageId={speakingMessageId}
                           onReadAloud={handleReadAloud}
                           copiedMessageId={copiedMessageId}
                           onCopyMessage={handleCopyMessage}
+                          onRetry={() => retry(msg)}
                         />
                       );
                     }
                   })}
-
-                  {isThinking && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '10px 14px',
-                        background: '#F8FAFC',
-                        borderRadius: '8px',
-                        width: 'fit-content',
-                        border: '1px solid #E2E8F0'
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '14px',
-                          height: '14px',
-                          borderRadius: '50%',
-                          border: '2px solid #E2E8F0',
-                          borderTopColor: '#1B2A4A',
-                          animation: 'voiceGlow 1s linear infinite'
-                        }}
-                      />
-                      <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>
-                        Searching textbook index & grounding explanation...
-                      </span>
-                    </div>
-                  )}
 
                   <div ref={chatBottomRef} />
                 </div>
@@ -2306,7 +1895,8 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder={`Ask anything from "${currentBook.title}"...`}
+                    placeholder={bookReady ? `Ask anything from "${currentBook.title}"...` : 'Questions unlock when this book is ready'}
+                    disabled={!bookReady}
                     style={{
                       flex: 1,
                       minWidth: 0,
@@ -2342,7 +1932,7 @@ export default function AskTextbookModule({ onBackToDashboard }) {
 
                   <button
                     type="submit"
-                    disabled={!chatInput.trim() || isThinking}
+                    disabled={!chatInput.trim() || isThinking || !bookReady}
                     style={{
                       width: '32px',
                       height: '32px',
@@ -2479,10 +2069,7 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                       key={book.id}
                       onClick={() => {
                         setActiveBookId(book.id);
-                        setActivePage(1);
-                        setViewMode('workspace');
                         setShowSearchModal(false);
-                        showToast(`Opened "${book.title}"`);
                       }}
                       style={{
                         display: 'flex',
@@ -2531,7 +2118,7 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                             {book.title}
                           </div>
                           <div style={{ fontSize: '11px', color: '#64748B' }}>
-                            {book.author} · {book.totalPages} pages · {book.category}
+                            {book.author} · {book.sizeLabel} · {book.category}
                           </div>
                         </div>
                       </div>
@@ -2688,11 +2275,10 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                 Tap to speak suggested question:
               </span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                {[
-                  "Explain Dulong-Petit Law from Chapter II",
-                  "Summarize Einstein's calculation of heat capacity",
-                  "Explain Bloch theorem and energy bands"
-                ].map((sampleQ, idx) => (
+                {(viewMode === 'workspace'
+                  ? suggestions
+                  : ['Summarize the key ideas of chapter 1', 'Explain the most important formula', 'Give me 3 practice questions']
+                ).map((sampleQ, idx) => (
                   <button
                     key={idx}
                     type="button"
@@ -2906,95 +2492,57 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                     justifyContent: 'space-between'
                   }}
                 >
-                  <span>Recent Questions</span>
+                  <span>Recent Conversations</span>
                   <span style={{ fontSize: '10.5px', color: '#CBD5E1', fontWeight: 600 }}>
-                    {Object.values(chatHistory).reduce((acc, arr) => acc + (arr ? arr.filter((m) => m.sender === 'user').length : 0), 0)} asked
+                    {visibleChats.length} saved
                   </span>
                 </div>
 
-                {(() => {
-                  const recentQuestions = Object.entries(chatHistory).flatMap(([bookId, msgs]) => {
-                    const book = textbooks.find((b) => b.id === bookId);
-                    return (msgs || [])
-                      .filter((m) => m.sender === 'user')
-                      .map((m) => ({
-                        id: m.id,
-                        text: m.text,
-                        time: m.time,
-                        bookId,
-                        bookTitle: book ? book.title : 'Textbook'
-                      }));
-                  }).reverse();
-
-                  if (recentQuestions.length === 0) {
-                    return (
+                {!visibleChats.length ? (
+                  <div
+                    style={{
+                      padding: '16px 12px',
+                      backgroundColor: '#F8FAFC',
+                      borderRadius: '12px',
+                      border: '1px dashed #E2E8F0',
+                      textAlign: 'center',
+                      color: '#94A3B8',
+                      fontSize: '12px'
+                    }}
+                  >
+                    No conversations yet. Ask any question to start!
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {visibleChats.slice(0, 20).map((c) => (
                       <div
+                        key={c.id}
+                        onClick={() => {
+                          navigate(`${pathFor('ask-textbook', c.bookId)}/${c.id}`);
+                          setShowMobileBooksDrawer(false);
+                        }}
                         style={{
-                          padding: '16px 12px',
-                          backgroundColor: '#F8FAFC',
-                          borderRadius: '12px',
-                          border: '1px dashed #E2E8F0',
-                          textAlign: 'center',
-                          color: '#94A3B8',
-                          fontSize: '12px'
+                          padding: '10px 12px',
+                          backgroundColor: c.id === chatId ? '#EFF6FF' : '#F8FAFC',
+                          borderRadius: '10px',
+                          border: `1px solid ${c.id === chatId ? '#BFDBFE' : '#E2E8F0'}`,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px'
                         }}
                       >
-                        No questions asked yet. Ask any question to start!
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {recentQuestions.map((q) => (
-                        <div
-                          key={q.id}
-                          onClick={() => {
-                            setActiveBookId(q.bookId);
-                            setViewMode('workspace');
-                            setShowMobileBooksDrawer(false);
-                            showToast(`Opened "${q.text.slice(0, 24)}..."`);
-                          }}
-                          style={{
-                            padding: '10px 12px',
-                            backgroundColor: '#F8FAFC',
-                            borderRadius: '10px',
-                            border: '1px solid #E2E8F0',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '4px',
-                            transition: 'all 120ms ease'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                            </svg>
-                            <span
-                              style={{
-                                fontSize: '12.5px',
-                                fontWeight: 600,
-                                color: '#1E293B',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              {q.text}
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10.5px', color: '#94A3B8' }}>
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }}>
-                              {q.bookTitle}
-                            </span>
-                            <span>{q.time}</span>
-                          </div>
+                        <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#1E293B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {c.title}
+                        </span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: '#94A3B8' }}>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }}>{c.bookTitle || 'Textbook'}</span>
+                          <span>{timeAgo(c.updatedAt)}</span>
                         </div>
-                      ))}
-                    </div>
-                  );
-                })()}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* SECTION 2: TEXTBOOK LIBRARY */}
@@ -3022,7 +2570,6 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                           setActiveBookId(book.id);
                           setActivePage(1);
                           setShowMobileBooksDrawer(false);
-                          showToast(`Switched to "${book.title}"`);
                         }}
                         style={{
                           padding: '10px 12px',
@@ -3049,7 +2596,7 @@ export default function AskTextbookModule({ onBackToDashboard }) {
                             {book.title}
                           </div>
                           <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
-                            {book.author} · {book.totalPages}p
+                            {book.sizeLabel} · {book.uploadDate}
                           </div>
                         </div>
 
@@ -3142,27 +2689,6 @@ export default function AskTextbookModule({ onBackToDashboard }) {
         </div>
       )}
 
-      {/* Toast Notification */}
-      {toast && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: '#1F2538',
-            color: '#FFFFFF',
-            borderRadius: '20px',
-            padding: '6px 16px',
-            fontSize: '11.5px',
-            fontWeight: 600,
-            zIndex: 120,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-          }}
-        >
-          {toast}
-        </div>
-      )}
     </div>
   );
 }

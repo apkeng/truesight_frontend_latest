@@ -19,6 +19,7 @@ import UserAvatar from './components/UserAvatar';
 import Icon from './design-system/icons';
 import { BASE, TSContext, pathFor, screenFromPath, useTS } from './session';
 import { NotificationProvider, useNotifications } from './notifications';
+import { useDashboard } from './data';
 import './truesights.css';
 
 // Large screens load on first visit.
@@ -32,7 +33,7 @@ const AskTextbookModule = lazy(() => import('./components/AskTextbookModule'));
 const EventsPage = lazy(() => import('./components/EventsPage'));
 const TrashPage = lazy(() => import('./components/TrashPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
-const FirstTimeUserScreen = lazy(() => import('./components/FirstTimeUserScreen'));
+const Welcome = lazy(() => import('./components/Welcome'));
 
 class ScreenErrorBoundary extends React.Component {
   constructor(props) {
@@ -485,7 +486,7 @@ function Shell() {
         >
           <ScreenErrorBoundary resetKey={location.pathname} onReset={() => setCurrentScreen('dashboard')}>
             {!isOnline ? (
-              <NoInternetScreen onRetry={() => setIsOnline(navigator.onLine)} onContinueOffline={() => setIsOnline(true)} />
+              <NoInternetScreen onRetry={() => setIsOnline(true)} onContinueOffline={() => setIsOnline(true)} />
             ) : (
               <Suspense fallback={<ScreenSkeleton screen={currentScreen} isSidebarCollapsed={isSidebarCollapsed} />}>
                 <Routes>
@@ -494,7 +495,7 @@ function Shell() {
                     path="dashboard"
                     element={<Dashboard isMobile={isMobile} windowWidth={windowWidth} isSidebarCollapsed={isSidebarCollapsed} />}
                   />
-                  <Route path="welcome" element={<FirstTimeUserScreen />} />
+                  <Route path="welcome" element={<Welcome onSkip={() => setCurrentScreen('dashboard')} />} />
                   <Route path="projects" element={<ProjectsHub />} />
                   <Route path="projects/:kind/:id" element={<ProjectWorkspace />} />
                   <Route path="quiz/:topic" element={<LiveChallenge />} />
@@ -813,11 +814,37 @@ function Shell() {
 const LegacyProject = ({ kind }) => <Navigate to={`${BASE}/projects/${kind}/${useParams().id}`} replace />;
 
 /** The dashboard: the prototype's two-row desktop grid, or a stacked column on mobile. */
+const WELCOME_SKIPPED_KEY = 'ts-welcome-skipped';
+
 function Dashboard({ isMobile, windowWidth, isSidebarCollapsed }) {
   const { go: setCurrentScreen, openNotifications } = useTS();
   const { unread: unreadNotificationsCount } = useNotifications();
+  const { data } = useDashboard();
+  const [welcomeSkipped, setWelcomeSkipped] = useState(() => {
+    try {
+      return sessionStorage.getItem(WELCOME_SKIPPED_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
   const setIsNotificationOpen = () => openNotifications();
   const openWorkspace = (proj) => setCurrentScreen('workspace', proj);
+
+  // Brand-new students (no roadmaps, no quizzes yet) start on Get Started.
+  if (data && !welcomeSkipped && !data.projectCounts?.all && !data.latestScore) {
+    return (
+      <Welcome
+        onSkip={() => {
+          try {
+            sessionStorage.setItem(WELCOME_SKIPPED_KEY, '1');
+          } catch {
+            // ignore
+          }
+          setWelcomeSkipped(true);
+        }}
+      />
+    );
+  }
 
   if (isMobile) {
     return (
