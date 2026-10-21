@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { useAuth } from "../../contexts/AuthContext";
 import { getCurrentDailyQuestion, getEvents, getRewards, getUser } from "../../utils/apiServices";
@@ -183,7 +183,9 @@ export default function Landing() {
   const ctaRef = useRef(null);
   const ctaBtnRef = useRef(null);
 
-  const [modal, setModal] = useState(null); // "register" | "daily" | "quest" | null
+  const location = useLocation();
+  // /?register=1 (the login page's Register link) opens the form straight away.
+  const [modal, setModal] = useState(() => (new URLSearchParams(location.search).has("register") ? "register" : null)); // "register" | "daily" | "quest" | null
   const [role, setRole] = useState(null);
   const [events, setEvents] = useState(null);
   const [rewards, setRewards] = useState(null);

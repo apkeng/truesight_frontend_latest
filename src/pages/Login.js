@@ -1,22 +1,28 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faEnvelope,
-  faLock,
-  faEye,
-  faEyeSlash,
-  faArrowRight,
-  faUser,
-  faGraduationCap,
-} from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../contexts/AuthContext";
 import Cookies from "js-cookie";
-import logo from "../assets/logo_colour.png";
+import mark from "../assets/landing/truesight-mark.png";
+import "./Landing/landing.css";
 
 // Backend API base URL
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
+
+// The backend passes Firebase Auth error codes through as-is; show people a sentence.
+const LOGIN_ERRORS = {
+  INVALID_LOGIN_CREDENTIALS: "That email and password don't match. Check them and try again.",
+  INVALID_PASSWORD: "That email and password don't match. Check them and try again.",
+  EMAIL_NOT_FOUND: "That email and password don't match. Check them and try again.",
+  USER_DISABLED: "This account has been disabled. Contact support for help.",
+};
+const loginErrorMessage = (code) => {
+  if (!code) return "Failed to login with email and password.";
+  const key = Object.keys(LOGIN_ERRORS).find((k) => String(code).includes(k));
+  if (key) return LOGIN_ERRORS[key];
+  if (String(code).includes("TOO_MANY_ATTEMPTS")) return "Too many attempts. Wait a few minutes, or reset your password.";
+  return code;
+};
 
 export default function Login() {
   const {
@@ -64,13 +70,13 @@ export default function Login() {
       }
 
       if (!response.ok) {
-        setError(result.error || "Failed to login with email and password.");
+        setError(loginErrorMessage(result.error));
         setIsLoading(false);
         return;
       }
 
       if (!result.success) {
-        setError(result.error || "Failed to login with email and password.");
+        setError(loginErrorMessage(result.error));
         setIsLoading(false);
         return;
       }
@@ -122,219 +128,148 @@ export default function Login() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${logo})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-          }}
-        ></div>
+    <div className="tsl login">
+      <div className="tsl-nav-wrap" style={{ marginBottom: 0 }}>
+        <header className="tsl-nav">
+          <Link to="/" className="brand">
+            <img src={mark} alt="" />
+            <span>TrueSight</span>
+          </Link>
+          <div className="nav-actions">
+            <span className="hide-sm" style={{ fontSize: 14, color: "var(--muted)" }}>
+              New here?
+            </span>
+            <Link to="/?register=1" className="btn btn-y" style={{ padding: "11px 20px" }}>
+              Register
+            </Link>
+          </div>
+        </header>
       </div>
 
-      {/* Animated Background Elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-      <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-      <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      <main className="login-main">
+        <section className="login-panel grid-bg" aria-hidden="true">
+          <div className="hero-line h" style={{ top: "34%" }} />
+          <div className="hero-line v" style={{ left: "62%" }} />
+          <div className="ring-deco" style={{ right: -110, bottom: -110, width: 340, height: 340 }} />
+          <div className="ring-deco" style={{ right: -40, bottom: -40, width: 200, height: 200, borderColor: "rgba(246,210,60,.55)" }} />
+          <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 22 }}>
+            <span className="hero-kicker">Students &amp; educators</span>
+            <h1 className="login-title">
+              Welcome back. Pick up <span className="y">where you left off.</span>
+            </h1>
+            <ul className="login-points">
+              <li>Your roadmap, paced to the exam</li>
+              <li>Answers cited from your own textbooks</li>
+              <li>Quizzes, duels and points for real rewards</li>
+            </ul>
+          </div>
+          <img src={mark} alt="" className="login-mark" />
+        </section>
 
-      <div className="relative z-10 w-full min-h-screen flex items-center justify-center px-4 py-8 md:py-12">
-        <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center">
-          {/* Left Side - Branding */}
-          <div className="flex flex-col items-center justify-center order-2 lg:order-1">
-            <div className="backdrop-blur-xl bg-white/30 rounded-2xl md:rounded-3xl shadow-2xl border border-white/20 p-6 md:p-10 lg:p-12 text-center w-full max-w-lg">
-              <div className="mb-6 md:mb-8 flex justify-center">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full blur-2xl opacity-50"></div>
-                  <img
-                    src={logo}
-                    alt="Truesight Logo"
-                    className="relative w-24 h-24 md:w-32 md:h-32 mx-auto rounded-full object-cover shadow-2xl border-4 border-white/50"
-                  />
-                </div>
-              </div>
-              <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-center bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3 md:mb-4">
-                Truesight
-              </h1>
-              <div className="mt-6 md:mt-8 flex items-center justify-center gap-3 md:gap-4 text-gray-600 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faGraduationCap} className="w-4 h-4 md:w-5 md:h-5" />
-                  <span className="text-xs md:text-sm">Students</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faUser} className="w-4 h-4 md:w-5 md:h-5" />
-                  <span className="text-xs md:text-sm">Educators</span>
-                </div>
-              </div>
-            </div>
+        <section className="login-card">
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <span className="mono y" style={{ fontSize: 12 }}>
+              LOG IN
+            </span>
+            <h2 style={{ margin: 0, fontSize: 30, fontWeight: 800, letterSpacing: "-.025em", lineHeight: 1.1 }}>Sign in to TrueSight</h2>
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: 15 }}>Use the email and password from your welcome email.</p>
           </div>
 
-          {/* Right Side - Login Form */}
-          <div className="w-full flex justify-center lg:justify-end order-1 lg:order-2">
-            <div className="w-full max-w-md">
-              <div className="backdrop-blur-xl bg-white/30 rounded-2xl md:rounded-3xl shadow-2xl border border-white/20 p-6 md:p-8 lg:p-10">
-                <div className="text-center mb-6 md:mb-8">
-                  <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 mb-2">
-                    Welcome Back
-                  </h2>
-                  <p className="text-sm md:text-base text-gray-600">
-                    Sign in to your account to continue
-                  </p>
-                </div>
+          <form onSubmit={handleSubmit(handleLogin)} noValidate style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="field">
+              <label htmlFor="login-email">Email</label>
+              <input
+                id="login-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoFocus
+                placeholder="you@college.edu"
+                className={`input${errors.email ? " bad" : ""}`}
+                {...register("email", {
+                  required: "Email is required.",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Enter a valid email address.",
+                  },
+                })}
+              />
+              {errors.email && <span className="err">{errors.email.message}</span>}
+            </div>
 
-                <form
-                  onSubmit={handleSubmit(handleLogin)}
-                  className="flex flex-col gap-5"
+            <div className="field">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <label htmlFor="login-password">Password</label>
+                <button type="button" className="link-btn" onClick={() => navigate("/forgotpassword")}>
+                  Forgot password?
+                </button>
+              </div>
+              <div style={{ position: "relative" }}>
+                <input
+                  id="login-password"
+                  type={inputType}
+                  autoComplete="current-password"
+                  placeholder="Your password"
+                  className={`input${errors.password ? " bad" : ""}`}
+                  style={{ paddingRight: 64 }}
+                  {...register("password", {
+                    required: "Password is required.",
+                    minLength: {
+                      value: 6,
+                      message: "Password must be at least 6 characters long.",
+                    },
+                  })}
+                />
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={togglePasswordVisibility}
+                  aria-label={inputType === "password" ? "Show password" : "Hide password"}
+                  style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: "var(--soft)" }}
                 >
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <FontAwesomeIcon
-                          icon={faEnvelope}
-                          className="w-5 h-5 text-gray-400"
-                        />
-                      </div>
-                      <input
-                        type="email"
-                        placeholder="Enter your email"
-                        {...register("email", {
-                          required: "Email is required!",
-                          pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
-                            message: "Invalid email address",
-                          },
-                        })}
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-white/30 bg-white/40 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <FontAwesomeIcon
-                          icon={faLock}
-                          className="w-5 h-5 text-gray-400"
-                        />
-                      </div>
-                      <input
-                        type={inputType}
-                        placeholder="Enter your password"
-                        {...register("password", {
-                          required: "Password is required!",
-                          minLength: {
-                            value: 6,
-                            message: "Password must be at least 6 characters long",
-                          },
-                        })}
-                        className="w-full pl-12 pr-12 py-3 rounded-xl border border-white/30 bg-white/40 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={togglePasswordVisibility}
-                        className="absolute inset-y-0 right-0 pr-4 flex items-center"
-                      >
-                        <FontAwesomeIcon
-                          icon={inputType === "password" ? faEye : faEyeSlash}
-                          className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors"
-                        />
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.password.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {error && (
-                    <div className="bg-red-50/50 backdrop-blur-sm border border-red-200 rounded-xl p-3">
-                      <p className="text-red-600 text-sm">{error}</p>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => navigate("/forgotpassword")}
-                      className="text-sm text-gray-600 hover:text-blue-600 hover:underline transition-colors"
-                    >
-                      Forgot Password?
-                    </button>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className={`group w-full bg-blue-600/90 hover:bg-blue-700/90 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl border border-white/20 flex items-center justify-center gap-2 ${
-                      isLoading ? "opacity-75 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <span>{isLoading ? "Signing In..." : "Sign In"}</span>
-                    {!isLoading && (
-                      <FontAwesomeIcon
-                        icon={faArrowRight}
-                        className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                      />
-                    )}
-                  </button>
-
-                  {showForceLogin && (
-                    <button
-                      type="button"
-                      onClick={() => handleLogin({ ...loginData, force: true })}
-                      className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-600 font-bold py-3 px-6 rounded-xl border border-red-200 transition-all flex items-center justify-center gap-2 mt-2"
-                    >
-                      <span>Logout from other devices & Login</span>
-                    </button>
-                  )}
-
-                </form>
+                  {inputType === "password" ? "Show" : "Hide"}
+                </button>
               </div>
+              {errors.password && <span className="err">{errors.password.message}</span>}
             </div>
-          </div>
-        </div>
-      </div>
 
-      <style>{`
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
+            {error && (
+              <div className="alert err" role="alert">
+                {error}
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-y btn-lg" disabled={isLoading} style={{ marginTop: 4 }}>
+              {isLoading ? (
+                <>
+                  <span className="spinner" /> Signing in…
+                </>
+              ) : (
+                <>Sign in →</>
+              )}
+            </button>
+
+            {showForceLogin && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={isLoading}
+                onClick={() => handleLogin({ ...loginData, force: true })}
+                style={{ borderColor: "#FF8A8A", color: "#FFB4B4" }}
+              >
+                Log out other devices &amp; sign in
+              </button>
+            )}
+          </form>
+
+          <p style={{ margin: 0, fontSize: 14, color: "var(--muted)", textAlign: "center" }}>
+            Don't have an account?{" "}
+            <Link to="/?register=1" className="y" style={{ fontWeight: 700 }}>
+              Register
+            </Link>
+          </p>
+        </section>
+      </main>
     </div>
   );
 }

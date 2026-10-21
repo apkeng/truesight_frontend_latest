@@ -1166,3 +1166,82 @@
 
 /* anchor targets land below the floating header */
 .tsl section[id] { scroll-margin-top: 90px; }
+
+/* ---------- login page (shares the landing tokens) ---------- */
+.tsl .link-btn { background: none; border: 0; padding: 0; cursor: pointer; font-size: 13px; font-weight: 700; color: var(--yellow); }
+.tsl .link-btn:hover { text-decoration: underline; }
+.tsl.login { display: flex; flex-direction: column; }
+.tsl .login-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 32px 20px 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 20px;
+  align-items: stretch;
+}
+.tsl .login-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 56px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  min-height: 560px;
+  background-color: #24315e;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(120% 90% at 75% 0%, #2c3b72 0%, #24315e 45%, #1b2549 100%);
+  background-size: 64px 64px, 64px 64px, 100% 100%;
+}
+.tsl .login-title {
+  margin: 0;
+  font-size: clamp(36px, 4.2vw, 60px);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+  text-wrap: balance;
+  max-width: 560px;
+}
+.tsl .login-points { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.tsl .login-points li { display: flex; gap: 12px; align-items: center; font-size: 16px; color: #d5dbee; }
+.tsl .login-points li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); flex: none; }
+.tsl .login-mark { position: relative; width: 72px; height: 72px; filter: drop-shadow(0 12px 30px rgba(4, 8, 24, 0.45)); }
+.tsl .login-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  padding: 48px 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+}
+@media (max-width: 900px) {
+  .tsl .login-main { grid-template-columns: 1fr; padding-top: 24px; }
+  .tsl .login-panel { display: none; }
+}
+@media (max-width: 640px) {
+  .tsl .hide-sm { display: none; }
+  .tsl .login-main { padding: 20px 12px 32px; }
+  .tsl .login-card { padding: 28px 22px; border-radius: 22px; }
+}
+
+/* Browser autofill paints inputs light; keep them on the dark field colour. */
+.tsl .input:-webkit-autofill,
+.tsl .input:-webkit-autofill:hover,
+.tsl .input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--deeper) inset;
+  box-shadow: 0 0 0 1000px var(--deeper) inset;
+  transition: background-color 9999s ease-out 0s;
+}
+.tsl .input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--deeper) inset, 0 0 0 4px rgba(246, 210, 60, 0.12);
+  box-shadow: 0 0 0 1000px var(--deeper) inset, 0 0 0 4px rgba(246, 210, 60, 0.12);
+}

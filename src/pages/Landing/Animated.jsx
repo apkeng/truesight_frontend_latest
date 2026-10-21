@@ -140,7 +140,7 @@ export function HeroRoadmap() {
   );
 }
 
-const TICKER_A = ["MOSFET Circuits", "Navier–Stokes Derivation", "Rankine Cycle", "Mechatronics Sensor Fusion", "Kerala Building Rules 2025", "Digital Signal Processing"];
+const TICKER_A = ["MOSFET Circuits", "Navier–Stokes Derivation", "Rankine Cycle", "Mechatronics Sensor Fusion", "Digital Signal Processing"];
 const TICKER_B = ["Strength of Materials", "Power Electronics", "Thermodynamics", "Control Systems", "Fluid Mechanics", "Engineering Mathematics"];
 
 export const Ticker = () => (
