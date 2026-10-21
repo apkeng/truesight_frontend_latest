@@ -6,14 +6,14 @@ import {
   Navigate,
   useNavigate,
 } from "react-router-dom";
-import StudentHome from "./pages/StudentHome";
+import Landing from "./pages/Landing/Landing";
 import Login from "./pages/Login";
 import { useAuth } from "./contexts/AuthContext";
 import Loading from "./components/Loading";
 import { setNavigateFunction } from "./utils/apiClient";
 
 // Route-level code splitting: each section loads on first navigation instead
-// of shipping in the main bundle. StudentHome and Login stay eager since they
+// of shipping in the main bundle. Landing and Login stay eager since they
 // are the entry pages.
 const Register = lazy(() => import("./pages/Register"));
 const Contact = lazy(() => import("./pages/Contact"));
@@ -54,7 +54,7 @@ function App() {
       <Suspense fallback={<Loading fullScreen />}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<StudentHome />} />
+          <Route path="/" element={<Landing />} />
           <Route path="/student-home" element={<Navigate to="/" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
