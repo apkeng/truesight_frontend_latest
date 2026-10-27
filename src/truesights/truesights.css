@@ -53,11 +53,11 @@ html.ts-app body {
   align-items: center;
 }
 
+/* The app frame keeps its 1511x857 design size and StudentApp zooms it to fit
+   the window, so #root only has to fill the viewport and centre it. */
 html.ts-app #root {
   width: 100%;
-  max-width: 1511px;
   height: 100%;
-  max-height: 857px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -417,7 +417,9 @@ html.ts-app ::-webkit-scrollbar-thumb:hover {
   backdrop-filter: blur(6px) !important;
   z-index: 999999 !important;
   display: flex !important;
-  align-items: center !important;
+  /* "safe": a modal taller than the window starts at the top and scrolls,
+     instead of overflowing above the scroll area where it can't be reached. */
+  align-items: safe center !important;
   justify-content: center !important;
   padding: 16px !important;
   box-sizing: border-box !important;

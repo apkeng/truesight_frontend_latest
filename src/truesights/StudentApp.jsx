@@ -206,6 +206,9 @@ function Shell() {
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== 'undefined' ? window.innerWidth : 1511
   );
+  const [windowHeight, setWindowHeight] = useState(
+    typeof window !== 'undefined' ? window.innerHeight : 857
+  );
 
   useEffect(() => {
     const onOnline = () => setIsOnline(true);
@@ -222,6 +225,7 @@ function Shell() {
     const handleResize = () => {
       const width = window.innerWidth;
       setWindowWidth(width);
+      setWindowHeight(window.innerHeight);
       if (width < 1280) setIsSidebarCollapsed(true);
     };
     window.addEventListener('resize', handleResize);
@@ -245,6 +249,13 @@ function Shell() {
   const isQuizMode = currentScreen === 'quiz';
   const isAskTextbook = currentScreen === 'ask-textbook';
 
+  // Desktop screens are laid out on a fixed design canvas. Zoom it to fit the
+  // window: shorter/narrower windows (e.g. 14" laptops at 175-200% scaling)
+  // would otherwise crop it, and large ones would leave it small in the middle.
+  const frameWidth = isQuizMode || !isSidebarCollapsed ? 1511 : 1510;
+  const frameHeight = isSidebarCollapsed ? 840 : 857;
+  const frameZoom = isMobile ? 1 : Math.min(windowWidth / frameWidth, windowHeight / frameHeight);
+
   const screenDisplayNames = {
     'projects': 'Roadmaps',
     'workspace': 'Workspace',
@@ -263,10 +274,11 @@ function Shell() {
   return (
     <div
       style={{
-        width: '100%',
-        maxWidth: isMobile ? '100%' : isQuizMode ? '1511px' : isSidebarCollapsed ? '1510px' : '1511px',
-        height: isMobile ? '100%' : isSidebarCollapsed ? '840px' : '857px',
-        maxHeight: isMobile ? '100dvh' : isSidebarCollapsed ? '840px' : '857px',
+        width: isMobile ? '100%' : `${frameWidth}px`,
+        height: isMobile ? '100%' : `${frameHeight}px`,
+        maxHeight: isMobile ? '100dvh' : undefined,
+        flexShrink: 0,
+        zoom: frameZoom,
         backgroundColor: 'var(--bg-page)',
         display: 'flex',
         flexDirection: isMobile ? 'column' : 'row',
