@@ -144,6 +144,7 @@ export default function TrashPage() {
       const res = await api.purge(asApi(rows));
       const failed = await purgeBooks(res.textbooksToDelete || []);
       drop(rows);
+      if (res.textbooksToDelete?.length) invalidate(`${uidKey('chats:')}*`); // their chats went with them
       showToast(`Permanently deleted ${rows.length === 1 ? `"${rows[0].title}"` : `${rows.length} items`}.${failed ? " Some textbooks couldn't be removed from the library - try again later." : ''}`);
     } catch (e) {
       toast.error(e.message);
@@ -179,6 +180,7 @@ export default function TrashPage() {
     try {
       const res = await api.emptyTrash();
       await purgeBooks(res.textbooksToDelete || []);
+      if (res.textbooksToDelete?.length) invalidate(`${uidKey('chats:')}*`);
       setQueryData(keys.trash(), (d) => d && { ...d, items: [] });
       setSelectedIds(new Set());
       showToast('Trash emptied.');

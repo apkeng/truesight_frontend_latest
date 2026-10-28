@@ -658,7 +658,11 @@ export default function AskTextbookModule() {
   const filteredBooks = textbooks.filter((b) => b.title.toLowerCase().includes(searchBookQuery.toLowerCase()));
 
   // Saved conversations: those of the open book, else the most recent ones
-  const visibleChats = (chats.data || []).filter((c) => !activeBookId || c.bookId === activeBookId);
+  // Chats on books that are trashed or gone from the library aren't shown (the server also prunes them).
+  const libraryIds = books.data && !books.error ? new Set(textbooks.map((b) => b.id)) : null;
+  const visibleChats = (chats.data || []).filter(
+    (c) => (!libraryIds || libraryIds.has(c.bookId)) && (!activeBookId || c.bookId === activeBookId)
+  );
   const suggestions = suggestionsFor(currentBook.title);
 
   return (
