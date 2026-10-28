@@ -22,6 +22,8 @@ export const linkFor = (ref) => {
     case "project":
       return `${B}/projects/${ref.projectKind || "self"}/${ref.id}`;
     case "project_failed": {
+      // A textbook roadmap is retried from that book in Ask a Textbook.
+      if (ref.bookId) return `${B}/ask-a-textbook/${ref.bookId}?roadmap=1`;
       const q = new URLSearchParams({ new: "1", topic: ref.topic || "", level: ref.levelOfLearning || "" });
       return `${B}/projects?${q}`;
     }

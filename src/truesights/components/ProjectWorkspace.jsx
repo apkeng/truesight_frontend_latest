@@ -44,7 +44,8 @@ const toWorkspace = (project, history) => ({
           icon: CONCEPT_ICONS[k % CONCEPT_ICONS.length],
           description: c.description,
           example: c.example,
-          memoryAnchor: c.mnemonic
+          memoryAnchor: c.mnemonic,
+          pages: c.pages || []
         }))
       };
     })
@@ -84,6 +85,8 @@ export default function ProjectWorkspace() {
   };
 
   const onExit = () => go('projects');
+  // Built from an Ask a Textbook upload: content and quizzes come from that PDF only.
+  const book = project?.source?.kind === 'textbook' ? project.source : null;
   const quizUrl = (sub) =>
     `${pathFor('quiz', sub)}?projectTopic=${encodeURIComponent(project.topic || project.title)}&from=${kind}/${id}`;
   const startQuiz = (st) => navigate(quizUrl(st.title));
@@ -316,7 +319,32 @@ export default function ProjectWorkspace() {
           >
             {activeData.description}
           </p>
-          {project.generation && (
+          {book && (
+            <button
+              type="button"
+              onClick={() => navigate(pathFor('ask-textbook', book.bookId))}
+              title="Open this textbook in Ask a Textbook"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                marginTop: '8px',
+                background: 'rgba(16, 185, 129, 0.16)',
+                border: '1px solid rgba(167, 243, 208, 0.35)',
+                color: '#D1FAE5',
+                borderRadius: '999px',
+                padding: '3px 10px',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              <Icon name="checkCircle" size={12} color="#A7F3D0" />
+              From your textbook: {book.bookTitle}
+              {project.generation?.averageFinalScore != null && ` · checked against the book ${project.generation.averageFinalScore}/100`}
+            </button>
+          )}
+          {project.generation && !book && (
             <div
               style={{
                 display: 'inline-flex',
@@ -704,7 +732,7 @@ export default function ProjectWorkspace() {
               {currentModule.description}
             </p>
             </div>
-            {project.canEdit && activeData.modules.length > 0 && (
+            {project.canEdit && !book && activeData.modules.length > 0 && (
               <TSButton variant="secondary" busy={generating} onClick={generateMore}>
                 <Icon name="aiAutomation" size={14} color="#0B1A2B" /> More subtopics
               </TSButton>
@@ -1041,6 +1069,11 @@ export default function ProjectWorkspace() {
                                 <p style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.45, margin: '0 0 8px 0' }}>
                                   <strong style={{ color: '#1F2537' }}>Example: </strong>
                                   {concept.example}
+                                </p>
+                              )}
+                              {book && concept.pages.length > 0 && (
+                                <p style={{ fontSize: '11px', color: '#94A3B8', margin: '0 0 8px 0' }}>
+                                  {book.bookTitle}, p. {concept.pages.join(', ')}
                                 </p>
                               )}
 

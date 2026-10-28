@@ -6,7 +6,7 @@ import ModalPortal from './ModalPortal';
 import CreateRoadmapModal from './CreateRoadmapModal';
 import { api, invalidate, keys, setQueryData, useQuery } from '../data';
 import { useNotifications } from '../notifications';
-import { useTS } from '../session';
+import { pathFor, useTS } from '../session';
 import { pickCoverForTopic } from '../covers';
 
 const shortDate = (iso) => {
@@ -21,7 +21,7 @@ const toCard = (p) => ({
   kind: p.kind,
   title: p.title,
   level: (p.levelOfLearning || 'Self-paced').toUpperCase(),
-  educator: p.kind === 'self' ? 'Personal workspace' : p.ownerName || p.instituteName || 'Your educator',
+  educator: p.kind !== 'self' ? p.ownerName || p.instituteName || 'Your educator' : p.source ? `From your textbook` : 'Personal workspace',
   assignedDate: shortDate(p.kind === 'self' ? p.createdAt : p.updatedAt),
   assetsCount: 0,
   modulesCount: p.modules,
@@ -1123,7 +1123,9 @@ export default function ProjectsHub() {
                     type="button"
                     onClick={() => {
                       dismissJob(j);
-                      openCreate(j.topic, j.levelOfLearning);
+                      // Textbook roadmaps are retried from their book in Ask a Textbook.
+                      if (j.bookId) navigate(`${pathFor('ask-textbook', j.bookId)}?roadmap=1`);
+                      else openCreate(j.topic, j.levelOfLearning);
                     }}
                     style={{ background: '#FEE047', color: '#0F1219', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
                   >

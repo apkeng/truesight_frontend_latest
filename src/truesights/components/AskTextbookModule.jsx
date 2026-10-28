@@ -4,6 +4,7 @@ import Cookies from 'js-cookie';
 import { toast as notify } from 'react-toastify';
 import Icon from '../design-system/icons';
 import ModalPortal from './ModalPortal';
+import BookRoadmapModal from './BookRoadmapModal';
 import { api, invalidate, keys, setQueryData, useQuery } from '../data';
 import { pathFor, useTS } from '../session';
 import { uidKey } from '../../revamp/lib/api';
@@ -345,6 +346,14 @@ export default function AskTextbookModule() {
     raw: null
   };
   const bookReady = currentBook.status === 'ready';
+
+  // "Create roadmap" from this book (also opened by ?roadmap=1, e.g. retrying a failed one).
+  const [showRoadmapModal, setShowRoadmapModal] = useState(false);
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('roadmap') !== '1') return;
+    if (bookReady) setShowRoadmapModal(true);
+    navigate(location.pathname, { replace: true });
+  }, [location.search, location.pathname, bookReady, navigate]);
 
   const showToast = (msg) => notify.info(msg);
 
@@ -1480,6 +1489,30 @@ export default function AskTextbookModule() {
 
             {/* Right: Hide / Open Textbook Button (Desktop) OR Segmented Switcher (Mobile) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {bookReady && (
+                <button
+                  type="button"
+                  onClick={() => setShowRoadmapModal(true)}
+                  title="Build a study roadmap and quizzes from this book only"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#FEE047',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: isMobile ? '5px 8px' : '5px 10px',
+                    fontSize: '11.5px',
+                    fontWeight: 800,
+                    color: '#0B1A2B',
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }}
+                >
+                  <Icon name="aiAutomation" size={13} color="currentColor" />
+                  <span>{isMobile ? 'Roadmap' : 'Create roadmap'}</span>
+                </button>
+              )}
               {isMobile ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <div
@@ -2689,6 +2722,9 @@ export default function AskTextbookModule() {
         </div>
       )}
 
+      {showRoadmapModal && bookReady && (
+        <BookRoadmapModal book={currentBook} onClose={() => setShowRoadmapModal(false)} />
+      )}
     </div>
   );
 }

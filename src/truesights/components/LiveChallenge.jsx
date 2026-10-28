@@ -49,6 +49,8 @@ export default function LiveChallenge() {
   const challengeId = params.get('challengeId');
   const projectTopic = params.get('projectTopic');
   const from = params.get('from'); // "self/<id>" | "educator/<id>"
+  // Private roadmaps may be built from a textbook; the server then quizzes from that book.
+  const projectId = from && from.startsWith('self/') ? from.slice(5) : null;
   const backTo = from ? `${pathFor('projects')}/${from}` : challengeId ? pathFor('challenges') : pathFor('projects');
   const key = draftKey(topic, challengeId);
   const subtopic = { title: topic };
@@ -117,7 +119,7 @@ export default function LiveChallenge() {
             if (!c?.questions?.length) throw new Error('This challenge has no questions.');
             return { questions: c.questions };
           })
-        : api.generateQuiz(topic, projectTopic);
+        : api.generateQuiz(topic, projectTopic, projectId);
       load
         .then((res) => {
           const qs = res?.questions;
@@ -135,7 +137,7 @@ export default function LiveChallenge() {
       alive = false;
       clearInterval(tick);
     };
-  }, [key, challengeId, topic, projectTopic]);
+  }, [key, challengeId, topic, projectTopic, projectId]);
 
   // 2. 25-Second Focus Timer
   useEffect(() => {

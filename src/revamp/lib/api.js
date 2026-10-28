@@ -84,15 +84,18 @@ export const api = {
   trashProject: (id) => apiClient.post(v2(`/learn/projects/${id}/trash`), {}),
   createProject: (payload) => createProject(payload),
   // Background roadmap generation: returns at once, ends with a notification.
-  generateProject: ({ topic, levelOfLearning, source }) =>
-    apiClient.post(v2("/learn/projects/generate"), { topic, levelOfLearning, source }).then((r) => r.job),
+  // With bookId, the roadmap (and its quizzes) are built from that Ask a Textbook upload only.
+  generateProject: ({ topic, levelOfLearning, source, bookId }) =>
+    apiClient.post(v2("/learn/projects/generate"), { topic, levelOfLearning, source, bookId }).then((r) => r.job),
   projectJobs: () => apiClient.get(v2("/learn/projects/jobs")).then((r) => r.jobs),
   dismissJob: (id) => apiClient.delete(v2(`/learn/projects/jobs/${id}`)),
   results: () => apiClient.get(v2("/learn/results")),
   result: (id) => apiClient.get(v2(`/learn/results/${id}`)).then((r) => r.result),
   trashResult: (id) => apiClient.delete(v2(`/learn/results/${id}`)),
   // -> { quizId, questions }; questions carry no answer key - the server grades on submit.
-  generateQuiz: (topicName, projectTopic) => apiClient.post("/api/llm/generate-quiz-questions", { topicName, projectTopic }),
+  // projectId lets the server quiz a textbook roadmap from its book.
+  generateQuiz: (topicName, projectTopic, projectId) =>
+    apiClient.post("/api/llm/generate-quiz-questions", { topicName, projectTopic, projectId }),
   submitQuiz: (payload) => submitQuizResult(payload),
 
   // challenges

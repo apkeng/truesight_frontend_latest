@@ -173,9 +173,9 @@ export function NotificationProvider({ initialUnread, children }) {
   );
 
   /** Start background roadmap generation (Projects screen + syllabus mind map). */
-  const startRoadmap = useCallback(async ({ topic, levelOfLearning, source = 'projects' }) => {
+  const startRoadmap = useCallback(async ({ topic, levelOfLearning, source = 'projects', bookId }) => {
     try {
-      const job = await api.generateProject({ topic, levelOfLearning, source });
+      const job = await api.generateProject({ topic, levelOfLearning, source, bookId });
       setQueryData(keys.projectJobs(), (d) => [job, ...(d || [])]);
       toast.info(`Building “${topic}”. Keep working - we'll notify you as soon as your roadmap is ready.`, { autoClose: 7000 });
       return job;
