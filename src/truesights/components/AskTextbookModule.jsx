@@ -5,6 +5,7 @@ import { toast as notify } from 'react-toastify';
 import Icon from '../design-system/icons';
 import ModalPortal from './ModalPortal';
 import BookRoadmapModal from './BookRoadmapModal';
+import TSModal, { TSButton } from './TSModal';
 import { api, invalidate, keys, setQueryData, useQuery } from '../data';
 import { pathFor, useTS } from '../session';
 import { uidKey } from '../../revamp/lib/api';
@@ -346,6 +347,26 @@ export default function AskTextbookModule() {
     raw: null
   };
   const bookReady = currentBook.status === 'ready';
+
+  // Move a book to the trash (kept 30 days; Trash deletes it from the service for good).
+  const [bookToTrash, setBookToTrash] = useState(null);
+  const [trashingBook, setTrashingBook] = useState(false);
+  const trashBook = async () => {
+    const book = bookToTrash;
+    setTrashingBook(true);
+    try {
+      await api.trashTextbook({ bookId: book.id, title: book.title, sizeLabel: book.status === 'ready' ? book.sizeLabel : null });
+      setQueryData(trashedKey(), (d) => [...(d || []), book.id]);
+      invalidate(keys.trash(), `${uidKey('chats:')}*`); // its chats are hidden with it
+      if (book.id === activeBookId) navigate(pathFor('ask-textbook'));
+      notify.success(`Moved "${book.title}" to trash - it's kept for 30 days.`);
+      setBookToTrash(null);
+    } catch (e) {
+      notify.error(e.message || "Couldn't move that book to trash.");
+    } finally {
+      setTrashingBook(false);
+    }
+  };
 
   // "Create roadmap" from this book (also opened by ?roadmap=1, e.g. retrying a failed one).
   const [showRoadmapModal, setShowRoadmapModal] = useState(false);
@@ -986,11 +1007,12 @@ export default function AskTextbookModule() {
                         boxShadow: isHovered && !isActive ? '0 2px 6px rgba(0,0,0,0.1)' : 'none',
                         cursor: 'pointer',
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '2px',
+                        alignItems: 'center',
+                        gap: '6px',
                         transition: 'all 140ms ease'
                       }}
                     >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0, flex: 1 }}>
                       <span
                         style={{
                           fontSize: '12.5px',
@@ -1019,6 +1041,21 @@ export default function AskTextbookModule() {
                       >
                         {book.sizeLabel}
                       </span>
+                      </div>
+                      {isHovered && (
+                        <button
+                          type="button"
+                          title="Move to trash"
+                          aria-label={`Move ${book.title} to trash`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBookToTrash(book);
+                          }}
+                          style={{ background: 'transparent', border: 'none', padding: '4px', borderRadius: '6px', cursor: 'pointer', display: 'flex', flexShrink: 0 }}
+                        >
+                          <Icon name="trash" size={14} color="#94A3B8" />
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -2637,6 +2674,18 @@ export default function AskTextbookModule() {
                           </div>
                         </div>
 
+                        <button
+                          type="button"
+                          title="Move to trash"
+                          aria-label={`Move ${book.title} to trash`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBookToTrash(book);
+                          }}
+                          style={{ background: 'transparent', border: 'none', padding: '6px', marginRight: '4px', cursor: 'pointer', display: 'flex', flexShrink: 0 }}
+                        >
+                          <Icon name="trash" size={15} color="#94A3B8" />
+                        </button>
                         {isSelected ? (
                           <span
                             style={{
@@ -2724,6 +2773,31 @@ export default function AskTextbookModule() {
             </div>
           </div>
         </div>
+      )}
+
+      {bookToTrash && (
+        <TSModal
+          eyebrow="Ask a Textbook"
+          title="Move this book to trash?"
+          onClose={() => !trashingBook && setBookToTrash(null)}
+          maxWidth={460}
+          footer={
+            <>
+              <TSButton variant="secondary" onClick={() => setBookToTrash(null)} disabled={trashingBook}>
+                Cancel
+              </TSButton>
+              <TSButton variant="danger" onClick={trashBook} busy={trashingBook}>
+                Move to trash
+              </TSButton>
+            </>
+          }
+        >
+          <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: 1.55 }}>
+            <strong style={{ color: '#0F172A' }}>{bookToTrash.title}</strong> and its saved chats will be hidden from Ask a Textbook.
+            You can restore them from Trash within 30 days; after that the book and its chats are deleted for good.
+            Roadmaps built from it are kept, but their quizzes stop working once the book is deleted for good.
+          </p>
+        </TSModal>
       )}
 
       {showRoadmapModal && bookReady && (
