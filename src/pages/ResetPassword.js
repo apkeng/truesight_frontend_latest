@@ -112,7 +112,8 @@ export default function ResetPassword() {
       
       // Redirect to login after 2 seconds
       setTimeout(() => {
-        navigate("/login");
+        // replace: the reset link is spent, so Back shouldn't return to it.
+        navigate("/login", { replace: true });
       }, 2000);
     } catch (error) {
       console.error("Error resetting password:", error);

@@ -99,6 +99,12 @@ export const resetUserPassword = async (userId, newPassword) => {
   return response;
 };
 
+/** Admin: a one-time link the user opens to choose a new password ({ resetLink, email, expiresInMinutes }). */
+export const generatePasswordResetLink = async (userId) => {
+  const response = await apiClient.post(`/api/users/${userId}/reset-link`, {});
+  return response;
+};
+
 /**
  * Projects API
  */
