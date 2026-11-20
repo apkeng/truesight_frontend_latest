@@ -26,7 +26,9 @@ const toBook = (b) => ({
   error: b.error || null,
   hasOriginal: Boolean(b.has_original),
   sizeLabel: b.status === 'ready' ? `${b.chunk_count || 0} sections` : b.status === 'processing' ? 'Processing…' : 'Failed',
-  author: b.status === 'ready' ? 'Ready to ask' : b.status === 'processing' ? 'Indexing your PDF' : 'Upload failed',
+  // `progress` is e.g. "Reading scanned pages: 12 of 94" while a scanned PDF is OCR'd.
+  author: b.status === 'ready' ? 'Ready to ask' : b.status === 'processing' ? b.progress || 'Indexing your PDF' : 'Upload failed',
+  progress: b.status === 'processing' ? b.progress || null : null,
   category: 'Your library',
   uploadDate: b.created_at ? timeAgo(b.created_at) : '',
   raw: b
@@ -1847,7 +1849,7 @@ export default function AskTextbookModule() {
                       </div>
                       {currentBook.status === 'processing' && (
                         <div style={{ fontSize: '12px', fontWeight: 700, color: '#B45309', marginTop: '8px' }}>
-                          This book is still processing - questions unlock when it's ready.
+                          This book is still processing{currentBook.progress ? ` (${currentBook.progress})` : ''} - questions unlock when it's ready.
                         </div>
                       )}
                       {currentBook.status === 'failed' && (
