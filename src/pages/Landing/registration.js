@@ -15,6 +15,12 @@ const API_KEY = process.env.REACT_APP_FIREBASE_API_KEY;
 const SHEETS_WEBHOOK_URL = process.env.REACT_APP_GOOGLE_SHEETS_WEBHOOK_URL;
 const TIMEOUT_MS = 8000;
 
+/** Monthly subscription shown on the form; the amount itself is set on the Razorpay button. */
+export const SUBSCRIPTION_PRICE_INR = 450;
+/** Razorpay Payment Button id (public; it is in the page source either way). */
+export const RAZORPAY_PAYMENT_BUTTON_ID =
+  process.env.REACT_APP_RAZORPAY_PAYMENT_BUTTON_ID || "pl_U3jNu2SvWvc4n7";
+
 const withTimeout = (promise, ms, message) =>
   Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms))]);
 
@@ -88,7 +94,16 @@ export async function submitRegistration(form) {
     university: form.university.trim(),
     timestamp: new Date().toISOString(),
   };
-  const doc = { ...payload, createdAt: new Date(), status: "pending", source: "web-form" };
+  // "pending_payment" until the backend's Razorpay webhook confirms the
+  // payment and flips it to "paid"; the browser never marks it paid itself.
+  const doc = {
+    ...payload,
+    createdAt: new Date(),
+    status: "pending_payment",
+    plan: "monthly",
+    amountInr: String(SUBSCRIPTION_PRICE_INR),
+    source: "web-form",
+  };
 
   const sheets = sendToSheets(payload);
   sheets.catch(() => {});

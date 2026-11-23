@@ -1245,3 +1245,9 @@
   -webkit-box-shadow: 0 0 0 1000px var(--deeper) inset, 0 0 0 4px rgba(246, 210, 60, 0.12);
   box-shadow: 0 0 0 1000px var(--deeper) inset, 0 0 0 4px rgba(246, 210, 60, 0.12);
 }
+
+/* Registration: monthly price panel */
+.tsl .tsl-price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 8px; margin-top: 6px; padding: 12px 14px; border-radius: 12px; background: rgba(254, 224, 71, 0.08); border: 1px solid rgba(254, 224, 71, 0.35); }
+.tsl .tsl-price-amt { font-size: 26px; font-weight: 800; color: var(--yellow); line-height: 1; }
+.tsl .tsl-price-per { font-size: 14px; font-weight: 600; color: var(--ink); }
+.tsl .tsl-price-note { margin-left: auto; font-size: 12px; color: var(--muted); }

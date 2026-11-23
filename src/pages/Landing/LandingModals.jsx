@@ -7,7 +7,37 @@ import {
   getRandomPuzzle,
   submitDailyQuestionAnswer,
 } from "../../utils/apiServices";
-import { submitRegistration, validateRegistration, warmRegistration } from "./registration";
+import {
+  RAZORPAY_PAYMENT_BUTTON_ID,
+  SUBSCRIPTION_PRICE_INR,
+  submitRegistration,
+  validateRegistration,
+  warmRegistration,
+} from "./registration";
+
+/**
+ * Razorpay's embeddable Payment Button. Its <script> has to be created by hand:
+ * React inserts JSX <script> tags without running them. The script renders
+ * Razorpay's own "Pay" button next to itself inside the <form>.
+ */
+function RazorpayPaymentButton({ buttonId }) {
+  const hostRef = useRef(null);
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return undefined;
+    const form = document.createElement("form");
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/payment-button.js";
+    script.async = true;
+    script.dataset.payment_button_id = buttonId;
+    form.appendChild(script);
+    host.appendChild(form);
+    return () => {
+      host.innerHTML = "";
+    };
+  }, [buttonId]);
+  return <div ref={hostRef} style={{ minHeight: 48, display: "flex", justifyContent: "center" }} />;
+}
 
 /** Dark modal shell: Escape / backdrop click close it, page scroll is locked. */
 export function Modal({ onClose, labelledBy, maxWidth = 520, children }) {
@@ -79,18 +109,24 @@ export function RegisterModal({ onClose, onLogin }) {
   };
 
   if (status === "done") {
+    // Details are saved; payment is confirmed server-side by Razorpay's webhook,
+    // so this screen only hands over to Razorpay and never claims "paid".
     return (
       <Modal onClose={onClose} labelledBy="reg-title">
-        <span className="pill pill-green" style={{ alignSelf: "flex-start" }}>
-          Registration received
+        <span className="pill pill-y" style={{ alignSelf: "flex-start" }}>
+          Step 2 of 2 · Payment
         </span>
-        <h3 id="reg-title">You're on the list{form.firstName ? `, ${form.firstName.trim()}` : ""}.</h3>
+        <h3 id="reg-title">Almost there{form.firstName ? `, ${form.firstName.trim()}` : ""}.</h3>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 15, lineHeight: 1.6 }}>
-          We've got your details and will reach out at <b style={{ color: "var(--ink)" }}>{form.email.trim()}</b> shortly with
-          your login.
+          Pay <b style={{ color: "var(--ink)" }}>₹{SUBSCRIPTION_PRICE_INR} / month</b> to activate your subscription. Use{" "}
+          <b style={{ color: "var(--ink)" }}>{form.email.trim()}</b> in the payment form so we can match your payment.
         </p>
-        <button type="button" className="btn btn-y" style={{ alignSelf: "flex-start" }} onClick={onClose}>
-          Done
+        <RazorpayPaymentButton buttonId={RAZORPAY_PAYMENT_BUTTON_ID} />
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13, lineHeight: 1.55, textAlign: "center" }}>
+          Payments are handled securely by Razorpay. Once your payment is confirmed, we'll email your login.
+        </p>
+        <button type="button" className="btn" style={{ alignSelf: "center" }} onClick={onClose}>
+          Close
         </button>
       </Modal>
     );
@@ -105,8 +141,13 @@ export function RegisterModal({ onClose, onLogin }) {
         </span>
         <h3 id="reg-title">Get your TrueSight account</h3>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 14, lineHeight: 1.55 }}>
-          Share a few details and we'll set you up.
+          Share a few details, then pay securely with Razorpay to activate your account.
         </p>
+        <div className="tsl-price" role="note" aria-label={`Monthly subscription: ${SUBSCRIPTION_PRICE_INR} rupees per month`}>
+          <span className="tsl-price-amt">₹{SUBSCRIPTION_PRICE_INR}</span>
+          <span className="tsl-price-per">/ month</span>
+          <span className="tsl-price-note">Monthly subscription</span>
+        </div>
       </div>
       <form onSubmit={submit} noValidate style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div className="field">
@@ -196,7 +237,7 @@ export function RegisterModal({ onClose, onLogin }) {
               <span className="spinner" /> Sending…
             </>
           ) : (
-            <>Register →</>
+            <>Register &amp; pay ₹{SUBSCRIPTION_PRICE_INR} →</>
           )}
         </button>
         <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", textAlign: "center" }}>
