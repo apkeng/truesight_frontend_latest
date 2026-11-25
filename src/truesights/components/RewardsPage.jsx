@@ -9,6 +9,7 @@ import OrdersTrackerPage from './OrdersTrackerPage';
 import WishlistCartPage from './WishlistCartPage';
 import { api, invalidate, keys, setQueryData, useQuery } from '../data';
 import { pathFor, useTS } from '../session';
+import { REDEEM_LOCKED_TIP, useRedeemLock } from './RedeemLock';
 
 const PLACEHOLDER_IMAGE = '/assets/Product visual.png';
 const KNOWN_ICONS = new Set(['wellness', 'apparel', 'fantasy', 'trend']);
@@ -86,6 +87,7 @@ export default function RewardsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { points: pointsWallet } = useTS();
+  const redeemLock = useRedeemLock();
 
   const catalogQuery = useQuery(keys.rewards(), api.rewards);
   const wishlistQuery = useQuery(keys.wishlist(), api.wishlist);
@@ -203,6 +205,10 @@ export default function RewardsPage() {
   const handleOpenProduct = (item) => navigate(pathFor('rewards', item.id));
 
   const handleProceedToRedeem = (item, choice) => {
+    if (redeemLock.locked) {
+      notify.info(REDEEM_LOCKED_TIP);
+      return;
+    }
     // Items with options need a choice from the product page first.
     if (item.hasOptions && !item.options) {
       handleOpenProduct(item);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { RedeemLockTip, useRedeemLock } from './RedeemLock';
 
 export default function ProductDetailPage({
   product,
@@ -36,6 +37,8 @@ export default function ProductDetailPage({
 
   const currentImage = imagesList[activeImageIndex] || product?.image;
   const canAfford = pointsWallet >= (product?.points || 0);
+  const redeemLock = useRedeemLock();
+  const redeemable = canAfford && !redeemLock.locked;
 
   if (isMobile) {
     return (
@@ -562,33 +565,35 @@ export default function ProductDetailPage({
               </svg>
             </button>
 
-            <button
-              type="button"
-              disabled={!canAfford}
-              onClick={() => onProceedToRedeem(product, selectedChoice)}
-              style={{
-                flex: 1,
-                height: '46px',
-                borderRadius: '8px',
-                border: 'none',
-                background: canAfford ? '#FEE047' : '#E2E8F0',
-                color: canAfford ? '#101D3B' : '#94A3B8',
-                fontSize: '14px',
-                fontWeight: 900,
-                cursor: canAfford ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                boxShadow: canAfford ? '0 2px 8px rgba(254, 224, 71, 0.4)' : 'none'
-              }}
-            >
-              <span>Proceed to Redeem ({product.points} PTS)</span>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </button>
+            <RedeemLockTip locked={redeemLock.locked} unlocksAt={redeemLock.unlocksAt} style={{ flex: 1 }}>
+              <button
+                type="button"
+                disabled={!redeemable}
+                onClick={() => onProceedToRedeem(product, selectedChoice)}
+                style={{
+                  flex: 1,
+                  height: '46px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: redeemable ? '#FEE047' : '#E2E8F0',
+                  color: redeemable ? '#101D3B' : '#94A3B8',
+                  fontSize: '14px',
+                  fontWeight: 900,
+                  cursor: redeemable ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  boxShadow: redeemable ? '0 2px 8px rgba(254, 224, 71, 0.4)' : 'none'
+                }}
+              >
+                <span>Proceed to Redeem ({product.points} PTS)</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </RedeemLockTip>
           </div>
         </div>
       </div>
@@ -1231,46 +1236,48 @@ export default function ProductDetailPage({
                 </svg>
               </button>
 
-              <button
-                type="button"
-                disabled={!canAfford}
-                onClick={() => onProceedToRedeem(product, selectedChoice)}
-                style={{
-                  flex: 1,
-                  height: '46px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: canAfford ? '#FEE047' : '#E2E8F0',
-                  color: canAfford ? '#101D3B' : '#94A3B8',
-                  fontSize: '15px',
-                  fontWeight: 900,
-                  cursor: canAfford ? 'pointer' : 'not-allowed',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: canAfford ? '0 4px 14px rgba(254, 224, 71, 0.4)' : 'none',
-                  transition: 'all 0.18s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (canAfford) {
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow = '0 6px 18px rgba(254, 224, 71, 0.55)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (canAfford) {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(254, 224, 71, 0.4)';
-                  }
-                }}
-              >
-                <span>Proceed to Redeem</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-              </button>
+              <RedeemLockTip locked={redeemLock.locked} unlocksAt={redeemLock.unlocksAt} style={{ flex: 1 }}>
+                <button
+                  type="button"
+                  disabled={!redeemable}
+                  onClick={() => onProceedToRedeem(product, selectedChoice)}
+                  style={{
+                    flex: 1,
+                    height: '46px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: redeemable ? '#FEE047' : '#E2E8F0',
+                    color: redeemable ? '#101D3B' : '#94A3B8',
+                    fontSize: '15px',
+                    fontWeight: 900,
+                    cursor: redeemable ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: redeemable ? '0 4px 14px rgba(254, 224, 71, 0.4)' : 'none',
+                    transition: 'all 0.18s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (redeemable) {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 6px 18px rgba(254, 224, 71, 0.55)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (redeemable) {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 14px rgba(254, 224, 71, 0.4)';
+                    }
+                  }}
+                >
+                  <span>Proceed to Redeem</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+              </RedeemLockTip>
             </div>
           </div>
         </div>

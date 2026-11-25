@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { api, keys, useQuery } from '../data';
 import { useTS } from '../session';
+import { RedeemLockTip, useRedeemLock } from './RedeemLock';
 
 const ADDRESS_KEY = 'ts-last-address';
 const readSaved = () => {
@@ -71,6 +72,8 @@ export default function CheckoutPage({
   const finalPoints = Math.max(0, (product?.points || 0) - discountPoints);
   const postBalance = Math.max(0, pointsWallet - finalPoints);
   const canAfford = pointsWallet >= finalPoints;
+  const redeemLock = useRedeemLock();
+  const redeemable = canAfford && !redeemLock.locked;
 
   const handleApplyCoupon = async () => {
     setCouponError('');
@@ -99,7 +102,7 @@ export default function CheckoutPage({
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
-    if (!canAfford || submitting) return;
+    if (!redeemable || submitting) return;
     if (fullAddress.length < 10) {
       toast.error('Please enter a full delivery address.');
       return;
@@ -465,33 +468,35 @@ export default function CheckoutPage({
             </div>
           )}
 
-          <button
-            type="button"
-            disabled={!canAfford || submitting}
-            onClick={handleSubmit}
-            style={{
-              width: '100%',
-              height: '46px',
-              borderRadius: '8px',
-              border: 'none',
-              background: canAfford ? '#FEE047' : '#E2E8F0',
-              color: canAfford ? '#101D3B' : '#94A3B8',
-              fontSize: '14px',
-              fontWeight: 900,
-              cursor: canAfford ? 'pointer' : 'not-allowed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              marginTop: '4px',
-              boxShadow: canAfford ? '0 2px 8px rgba(254, 224, 71, 0.4)' : 'none'
-            }}
-          >
-            <span>{submitting ? 'Placing your order…' : 'Confirm & Acquire Reward'}</span>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </button>
+          <RedeemLockTip locked={redeemLock.locked} unlocksAt={redeemLock.unlocksAt} style={{ width: '100%' }}>
+            <button
+              type="button"
+              disabled={!redeemable || submitting}
+              onClick={handleSubmit}
+              style={{
+                width: '100%',
+                height: '46px',
+                borderRadius: '8px',
+                border: 'none',
+                background: redeemable ? '#FEE047' : '#E2E8F0',
+                color: redeemable ? '#101D3B' : '#94A3B8',
+                fontSize: '14px',
+                fontWeight: 900,
+                cursor: redeemable ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                marginTop: '4px',
+                boxShadow: redeemable ? '0 2px 8px rgba(254, 224, 71, 0.4)' : 'none'
+              }}
+            >
+              <span>{submitting ? 'Placing your order…' : 'Confirm & Acquire Reward'}</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </button>
+          </RedeemLockTip>
         </div>
       </div>
     );
@@ -1174,45 +1179,47 @@ export default function CheckoutPage({
               </span>
             )}
 
-            <button
-              type="button"
-              disabled={!canAfford || submitting}
-              onClick={handleSubmit}
-              style={{
-                width: '100%',
-                height: '46px',
-                borderRadius: '8px',
-                border: 'none',
-                background: canAfford ? '#FEE047' : '#E2E8F0',
-                color: canAfford ? '#101D3B' : '#94A3B8',
-                fontSize: '14px',
-                fontWeight: 900,
-                cursor: canAfford ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: canAfford ? '0 4px 12px rgba(254, 224, 71, 0.4)' : 'none',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                if (canAfford) {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(254, 224, 71, 0.55)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (canAfford) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(254, 224, 71, 0.4)';
-                }
-              }}
-            >
-              <span>{submitting ? 'Placing your order…' : 'Authorize & Confirm Acquisition'}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </button>
+            <RedeemLockTip locked={redeemLock.locked} unlocksAt={redeemLock.unlocksAt} style={{ width: '100%' }}>
+              <button
+                type="button"
+                disabled={!redeemable || submitting}
+                onClick={handleSubmit}
+                style={{
+                  width: '100%',
+                  height: '46px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: redeemable ? '#FEE047' : '#E2E8F0',
+                  color: redeemable ? '#101D3B' : '#94A3B8',
+                  fontSize: '14px',
+                  fontWeight: 900,
+                  cursor: redeemable ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: redeemable ? '0 4px 12px rgba(254, 224, 71, 0.4)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  if (redeemable) {
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(254, 224, 71, 0.55)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (redeemable) {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(254, 224, 71, 0.4)';
+                  }
+                }}
+              >
+                <span>{submitting ? 'Placing your order…' : 'Authorize & Confirm Acquisition'}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </RedeemLockTip>
           </div>
         </div>
       </div>
