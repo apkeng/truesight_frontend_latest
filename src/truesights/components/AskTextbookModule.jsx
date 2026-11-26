@@ -828,11 +828,11 @@ export default function AskTextbookModule() {
 
             {/* Vertical Icon Rail */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
-              {/* New Chat icon */}
+              {/* New Upload icon */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                title="New Chat / Upload"
+                title="New Upload"
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -848,7 +848,7 @@ export default function AskTextbookModule() {
                 onMouseEnter={(e) => (e.currentTarget.style.color = '#FFFFFF')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.75)')}
               >
-                <Icon name="edit" size={17} color="currentColor" />
+                <Icon name="docUpload" size={17} color="currentColor" />
               </button>
 
               {/* Search icon (opens search popup) */}
@@ -968,7 +968,7 @@ export default function AskTextbookModule() {
               </button>
             </div>
 
-            {/* "New Chat" Button: Transparent by default, white pill on hover */}
+            {/* "New Upload" Button: Transparent by default, white pill on hover */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -992,8 +992,8 @@ export default function AskTextbookModule() {
                 transition: 'all 150ms ease'
               }}
             >
-              <Icon name="edit" size={15} color={isNewChatHovered ? '#243367' : '#FFFFFF'} />
-              <span>New Chat</span>
+              <Icon name="docUpload" size={15} color={isNewChatHovered ? '#243367' : '#FFFFFF'} />
+              <span>New Upload</span>
             </button>
 
             {/* Search Input Row (Opens Search Popup Modal) */}
