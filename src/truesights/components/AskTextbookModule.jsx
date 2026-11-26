@@ -34,6 +34,60 @@ const toBook = (b) => ({
   raw: b
 });
 
+/* Loading treatment for books the textbook service is still ingesting. */
+const INGEST_CSS = `
+@keyframes ts-ingest-spin { to { transform: rotate(360deg); } }
+@keyframes ts-ingest-slide { 0% { left: -40%; } 100% { left: 100%; } }
+.ts-ingest-spinner { border-radius: 50%; border-style: solid; border-color: currentColor; border-right-color: transparent; animation: ts-ingest-spin 0.8s linear infinite; flex-shrink: 0; display: inline-block; box-sizing: border-box; }
+.ts-ingest-track { position: relative; overflow: hidden; height: 4px; border-radius: 999px; background: rgba(37, 99, 235, 0.15); }
+.ts-ingest-track > span { position: absolute; top: 0; bottom: 0; width: 40%; border-radius: 999px; background: #2563EB; animation: ts-ingest-slide 1.3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .ts-ingest-spinner, .ts-ingest-track > span { animation-duration: 3s; } }
+`;
+
+const IngestStyles = () => <style>{INGEST_CSS}</style>;
+
+const Spinner = ({ size = 12, color = '#2563EB', width = 2 }) => (
+  <span className="ts-ingest-spinner" aria-hidden="true" style={{ width: size, height: size, borderWidth: width, color }} />
+);
+
+/** Inline "Ingesting…" label for book rows in the library lists. */
+const IngestingLabel = ({ book, color = '#B45309', spinnerColor }) => (
+  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color, minWidth: 0 }} title={book.progress || 'Ingesting your textbook'}>
+    <Spinner size={10} color={spinnerColor || color} />
+    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{book.progress || 'Ingesting…'}</span>
+  </span>
+);
+
+/** Card shown on the masks over the PDF and chat panes while a book is ingested. */
+const IngestingCard = ({ book }) => (
+  <div
+    role="status"
+    aria-live="polite"
+    style={{
+      background: '#FFFFFF',
+      borderRadius: '14px',
+      padding: '20px 22px',
+      maxWidth: '340px',
+      width: 'calc(100% - 32px)',
+      boxShadow: '0 12px 32px rgba(15, 23, 42, 0.18)',
+      border: '1px solid #E2E8F0',
+      textAlign: 'center'
+    }}
+  >
+    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+      <Spinner size={28} width={3} />
+    </div>
+    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1E2538' }}>Ingesting your textbook…</div>
+    <div style={{ fontSize: '12px', color: '#64748B', marginTop: '6px', lineHeight: 1.5 }}>
+      We're reading and indexing "{book.title}". Questions unlock as soon as it's ready - this page updates on its own.
+    </div>
+    <div className="ts-ingest-track" style={{ marginTop: '14px' }}>
+      <span />
+    </div>
+    <div style={{ fontSize: '11.5px', fontWeight: 600, color: '#2563EB', marginTop: '8px' }}>{book.progress || 'Indexing your PDF'}</div>
+  </div>
+);
+
 /** A saved chat message in the shape the conversation renders. */
 const toMessage = (m, i, chatId) => ({
   id: `${chatId || 'new'}-${i}`,
@@ -701,6 +755,8 @@ export default function AskTextbookModule() {
         boxSizing: 'border-box'
       }}
     >
+      <IngestStyles />
+
       {/* Hidden real file input: allows selecting real PDF or textbook file anytime */}
       <input
         type="file"
@@ -1041,7 +1097,11 @@ export default function AskTextbookModule() {
                             : 'rgba(255, 255, 255, 0.6)'
                         }}
                       >
-                        {book.sizeLabel}
+                        {book.status === 'processing' ? (
+                          <IngestingLabel book={book} color={isHovered ? '#B45309' : '#FEE047'} />
+                        ) : (
+                          book.sizeLabel
+                        )}
                       </span>
                       </div>
                       {isHovered && (
@@ -1796,6 +1856,22 @@ export default function AskTextbookModule() {
                       title={currentBook.title}
                     />
                   )}
+                  {currentBook.status === 'processing' && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        backgroundColor: 'rgba(15, 23, 42, 0.55)',
+                        backdropFilter: 'blur(2px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 2
+                      }}
+                    >
+                      <IngestingCard book={currentBook} />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1840,18 +1916,18 @@ export default function AskTextbookModule() {
                   }}
                 >
                   {loadingChat && [0, 1].map((i) => <div key={i} className="skeleton-shimmer" style={{ height: '70px', borderRadius: '12px' }} />)}
-                  {!loadingChat && !messages.length && (
+                  {!loadingChat && !messages.length && currentBook.status === 'processing' && (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0' }}>
+                      <IngestingCard book={currentBook} />
+                    </div>
+                  )}
+                  {!loadingChat && !messages.length && currentBook.status !== 'processing' && (
                     <div style={{ border: '1px dashed #CBD5E1', borderRadius: '12px', padding: '20px', textAlign: 'center', background: '#FFFFFF' }}>
                       <div style={{ fontSize: '13px', color: '#334155', lineHeight: 1.55 }}>
                         {currentBook.status === 'missing'
                           ? 'This textbook is no longer in your library - it may have been moved to trash.'
                           : `Ask anything from "${currentBook.title}". Answers are grounded strictly in this book, with page references.`}
                       </div>
-                      {currentBook.status === 'processing' && (
-                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#B45309', marginTop: '8px' }}>
-                          This book is still processing{currentBook.progress ? ` (${currentBook.progress})` : ''} - questions unlock when it's ready.
-                        </div>
-                      )}
                       {currentBook.status === 'failed' && (
                         <div style={{ fontSize: '12px', fontWeight: 700, color: '#DC2626', marginTop: '8px' }}>
                           Indexing failed{currentBook.error ? `: ${currentBook.error}` : ''}. Upload the PDF again to retry.
@@ -2194,7 +2270,7 @@ export default function AskTextbookModule() {
                             {book.title}
                           </div>
                           <div style={{ fontSize: '11px', color: '#64748B' }}>
-                            {book.author} · {book.sizeLabel} · {book.category}
+                            {book.status === 'processing' ? <IngestingLabel book={book} /> : <>{book.author} · {book.sizeLabel} · {book.category}</>}
                           </div>
                         </div>
                       </div>
@@ -2672,7 +2748,7 @@ export default function AskTextbookModule() {
                             {book.title}
                           </div>
                           <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
-                            {book.sizeLabel} · {book.uploadDate}
+                            {book.status === 'processing' ? <IngestingLabel book={book} /> : <>{book.sizeLabel} · {book.uploadDate}</>}
                           </div>
                         </div>
 
