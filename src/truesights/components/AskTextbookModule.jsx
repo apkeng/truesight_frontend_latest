@@ -1449,7 +1449,7 @@ export default function AskTextbookModule() {
                   type="text"
                   value={landingInput}
                   onChange={(e) => setLandingInput(e.target.value)}
-                  placeholder={isMobile ? "Ask anything from this textbook..." : "Upload your syllabus and Ask AI"}
+                  placeholder="Ask anything from your textbooks..."
                   style={{
                     flex: 1,
                     minWidth: 0,
